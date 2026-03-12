@@ -1,0 +1,294 @@
+import { Queue, Worker, Job } from 'bullmq';
+import Redis from 'ioredis';
+import { env } from '../config/env';
+import { supabaseAdmin, auditLog } from './supabase';
+import * as paystack from './paystack';
+
+const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) as any;
+
+// ---- PAYOUT QUEUE ----
+export const payoutQueue = new Queue('payouts', {
+  connection,
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: { type: 'exponential', delay: 60000 },
+    removeOnComplete: { count: 1000 },
+    removeOnFail: { count: 5000 },
+  },
+});
+
+// ---- NOTIFICATION QUEUE ----
+export const notificationQueue = new Queue('notifications', {
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 10000 },
+    removeOnComplete: { count: 500 },
+  },
+});
+
+// ---- PAYOUT WORKER ----
+export function startPayoutWorker() {
+  const worker = new Worker('payouts', async (job: Job) => {
+    const { payout_id, transaction_id, type, amount, destination, idempotency_key, reason } = job.data;
+
+    console.log(`[PAYOUT_WORKER] Processing payout ${payout_id} attempt ${job.attemptsMade + 1}`);
+
+    await supabaseAdmin
+      .from('payouts')
+      .update({ status: 'PROCESSING', attempts: job.attemptsMade + 1 })
+      .eq('id', payout_id);
+
+    const recipientResult = await paystack.createTransferRecipient({
+      type: destination.type === 'bank' ? 'nuban' : 'mobile_money',
+      name: destination.name,
+      account_number: destination.account_number,
+      bank_code: destination.bank_code,
+    });
+
+    const recipientCode = recipientResult.data.recipient_code;
+    const transferRef = `payout_${payout_id}_${Date.now()}`;
+
+    const transferResult = await paystack.initiateTransfer({
+      amount,
+      recipient_code: recipientCode,
+      reference: transferRef,
+      reason: reason || `${type} payout for transaction`,
+    });
+
+    await supabaseAdmin
+      .from('payouts')
+      .update({
+        status: 'SUCCESS',
+        provider_ref: transferResult.data?.reference || transferRef,
+        transfer_code: transferResult.data?.transfer_code,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', payout_id);
+
+    // Debit the appropriate ledger bucket
+    const bucket = type === 'RIDER' ? 'DELIVERY' : 'PRODUCT';
+    await supabaseAdmin.from('ledger_entries').insert({
+      transaction_id,
+      bucket,
+      direction: 'DEBIT',
+      amount,
+      ref: transferRef,
+      description: `${type} payout completed`,
+    });
+
+    await auditLog({
+      action: 'PAYOUT_SUCCESS',
+      entity: 'payouts',
+      entity_id: payout_id,
+      after_state: { transfer_ref: transferRef, amount },
+    });
+
+    // Fire notification
+    await notificationQueue.add('send', {
+      type: 'PAYOUT_SUCCESS',
+      transaction_id,
+      payout_type: type,
+      amount,
+    });
+
+    return { success: true, transfer_ref: transferRef };
+  }, {
+    connection,
+    concurrency: 2,
+  });
+
+  worker.on('completed', (job) => {
+    console.log(`[PAYOUT_WORKER] Job ${job.id} completed`);
+  });
+
+  worker.on('failed', async (job, err) => {
+    console.error(`[PAYOUT_WORKER] Job ${job?.id} failed: ${err.message}`);
+    if (job) {
+      await supabaseAdmin
+        .from('payouts')
+        .update({
+          status: job.attemptsMade >= (job.opts.attempts || 5) ? 'FAILED' : 'QUEUED',
+          last_error: err.message,
+          attempts: job.attemptsMade,
+          next_retry_at: new Date(Date.now() + 60000 * Math.pow(2, job.attemptsMade)).toISOString(),
+        })
+        .eq('id', job.data.payout_id);
+    }
+  });
+
+  return worker;
+}
+
+// ---- SCHEDULER QUEUE (auto-release, trust recalc, stats refresh) ----
+export const schedulerQueue = new Queue('scheduler', {
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 30000 },
+    removeOnComplete: { count: 500 },
+  },
+});
+
+// ---- NOTIFICATION WORKER ----
+export function startNotificationWorker() {
+  const worker = new Worker('notifications', async (job: Job) => {
+    const { type, transaction_id, ...extra } = job.data;
+    console.log(`[NOTIFICATION] ${type} for transaction ${transaction_id}`);
+
+    const { data: txn } = await supabaseAdmin
+      .from('transactions')
+      .select('buyer_id, seller_id, buyer_phone, seller_phone, buyer_name, seller_name, short_id')
+      .eq('id', transaction_id)
+      .single();
+
+    if (!txn) return;
+
+    const messages: { user_id: string | null; phone: string; title: string; body: string }[] = [];
+
+    switch (type) {
+      case 'PAYMENT_SUCCESS':
+        messages.push({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Payment Confirmed',
+          body: `Your payment for transaction ${txn.short_id} has been confirmed. Your seller has been notified.`,
+        });
+        messages.push({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'New Order Received',
+          body: `A buyer has paid for transaction ${txn.short_id}. Please log in to accept and dispatch.`,
+        });
+        break;
+      case 'DISPATCHED':
+        messages.push({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Order Dispatched',
+          body: `Your order ${txn.short_id} has been dispatched by ${txn.seller_name}.`,
+        });
+        break;
+      case 'DELIVERY_CONFIRMED':
+        messages.push({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'Delivery Confirmed',
+          body: `The buyer has confirmed delivery for ${txn.short_id}. You can now collect your payout.`,
+        });
+        break;
+      case 'PAYOUT_SUCCESS':
+        messages.push({
+          user_id: null,
+          phone: extra.payout_type === 'RIDER' ? txn.buyer_phone : txn.seller_phone,
+          title: 'Payout Sent',
+          body: `GHS ${extra.amount} payout for ${txn.short_id} has been processed.`,
+        });
+        break;
+      case 'DISPUTE_OPENED':
+        messages.push({
+          user_id: txn.buyer_id, phone: txn.buyer_phone,
+          title: 'Dispute Opened', body: `A dispute has been opened for ${txn.short_id}.`,
+        });
+        break;
+    }
+
+    for (const msg of messages) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: msg.user_id,
+        phone: msg.phone,
+        channel: 'LOG',
+        title: msg.title,
+        body: msg.body,
+        status: 'SENT',
+        sent_at: new Date().toISOString(),
+        metadata: { type, transaction_id },
+      });
+    }
+  }, { connection, concurrency: 5 });
+
+  return worker;
+}
+
+// ---- SCHEDULER WORKER (auto-release, trust recalc, platform stats) ----
+export function startSchedulerWorker() {
+  const worker = new Worker('scheduler', async (job: Job) => {
+    const { type } = job.data;
+
+    switch (type) {
+      case 'AUTO_RELEASE': {
+        const { data: pending } = await supabaseAdmin
+          .from('transactions')
+          .select('id, buyer_id, seller_id')
+          .eq('status', 'DELIVERED_PENDING')
+          .not('auto_release_at', 'is', null)
+          .lte('auto_release_at', new Date().toISOString());
+
+        for (const txn of pending || []) {
+          await supabaseAdmin.from('transactions').update({
+            status: 'DELIVERED_CONFIRMED',
+            delivered_at: new Date().toISOString(),
+          }).eq('id', txn.id);
+
+          await auditLog({
+            action: 'AUTO_RELEASE',
+            entity: 'transactions',
+            entity_id: txn.id,
+            after_state: { reason: 'Auto-released after timeout' },
+          });
+        }
+        break;
+      }
+
+      case 'RECALC_TRUST': {
+        const { data: sellers } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id')
+          .eq('role', 'seller');
+
+        for (const seller of sellers || []) {
+          await supabaseAdmin.rpc('calculate_trust_score', { p_seller_id: seller.user_id });
+        }
+        break;
+      }
+
+      case 'REFRESH_STATS': {
+        await supabaseAdmin.rpc('refresh_platform_stats');
+        break;
+      }
+
+      case 'EXPIRE_CODES': {
+        const { data: expired } = await supabaseAdmin
+          .from('transaction_codes')
+          .select('transaction_id')
+          .lt('delivery_code_expires_at', new Date().toISOString())
+          .eq('delivery_verified', false);
+
+        for (const code of expired || []) {
+          await auditLog({
+            action: 'CODE_EXPIRED',
+            entity: 'transaction_codes',
+            entity_id: code.transaction_id,
+          });
+        }
+        break;
+      }
+    }
+  }, { connection, concurrency: 1 });
+
+  // Schedule recurring jobs
+  schedulerQueue.add('auto_release', { type: 'AUTO_RELEASE' }, {
+    repeat: { every: 15 * 60 * 1000 }, // every 15 min
+  });
+  schedulerQueue.add('recalc_trust', { type: 'RECALC_TRUST' }, {
+    repeat: { every: 6 * 60 * 60 * 1000 }, // every 6 hours
+  });
+  schedulerQueue.add('refresh_stats', { type: 'REFRESH_STATS' }, {
+    repeat: { every: 10 * 60 * 1000 }, // every 10 min
+  });
+  schedulerQueue.add('expire_codes', { type: 'EXPIRE_CODES' }, {
+    repeat: { every: 30 * 60 * 1000 }, // every 30 min
+  });
+
+  return worker;
+}
