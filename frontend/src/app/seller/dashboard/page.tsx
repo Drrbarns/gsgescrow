@@ -254,5 +254,4 @@ export default function SellerDashboard() {
       <Footer />
     </div>
   );
-  );
 }
