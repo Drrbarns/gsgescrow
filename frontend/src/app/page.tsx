@@ -79,10 +79,11 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-hidden">
         {/* HERO SECTION */}
-        <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-24 lg:pt-36 lg:pb-40">
+        <section className="relative pt-20 pb-16 sm:pt-28 sm:pb-28 lg:pt-36 lg:pb-40">
           <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -top-[40%] -right-[10%] h-[600px] w-[600px] sm:h-[1000px] sm:w-[1000px] rounded-full bg-primary/10 blur-[120px] opacity-70" />
-            <div className="absolute top-[20%] -left-[10%] h-[500px] w-[500px] sm:h-[800px] sm:w-[800px] rounded-full bg-blue-500/10 blur-[120px] opacity-50" />
+            <div className="absolute -top-[40%] -right-[10%] h-[600px] w-[600px] sm:h-[1000px] sm:w-[1000px] rounded-full bg-primary/8 blur-[120px]" />
+            <div className="absolute top-[20%] -left-[10%] h-[500px] w-[500px] sm:h-[800px] sm:w-[800px] rounded-full bg-blue-500/8 blur-[120px]" />
+            <div className="absolute top-[60%] right-[20%] h-[300px] w-[300px] rounded-full bg-amber-400/6 blur-[100px]" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
@@ -90,51 +91,75 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
               <div className="max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
-                <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-primary">
-                  <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <div className="mb-5 sm:mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary shadow-sm">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                  </span>
                   Ghana&apos;s #1 Escrow Platform
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-4 sm:mb-6 text-slate-900">
-                  Secure Every <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Transaction.</span><br/>
+                <h1 className="text-[2rem] leading-[1.1] sm:text-5xl lg:text-[4.25rem] lg:leading-[1.08] font-extrabold tracking-tight mb-5 sm:mb-7 text-slate-900">
+                  Secure Every{' '}
+                  <span className="relative inline-block">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-primary">Transaction.</span>
+                    <span className="absolute -bottom-1 left-0 right-0 h-[3px] sm:h-1 rounded-full bg-gradient-to-r from-primary to-blue-600 opacity-40" />
+                  </span>
+                  <br/>
                   Protect Every Deal.
                 </h1>
 
-                <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-10 leading-relaxed">
-                  Buy and sell online with zero risk. We hold the funds securely until the buyer receives and approves the item. No scams, no chargebacks, just safe business.
+                <p className="text-base sm:text-lg lg:text-xl text-slate-500 mb-7 sm:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  Buy and sell online with <strong className="text-slate-700">zero risk</strong>. We hold funds securely until the buyer receives and approves the item. No scams, no chargebacks &mdash; just safe business.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                   <Link href="/buyer/step-1" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+                    <Button size="lg" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5">
                       <ShoppingBag className="h-5 w-5" /> Start as Buyer
                     </Button>
                   </Link>
                   <Link href="/seller/step-1" className="w-full sm:w-auto">
-                    <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 border-2 hover:bg-muted transition-all hover:-translate-y-0.5">
+                    <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 border-2 border-slate-200 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 hover:-translate-y-0.5">
                       <Store className="h-5 w-5" /> Start as Seller
                     </Button>
                   </Link>
                 </div>
 
-                <div className="mt-6 sm:mt-10 flex items-center justify-center lg:justify-start gap-3 sm:gap-4 text-sm text-slate-500 font-medium">
-                  <div className="flex -space-x-2">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600" style={{ zIndex: 10 - i }}>
-                        {['JD', 'AK', 'MO', 'ED'][i-1]}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex text-yellow-500 mb-0.5">
-                      {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
+                {/* Trust strip */}
+                <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 sm:gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2.5">
+                      {['JD', 'AK', 'MO', 'ED', 'KA'].map((initials, i) => (
+                        <div
+                          key={initials}
+                          className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border-[2.5px] border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                          style={{
+                            zIndex: 10 - i,
+                            background: ['#6d28d9','#2563eb','#059669','#d97706','#dc2626'][i],
+                          }}
+                        >
+                          {initials}
+                        </div>
+                      ))}
                     </div>
-                    Trusted by 10,000+ Ghanaians
+                    <div>
+                      <div className="flex text-amber-400 mb-0.5">
+                        {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
+                      </div>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-600">Trusted by <span className="text-slate-900">10,000+</span> Ghanaians</p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block h-8 w-px bg-slate-200" />
+                  <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-500 font-medium">
+                    <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-green-500" /> Bank-level security</span>
+                    <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-500" /> Instant payouts</span>
                   </div>
                 </div>
 
                 {/* Mobile escrow card preview */}
-                <div className="mt-8 lg:hidden rounded-2xl border border-slate-200 bg-white shadow-lg p-5">
+                <div className="mt-8 lg:hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50 p-5 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-primary" />
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -145,7 +170,7 @@ export default function HomePage() {
                         <p className="text-xs text-slate-500">Transaction #TX-892A</p>
                       </div>
                     </div>
-                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full">PAID</span>
+                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2.5 py-1 rounded-full">PAID</span>
                   </div>
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between">
@@ -172,7 +197,7 @@ export default function HomePage() {
                 transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
                 className="relative hidden lg:block h-[600px] w-full"
               >
-                <div className="absolute inset-0 right-[-10%] top-[5%] bottom-[5%] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/50 z-0">
+                <div className="absolute inset-0 right-[-10%] top-[5%] bottom-[5%] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-900/20 border border-white/30 z-0">
                   <Image
                     src="/images/hero-woman.png"
                     alt="Confident African Professional using phone"
@@ -180,75 +205,93 @@ export default function HomePage() {
                     className="object-cover"
                     priority
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/50 via-slate-900/10 to-transparent" />
                 </div>
 
+                {/* Main Transaction Card */}
                 <motion.div
                   animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                  className="absolute top-[10%] -left-[10%] w-[340px] rounded-3xl border border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl p-6 z-20"
+                  className="absolute top-[8%] -left-[10%] w-[340px] rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl shadow-2xl shadow-slate-900/10 p-6 z-20"
                 >
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl bg-gradient-to-r from-primary via-blue-500 to-primary" />
+                  <div className="flex justify-between items-center mb-5 pt-1">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary">
                         <Shield className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm">Escrow Secured</p>
-                        <p className="text-xs text-muted-foreground">Transaction #TX-892A</p>
+                        <p className="font-bold text-sm text-slate-900">Escrow Secured</p>
+                        <p className="text-xs text-slate-400">Transaction #TX-892A</p>
                       </div>
                     </div>
-                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full">PAID</span>
+                    <span className="bg-green-50 text-green-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-green-200">PAID</span>
                   </div>
-                  <div className="space-y-4 mb-6">
+                  <div className="space-y-3.5 mb-5">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">iPhone 15 Pro Max</span>
-                      <span className="font-bold">GHS 15,400</span>
+                      <span className="text-slate-500">iPhone 15 Pro Max</span>
+                      <span className="font-bold text-slate-800">GHS 15,400</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Delivery Fee</span>
-                      <span className="font-bold">GHS 50</span>
+                      <span className="text-slate-500">Delivery Fee</span>
+                      <span className="font-bold text-slate-800">GHS 50</span>
                     </div>
-                    <div className="h-px w-full bg-border" />
+                    <div className="h-px w-full bg-slate-100" />
                     <div className="flex justify-between text-base font-bold">
-                      <span>Total Secured</span>
+                      <span className="text-slate-900">Total Secured</span>
                       <span className="text-primary">GHS 15,450</span>
                     </div>
                   </div>
-                  <Button className="w-full rounded-xl gap-2 font-semibold" disabled>
+                  <Button className="w-full rounded-xl gap-2 font-semibold shadow-sm" disabled>
                     <Lock className="h-4 w-4" /> Funds Locked in Escrow
                   </Button>
                 </motion.div>
 
+                {/* Delivery Confirmed Notification */}
                 <motion.div
-                  animate={{ y: [0, 15, 0] }}
+                  animate={{ y: [0, 12, 0] }}
                   transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
-                  className="absolute top-[15%] right-[5%] w-[240px] rounded-2xl border border-border/50 bg-card/90 backdrop-blur-md shadow-xl p-4 z-30"
+                  className="absolute top-[15%] right-[3%] w-[240px] rounded-2xl border border-white/60 bg-white/95 backdrop-blur-md shadow-xl shadow-slate-900/8 p-4 z-30"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <div className="h-9 w-9 rounded-xl bg-green-50 flex items-center justify-center text-green-500 border border-green-100">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-bold text-xs">Delivery Confirmed</p>
-                      <p className="text-[10px] text-muted-foreground">Buyer approved item</p>
+                      <p className="font-bold text-xs text-slate-900">Delivery Confirmed</p>
+                      <p className="text-[10px] text-slate-400">Buyer approved item</p>
                     </div>
                   </div>
                 </motion.div>
 
+                {/* Payout Notification */}
                 <motion.div
-                  animate={{ y: [0, -15, 0] }}
+                  animate={{ y: [0, -12, 0] }}
                   transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 2 }}
-                  className="absolute bottom-[20%] left-[5%] w-[260px] rounded-2xl border border-border/50 bg-card/90 backdrop-blur-md shadow-xl p-4 z-10"
+                  className="absolute bottom-[18%] left-[3%] w-[260px] rounded-2xl border border-white/60 bg-white/95 backdrop-blur-md shadow-xl shadow-slate-900/8 p-4 z-10"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="h-9 w-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100">
                       <Zap className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-bold text-xs">Payout Released</p>
-                      <p className="text-[10px] text-muted-foreground">GHS 15,400 sent to Seller</p>
+                      <p className="font-bold text-xs text-slate-900">Payout Released</p>
+                      <p className="text-[10px] text-slate-400">GHS 15,400 sent to Seller</p>
                     </div>
+                  </div>
+                </motion.div>
+
+                {/* New: Security Badge */}
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.5 }}
+                  className="absolute bottom-[8%] right-[8%] rounded-full border border-white/60 bg-white/95 backdrop-blur-md shadow-lg shadow-slate-900/8 px-4 py-2.5 z-20"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200">
+                      <Lock className="h-3.5 w-3.5 text-amber-600" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700">256-bit Encrypted</span>
                   </div>
                 </motion.div>
               </motion.div>
