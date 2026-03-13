@@ -79,53 +79,48 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-hidden">
         {/* HERO SECTION */}
-        <section className="relative pt-24 pb-32 lg:pt-36 lg:pb-40">
-          {/* Abstract Background Elements */}
+        <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-24 lg:pt-36 lg:pb-40">
           <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -top-[40%] -right-[10%] h-[1000px] w-[1000px] rounded-full bg-primary/10 blur-[120px] opacity-70" />
-            <div className="absolute top-[20%] -left-[10%] h-[800px] w-[800px] rounded-full bg-blue-500/10 blur-[120px] opacity-50" />
+            <div className="absolute -top-[40%] -right-[10%] h-[600px] w-[600px] sm:h-[1000px] sm:w-[1000px] rounded-full bg-primary/10 blur-[120px] opacity-70" />
+            <div className="absolute top-[20%] -left-[10%] h-[500px] w-[500px] sm:h-[800px] sm:w-[800px] rounded-full bg-blue-500/10 blur-[120px] opacity-50" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 relative">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              
-              {/* Left Content */}
-              <motion.div 
-                initial="hidden" animate="visible" variants={staggerContainer}
-                className="max-w-2xl text-center lg:text-left mx-auto lg:mx-0"
-              >
-                <motion.div variants={fadeUp} custom={0} className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+
+              <div className="max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
+                <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-primary">
                   <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  Ghana's #1 Escrow Platform
-                </motion.div>
-                
-                <motion.h1 variants={fadeUp} custom={1} className="text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl mb-6 text-foreground">
+                  Ghana&apos;s #1 Escrow Platform
+                </div>
+
+                <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-4 sm:mb-6 text-slate-900">
                   Secure Every <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Transaction.</span><br/>
                   Protect Every Deal.
-                </motion.h1>
-                
-                <motion.p variants={fadeUp} custom={2} className="text-lg sm:text-xl text-muted-foreground mb-10 leading-relaxed">
+                </h1>
+
+                <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-10 leading-relaxed">
                   Buy and sell online with zero risk. We hold the funds securely until the buyer receives and approves the item. No scams, no chargebacks, just safe business.
-                </motion.p>
-                
-                <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                   <Link href="/buyer/step-1" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full h-14 px-8 rounded-full text-base gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+                    <Button size="lg" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
                       <ShoppingBag className="h-5 w-5" /> Start as Buyer
                     </Button>
                   </Link>
                   <Link href="/seller/step-1" className="w-full sm:w-auto">
-                    <Button size="lg" variant="outline" className="w-full h-14 px-8 rounded-full text-base gap-2 border-2 hover:bg-muted transition-all hover:-translate-y-0.5">
+                    <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 border-2 hover:bg-muted transition-all hover:-translate-y-0.5">
                       <Store className="h-5 w-5" /> Start as Seller
                     </Button>
                   </Link>
-                </motion.div>
+                </div>
 
-                <motion.div variants={fadeUp} custom={4} className="mt-10 flex items-center justify-center lg:justify-start gap-4 text-sm text-muted-foreground font-medium">
+                <div className="mt-6 sm:mt-10 flex items-center justify-center lg:justify-start gap-3 sm:gap-4 text-sm text-slate-500 font-medium">
                   <div className="flex -space-x-2">
                     {[1,2,3,4].map(i => (
-                      <div key={i} className={`h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[10px] font-bold z-${10-i}`}>
+                      <div key={i} className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600" style={{ zIndex: 10 - i }}>
                         {['JD', 'AK', 'MO', 'ED'][i-1]}
                       </div>
                     ))}
@@ -136,31 +131,60 @@ export default function HomePage() {
                     </div>
                     Trusted by 10,000+ Ghanaians
                   </div>
-                </motion.div>
-              </motion.div>
+                </div>
 
-              {/* Right Visuals (Floating UI Cards + Image) */}
-              <motion.div 
+                {/* Mobile escrow card preview */}
+                <div className="mt-8 lg:hidden rounded-2xl border border-slate-200 bg-white shadow-lg p-5">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Shield className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-slate-900">Escrow Secured</p>
+                        <p className="text-xs text-slate-500">Transaction #TX-892A</p>
+                      </div>
+                    </div>
+                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full">PAID</span>
+                  </div>
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">iPhone 15 Pro Max</span>
+                      <span className="font-bold text-slate-900">GHS 15,400</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Delivery Fee</span>
+                      <span className="font-bold text-slate-900">GHS 50</span>
+                    </div>
+                    <div className="h-px w-full bg-slate-100" />
+                    <div className="flex justify-between font-bold">
+                      <span className="text-slate-900">Total Secured</span>
+                      <span className="text-primary">GHS 15,450</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Visuals — desktop only */}
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
                 className="relative hidden lg:block h-[600px] w-full"
               >
-                {/* Background Professional Image */}
                 <div className="absolute inset-0 right-[-10%] top-[5%] bottom-[5%] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/50 z-0">
-                  <Image 
-                    src="/images/hero-woman.png" 
-                    alt="Confident African Professional using phone" 
-                    fill 
+                  <Image
+                    src="/images/hero-woman.png"
+                    alt="Confident African Professional using phone"
+                    fill
                     className="object-cover"
                     priority
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/40 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/40 to-transparent" />
                 </div>
 
-                {/* Main Card */}
-                <motion.div 
-                  animate={{ y: [0, -10, 0] }} 
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
                   className="absolute top-[10%] -left-[10%] w-[340px] rounded-3xl border border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl p-6 z-20"
                 >
@@ -196,9 +220,8 @@ export default function HomePage() {
                   </Button>
                 </motion.div>
 
-                {/* Floating Card 1 */}
-                <motion.div 
-                  animate={{ y: [0, 15, 0] }} 
+                <motion.div
+                  animate={{ y: [0, 15, 0] }}
                   transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
                   className="absolute top-[15%] right-[5%] w-[240px] rounded-2xl border border-border/50 bg-card/90 backdrop-blur-md shadow-xl p-4 z-30"
                 >
@@ -213,9 +236,8 @@ export default function HomePage() {
                   </div>
                 </motion.div>
 
-                {/* Floating Card 2 */}
-                <motion.div 
-                  animate={{ y: [0, -15, 0] }} 
+                <motion.div
+                  animate={{ y: [0, -15, 0] }}
                   transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 2 }}
                   className="absolute bottom-[20%] left-[5%] w-[260px] rounded-2xl border border-border/50 bg-card/90 backdrop-blur-md shadow-xl p-4 z-10"
                 >
@@ -236,48 +258,44 @@ export default function HomePage() {
         </section>
 
         {/* LOGO CLOUD / TRUST INDICATORS */}
-        <section className="py-12 bg-white border-y border-slate-100 overflow-hidden">
+        <section className="py-8 sm:py-12 bg-white border-y border-slate-100 overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <p className="text-center text-xs font-bold text-slate-400 mb-10 uppercase tracking-[0.2em]">Trusted Payment Partners</p>
-            
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-12 md:gap-20 items-center">
-              {/* Paystack */}
-              <div className="flex items-center gap-3 group cursor-pointer">
-                <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#092E20] group-hover:border-[#092E20] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
-                  <Shield className="h-6 w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
+            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-400 mb-6 sm:mb-10 uppercase tracking-[0.2em]">Trusted Payment Partners</p>
+
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-4 sm:gap-12 md:gap-20 items-center justify-items-center">
+              <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#092E20] group-hover:border-[#092E20] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <span className="font-extrabold text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">Paystack</span>
-              </div>
-              
-              {/* MTN MoMo */}
-              <div className="flex items-center gap-3 group cursor-pointer">
-                <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#FFCC00] group-hover:border-[#FFCC00] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
-                  <Smartphone className="h-6 w-6 text-slate-400 group-hover:text-[#000000] transition-colors duration-300" />
-                </div>
-                <span className="font-extrabold text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">MTN MoMo</span>
+                <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">Paystack</span>
               </div>
 
-              {/* Telecel Cash */}
-              <div className="flex items-center gap-3 group cursor-pointer">
-                <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#E60000] group-hover:border-[#E60000] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
-                  <Smartphone className="h-6 w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
+              <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#FFCC00] group-hover:border-[#FFCC00] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
+                  <Smartphone className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-[#000000] transition-colors duration-300" />
                 </div>
-                <span className="font-extrabold text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">Telecel Cash</span>
+                <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">MTN MoMo</span>
               </div>
 
-              {/* AT Money */}
-              <div className="flex items-center gap-3 group cursor-pointer">
-                <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#000000] group-hover:border-[#000000] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
-                  <Smartphone className="h-6 w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
+              <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#E60000] group-hover:border-[#E60000] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
+                  <Smartphone className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <span className="font-extrabold text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">AT Money</span>
+                <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">Telecel Cash</span>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#000000] group-hover:border-[#000000] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
+                  <Smartphone className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">AT Money</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* HOW IT WORKS */}
-        <section className="py-24 sm:py-32 relative bg-slate-50 overflow-hidden">
+        <section className="py-16 sm:py-24 lg:py-32 relative bg-slate-50 overflow-hidden">
           {/* Decorative background elements */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full overflow-hidden pointer-events-none">
             <div className="absolute top-[20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
@@ -299,7 +317,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="text-4xl font-extrabold sm:text-5xl mb-6 text-slate-900 tracking-tight"
+                className="text-3xl font-extrabold sm:text-4xl lg:text-5xl mb-4 sm:mb-6 text-slate-900 tracking-tight"
               >
                 The Safest Way to <span className="text-primary">Transact</span>
               </motion.h2>
@@ -308,13 +326,13 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="text-xl text-slate-600"
+                className="text-base sm:text-xl text-slate-600"
               >
                 Four simple steps that guarantee peace of mind for both buyers and sellers.
               </motion.p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 relative">
               {/* Animated connecting line for desktop */}
               <div className="hidden lg:block absolute top-[4.5rem] left-[12%] right-[12%] h-[2px] bg-slate-200 z-0">
                 <motion.div 
@@ -366,11 +384,11 @@ export default function HomePage() {
         <LiveStats stats={stats} />
 
         {/* WHY CHOOSE US (BENTO GRID) */}
-        <section className="py-24 sm:py-32 bg-muted/10">
+        <section className="py-16 sm:py-24 lg:py-32 bg-muted/10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="mb-16">
-              <h2 className="text-3xl font-extrabold sm:text-4xl mb-4">Built for the Modern Ghanaian Market</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl">Whether you sell on Instagram or buy from Twitter, we provide the infrastructure to make every deal safe.</p>
+            <div className="mb-10 sm:mb-16">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4 text-slate-900">Built for the Modern Ghanaian Market</h2>
+              <p className="text-base sm:text-lg text-slate-600 max-w-2xl">Whether you sell on Instagram or buy from Twitter, we provide the infrastructure to make every deal safe.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -419,14 +437,14 @@ export default function HomePage() {
         </section>
 
         {/* CTA */}
-        <section className="py-24 relative overflow-hidden">
+        <section className="py-16 sm:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-primary/5" />
           <div className="mx-auto max-w-4xl px-4 text-center relative z-10">
-            <h2 className="text-3xl sm:text-5xl font-extrabold mb-6">Stop Risking Your Money.</h2>
-            <p className="text-xl text-muted-foreground mb-10">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-slate-900">Stop Risking Your Money.</h2>
+            <p className="text-base sm:text-xl text-slate-600 mb-8 sm:mb-10">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-14 px-8 rounded-full text-lg shadow-xl">Start a Transaction</Button></Link>
-              <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 rounded-full text-lg bg-background">Calculate Fees</Button></Link>
+              <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-xl">Start a Transaction</Button></Link>
+              <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg bg-background">Calculate Fees</Button></Link>
             </div>
           </div>
         </section>
