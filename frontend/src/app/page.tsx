@@ -493,14 +493,22 @@ export default function HomePage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 sm:py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-primary/5" />
+        <section className="py-20 sm:py-28 lg:py-36 relative overflow-hidden">
+          <div className="absolute inset-0 -z-10">
+            <Image
+              src="/images/happy-customer.png"
+              alt="Happy customer using Sell-Safe Buy-Safe"
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/75 via-slate-900/70 to-slate-900/80" />
+          </div>
           <div className="mx-auto max-w-4xl px-4 text-center relative z-10">
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-slate-900">Stop Risking Your Money.</h2>
-            <p className="text-base sm:text-xl text-slate-600 mb-8 sm:mb-10">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-white drop-shadow-sm">Stop Risking Your Money.</h2>
+            <p className="text-base sm:text-xl text-white/80 mb-8 sm:mb-10 max-w-2xl mx-auto">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-xl">Start a Transaction</Button></Link>
-              <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg bg-background">Calculate Fees</Button></Link>
+              <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-xl shadow-primary/30">Start a Transaction</Button></Link>
+              <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white">Calculate Fees</Button></Link>
             </div>
           </div>
         </section>
