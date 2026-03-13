@@ -79,28 +79,29 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-hidden">
         {/* HERO SECTION */}
-        <section className="relative lg:pt-36 lg:pb-40">
-          {/* Mobile: hero image as full background */}
-          <div className="absolute inset-0 lg:hidden -z-10">
+        <section className="relative min-h-[480px] lg:min-h-0 lg:pt-36 lg:pb-40 bg-slate-50">
+          {/* Mobile: hero image as full background — z-0 so it stays behind content */}
+          <div className="absolute inset-0 z-0 lg:hidden">
             <Image
               src="/images/hero-woman.png"
               alt="Confident African Professional"
               fill
               className="object-cover object-top"
               priority
+              sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/85 to-white" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/88 to-white" aria-hidden />
           </div>
 
           {/* Desktop: abstract gradient blobs */}
-          <div className="absolute inset-0 -z-10 overflow-hidden hidden lg:block">
+          <div className="absolute inset-0 z-0 overflow-hidden hidden lg:block">
             <div className="absolute -top-[40%] -right-[10%] h-[1000px] w-[1000px] rounded-full bg-primary/8 blur-[120px]" />
             <div className="absolute top-[20%] -left-[10%] h-[800px] w-[800px] rounded-full bg-blue-500/8 blur-[120px]" />
             <div className="absolute top-[60%] right-[20%] h-[300px] w-[300px] rounded-full bg-amber-400/6 blur-[100px]" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative pt-24 pb-16 sm:pt-28 sm:pb-28 lg:pt-0 lg:pb-0">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10 pt-24 pb-16 sm:pt-28 sm:pb-28 lg:pt-0 lg:pb-0">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
               <div className="max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
@@ -167,38 +168,6 @@ export default function HomePage() {
                   <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-600 lg:text-slate-500 font-medium">
                     <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-green-500" /> Bank-level security</span>
                     <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-500" /> Instant payouts</span>
-                  </div>
-                </div>
-
-                {/* Mobile escrow card preview */}
-                <div className="mt-8 lg:hidden rounded-2xl border border-white/60 bg-white/90 backdrop-blur-md shadow-xl shadow-slate-900/10 p-5 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-primary" />
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Shield className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-slate-900">Escrow Secured</p>
-                        <p className="text-xs text-slate-500">Transaction #TX-892A</p>
-                      </div>
-                    </div>
-                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2.5 py-1 rounded-full">PAID</span>
-                  </div>
-                  <div className="space-y-2.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">iPhone 15 Pro Max</span>
-                      <span className="font-bold text-slate-900">GHS 15,400</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Delivery Fee</span>
-                      <span className="font-bold text-slate-900">GHS 50</span>
-                    </div>
-                    <div className="h-px w-full bg-slate-100" />
-                    <div className="flex justify-between font-bold">
-                      <span className="text-slate-900">Total Secured</span>
-                      <span className="text-primary">GHS 15,450</span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -492,23 +461,37 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="py-20 sm:py-28 lg:py-36 relative overflow-hidden">
-          <div className="absolute inset-0 -z-10">
-            <Image
-              src="/images/happy-customer.png"
-              alt="Happy customer using Sell-Safe Buy-Safe"
-              fill
-              className="object-cover"
+        {/* CTA — dark section with optional background image; overlay keeps text readable */}
+        <section
+          className="relative overflow-hidden min-h-[320px] flex items-center"
+          style={{ backgroundColor: '#0f172a' }}
+        >
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0">
+              <Image
+                src="/images/happy-customer.png"
+                alt=""
+                fill
+                className="object-cover"
+                sizes="100vw"
+              />
+            </div>
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(to bottom, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.88) 50%, rgba(15,23,42,0.94) 100%)',
+              }}
+              aria-hidden
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/75 via-slate-900/70 to-slate-900/80" />
           </div>
-          <div className="mx-auto max-w-4xl px-4 text-center relative z-10">
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-white drop-shadow-sm">Stop Risking Your Money.</h2>
-            <p className="text-base sm:text-xl text-white/80 mb-8 sm:mb-10 max-w-2xl mx-auto">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-xl shadow-primary/30">Start a Transaction</Button></Link>
-              <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white">Calculate Fees</Button></Link>
+          <div className="relative z-10 w-full py-20 sm:py-28 lg:py-36">
+            <div className="mx-auto max-w-4xl px-4 text-center">
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-white">Stop Risking Your Money.</h2>
+              <p className="text-base sm:text-xl text-slate-200 mb-8 sm:mb-10 max-w-2xl mx-auto">Join the thousands of smart Ghanaians using Sell-Safe Buy-Safe today.</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/buyer/step-1"><Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-xl shadow-primary/30">Start a Transaction</Button></Link>
+                <Link href="/calculator"><Button size="lg" variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 rounded-full text-base sm:text-lg border-white/50 text-white hover:bg-white/20 hover:text-white bg-white/10">Calculate Fees</Button></Link>
+              </div>
             </div>
           </div>
         </section>
