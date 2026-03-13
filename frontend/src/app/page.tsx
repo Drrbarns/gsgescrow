@@ -79,19 +79,32 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-hidden">
         {/* HERO SECTION */}
-        <section className="relative pt-20 pb-16 sm:pt-28 sm:pb-28 lg:pt-36 lg:pb-40">
-          <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -top-[40%] -right-[10%] h-[600px] w-[600px] sm:h-[1000px] sm:w-[1000px] rounded-full bg-primary/8 blur-[120px]" />
-            <div className="absolute top-[20%] -left-[10%] h-[500px] w-[500px] sm:h-[800px] sm:w-[800px] rounded-full bg-blue-500/8 blur-[120px]" />
+        <section className="relative lg:pt-36 lg:pb-40">
+          {/* Mobile: hero image as full background */}
+          <div className="absolute inset-0 lg:hidden -z-10">
+            <Image
+              src="/images/hero-woman.png"
+              alt="Confident African Professional"
+              fill
+              className="object-cover object-top"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/85 to-white" />
+          </div>
+
+          {/* Desktop: abstract gradient blobs */}
+          <div className="absolute inset-0 -z-10 overflow-hidden hidden lg:block">
+            <div className="absolute -top-[40%] -right-[10%] h-[1000px] w-[1000px] rounded-full bg-primary/8 blur-[120px]" />
+            <div className="absolute top-[20%] -left-[10%] h-[800px] w-[800px] rounded-full bg-blue-500/8 blur-[120px]" />
             <div className="absolute top-[60%] right-[20%] h-[300px] w-[300px] rounded-full bg-amber-400/6 blur-[100px]" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative pt-24 pb-16 sm:pt-28 sm:pb-28 lg:pt-0 lg:pb-0">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
               <div className="max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
-                <div className="mb-5 sm:mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary shadow-sm">
+                <div className="mb-5 sm:mb-7 inline-flex items-center gap-2 rounded-full border border-primary/30 lg:border-primary/20 bg-white/80 lg:bg-primary/5 backdrop-blur-sm px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary shadow-sm">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -109,8 +122,8 @@ export default function HomePage() {
                   Protect Every Deal.
                 </h1>
 
-                <p className="text-base sm:text-lg lg:text-xl text-slate-500 mb-7 sm:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  Buy and sell online with <strong className="text-slate-700">zero risk</strong>. We hold funds securely until the buyer receives and approves the item. No scams, no chargebacks &mdash; just safe business.
+                <p className="text-base sm:text-lg lg:text-xl text-slate-600 lg:text-slate-500 mb-7 sm:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  Buy and sell online with <strong className="text-slate-800 lg:text-slate-700">zero risk</strong>. We hold funds securely until the buyer receives and approves the item. No scams, no chargebacks &mdash; just safe business.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
@@ -120,7 +133,7 @@ export default function HomePage() {
                     </Button>
                   </Link>
                   <Link href="/seller/step-1" className="w-full sm:w-auto">
-                    <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 border-2 border-slate-200 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 hover:-translate-y-0.5">
+                    <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 sm:px-8 rounded-full text-sm sm:text-base gap-2 border-2 border-slate-300 lg:border-slate-200 bg-white/70 lg:bg-transparent backdrop-blur-sm hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 hover:-translate-y-0.5">
                       <Store className="h-5 w-5" /> Start as Seller
                     </Button>
                   </Link>
@@ -147,18 +160,18 @@ export default function HomePage() {
                       <div className="flex text-amber-400 mb-0.5">
                         {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
                       </div>
-                      <p className="text-xs sm:text-sm font-semibold text-slate-600">Trusted by <span className="text-slate-900">10,000+</span> Ghanaians</p>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-700 lg:text-slate-600">Trusted by <span className="text-slate-900">10,000+</span> Ghanaians</p>
                     </div>
                   </div>
                   <div className="hidden sm:block h-8 w-px bg-slate-200" />
-                  <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-500 font-medium">
+                  <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-600 lg:text-slate-500 font-medium">
                     <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-green-500" /> Bank-level security</span>
                     <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-500" /> Instant payouts</span>
                   </div>
                 </div>
 
                 {/* Mobile escrow card preview */}
-                <div className="mt-8 lg:hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50 p-5 relative overflow-hidden">
+                <div className="mt-8 lg:hidden rounded-2xl border border-white/60 bg-white/90 backdrop-blur-md shadow-xl shadow-slate-900/10 p-5 relative overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-primary" />
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
