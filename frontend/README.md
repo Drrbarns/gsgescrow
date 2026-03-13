@@ -29,8 +29,13 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on Vercel (monorepo)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This repo has the Next.js app inside the **`frontend`** folder. To fix **404 NOT_FOUND** on Vercel:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Open your project on [Vercel](https://vercel.com/dashboard).
+2. Go to **Settings** → **General**.
+3. Under **Root Directory**, click **Edit**, set it to **`frontend`**, then **Save**.
+4. Go to **Deployments** → open the **⋯** on the latest deployment → **Redeploy**.
+
+After redeploying, `gsgescrow.vercel.app` should serve the app. Add your env vars (e.g. `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`) in **Settings** → **Environment Variables**.
