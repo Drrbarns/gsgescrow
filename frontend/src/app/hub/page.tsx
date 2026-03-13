@@ -256,11 +256,9 @@ export default function HubPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
+                                <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 hover:bg-accent hover:text-accent-foreground">
                                     <MoreHorizontal className="h-5 w-5 text-slate-400" />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                  </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-100">
                                   <DropdownMenuItem onClick={() => router.push(`/tracking?q=${txn.short_id}`)} className="cursor-pointer py-2.5">
                                     <Eye className="mr-2 h-4 w-4 text-slate-400" /> View Details

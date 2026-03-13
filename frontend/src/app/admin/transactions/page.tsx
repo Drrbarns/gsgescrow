@@ -100,7 +100,9 @@ export default function AdminTransactions() {
                   <TableCell className="text-sm">{format(new Date(txn.created_at), 'dd MMM yy')}</TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => router.push(`/admin/transactions/${txn.id}`)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setFlagDialog(txn.id)} className="text-destructive"><Flag className="mr-2 h-4 w-4" /> Flag Suspicious</DropdownMenuItem>

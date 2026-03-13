@@ -262,12 +262,10 @@ export default function BuyerStep1() {
                     <div className="space-y-2">
                       <Label className="text-slate-600 font-semibold">Expected Delivery Date</Label>
                       <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full h-12 rounded-xl bg-slate-50 border-slate-200 justify-start text-left font-normal text-slate-600">
+                        <PopoverTrigger className="flex w-full h-12 items-center justify-start rounded-xl border border-slate-200 bg-slate-50 px-3 text-left font-normal text-slate-600 hover:bg-slate-100">
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {deliveryDate ? format(deliveryDate, 'PPP') : 'Select date'}
-                          </Button>
-                        </PopoverTrigger>
+                          </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 rounded-xl"><Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} /></PopoverContent>
                       </Popover>
                     </div>
