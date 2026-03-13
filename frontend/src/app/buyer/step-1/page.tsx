@@ -221,7 +221,7 @@ export default function BuyerStep1() {
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label className="text-slate-600 font-semibold">Where did you find this? *</Label>
-                      <Select value={sourcePlatform} onValueChange={setSourcePlatform}>
+                      <Select value={sourcePlatform} onValueChange={v => setSourcePlatform(v ?? '')}>
                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select platform" /></SelectTrigger>
                         <SelectContent>
                           {SOURCE_PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
@@ -230,7 +230,7 @@ export default function BuyerStep1() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-slate-600 font-semibold">Product Category *</Label>
-                      <Select value={productType} onValueChange={setProductType}>
+                      <Select value={productType} onValueChange={v => setProductType(v ?? '')}>
                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select category" /></SelectTrigger>
                         <SelectContent>
                           {PRODUCT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}

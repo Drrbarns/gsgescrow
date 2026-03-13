@@ -327,7 +327,7 @@ export default function SellerStep1() {
                       <div className="grid gap-5 sm:grid-cols-2 mb-6">
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">MoMo Provider *</Label>
-                          <Select value={momoProvider} onValueChange={setMomoProvider}>
+                          <Select value={momoProvider} onValueChange={v => setMomoProvider(v ?? '')}>
                             <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select provider" /></SelectTrigger>
                             <SelectContent>
                               {MOMO_PROVIDERS.map(p => <SelectItem key={p.value} value={p.bank_code}>{p.label}</SelectItem>)}
