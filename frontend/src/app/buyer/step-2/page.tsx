@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
-import { TRANSACTION_STATUSES } from '@/lib/constants';
+import { TRANSACTION_STATUSES, SIMULATION_MODE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export default function BuyerStep2() {
   const [riderMomo, setRiderMomo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [simDeliveryCode, setSimDeliveryCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -34,6 +35,14 @@ export default function BuyerStep2() {
   useEffect(() => {
     if (user) fetchTransactions();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (SIMULATION_MODE && selected?.id) {
+      api.getSimulationDeliveryCode(selected.id).then(({ data }) => setSimDeliveryCode(data.delivery_code)).catch(() => setSimDeliveryCode(null));
+    } else {
+      setSimDeliveryCode(null);
+    }
+  }, [selected?.id]);
 
   async function fetchTransactions() {
     try {
@@ -161,9 +170,15 @@ export default function BuyerStep2() {
 
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Product Delivered — Pay Rider</h3>
+                  {SIMULATION_MODE && simDeliveryCode && (
+                    <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
+                      <p className="font-medium text-amber-800">Simulation: use delivery code <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">{simDeliveryCode}</code></p>
+                      <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setDeliveryCode(simDeliveryCode)}>Fill code</Button>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Delivery Code (7 characters) *</Label>
-                    <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder="ABC1234" className="font-mono text-lg tracking-widest" />
+                    <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder={SIMULATION_MODE ? 'SIM0000' : 'ABC1234'} className="font-mono text-lg tracking-widest" />
                   </div>
                   <div className="space-y-2">
                     <Label>Rider MoMo Number *</Label>

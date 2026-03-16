@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
-import { SOURCE_PLATFORMS, PRODUCT_TYPES } from '@/lib/constants';
+import { SOURCE_PLATFORMS, PRODUCT_TYPES, SIMULATION_MODE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -117,10 +117,18 @@ function BuyerStep1() {
         refund_bank_details: refundBank ? { info: refundBank } : undefined,
       });
 
-      const { data: payment } = await api.initiatePayment(txn.id);
-      window.location.href = payment.authorization_url;
+      if (SIMULATION_MODE) {
+        const { data } = await api.simulatePayment(txn.id);
+        setTxnShortId(data.short_id);
+        setPaymentSuccess(true);
+        toast.success('Simulated payment confirmed!');
+      } else {
+        const { data: payment } = await api.initiatePayment(txn.id);
+        window.location.href = payment.authorization_url;
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to create transaction');
+    } finally {
       setSubmitting(false);
     }
   }

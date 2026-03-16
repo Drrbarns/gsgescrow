@@ -39,3 +39,19 @@ This repo has the Next.js app inside the **`frontend`** folder. To fix **404 NOT
 4. Go to **Deployments** → open the **⋯** on the latest deployment → **Redeploy**.
 
 After redeploying, `gsgescrow.vercel.app` should serve the app. Add your env vars (e.g. `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`) in **Settings** → **Environment Variables**.
+
+## Simulation mode (testing without real payments)
+
+To test the full buyer/seller flow without Paystack:
+
+1. **Backend:** In `backend/.env` set `SIMULATION_MODE=true`. Restart the API.
+2. **Frontend:** In `frontend/.env.local` set `NEXT_PUBLIC_SIMULATION_MODE=true`. Rebuild or restart dev.
+
+When enabled:
+
+- Buyer Step 1: "Pay" simulates success (no redirect to Paystack); you see the success screen and can go to Hub / Step 2.
+- Buyer Step 2: A **Simulation** box shows the delivery code **SIM0000**; use "Fill code" or type it, enter any rider MoMo, then "Confirm & Pay Rider" (no real transfer).
+- Seller payout: When the seller collects funds, the payout is marked success without a real Paystack transfer.
+- A yellow **Simulation mode** banner appears at the top of the site.
+
+**Turn both off** (or remove the env vars) when you are ready for real payments.

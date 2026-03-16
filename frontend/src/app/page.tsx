@@ -90,7 +90,7 @@ export default function HomePage() {
               priority
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/88 to-white" aria-hidden />
+            <div className="absolute inset-0 bg-black/20" aria-hidden />
           </div>
 
           {/* Desktop: abstract gradient blobs */}

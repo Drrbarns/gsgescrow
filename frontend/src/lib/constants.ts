@@ -3,6 +3,9 @@ export const APP_TAGLINE = 'Secure Every Transaction. Protect Every Deal.';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+/** When true, payment is simulated (no Paystack). Set NEXT_PUBLIC_SIMULATION_MODE=true to test the full flow. */
+export const SIMULATION_MODE = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true';
+
 export const SOURCE_PLATFORMS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'instagram', label: 'Instagram' },

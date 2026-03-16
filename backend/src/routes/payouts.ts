@@ -4,6 +4,7 @@ import { supabaseAdmin, auditLog } from '../services/supabase';
 import { payoutQueue } from '../services/queue';
 import { verifyCode } from '../utils/codes';
 import { v4 as uuidv4 } from 'uuid';
+import { env } from '../config/env';
 
 const router = Router();
 
@@ -79,15 +80,19 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
       delivery_verified: true,
     }).eq('transaction_id', transaction_id);
 
-    await payoutQueue.add('rider_payout', {
-      payout_id: payout.id,
-      transaction_id,
-      type: 'RIDER',
-      amount: payoutAmount,
-      destination: payout.destination,
-      idempotency_key: idempotencyKey,
-      reason: `Rider payout for ${txn.short_id}`,
-    });
+    if (env.SIMULATION_MODE) {
+      await supabaseAdmin.from('payouts').update({ status: 'SUCCESS' }).eq('id', payout.id);
+    } else {
+      await payoutQueue.add('rider_payout', {
+        payout_id: payout.id,
+        transaction_id,
+        type: 'RIDER',
+        amount: payoutAmount,
+        destination: payout.destination,
+        idempotency_key: idempotencyKey,
+        reason: `Rider payout for ${txn.short_id}`,
+      });
+    }
 
     await auditLog({
       actor_id: userId, action: 'RIDER_PAYOUT_INITIATED',
@@ -171,15 +176,19 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       description: 'Seller platform fee',
     });
 
-    await payoutQueue.add('seller_payout', {
-      payout_id: payout.id,
-      transaction_id,
-      type: 'SELLER',
-      amount: sellerAmount,
-      destination: txn.seller_payout_destination,
-      idempotency_key: idempotencyKey,
-      reason: `Seller payout for ${txn.short_id}`,
-    });
+    if (env.SIMULATION_MODE) {
+      await supabaseAdmin.from('payouts').update({ status: 'SUCCESS' }).eq('id', payout.id);
+    } else {
+      await payoutQueue.add('seller_payout', {
+        payout_id: payout.id,
+        transaction_id,
+        type: 'SELLER',
+        amount: sellerAmount,
+        destination: txn.seller_payout_destination,
+        idempotency_key: idempotencyKey,
+        reason: `Seller payout for ${txn.short_id}`,
+      });
+    }
 
     await supabaseAdmin.from('transactions').update({
       status: 'COMPLETED',

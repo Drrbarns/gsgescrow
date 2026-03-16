@@ -74,7 +74,7 @@ export default function LoginPage() {
     const { error } = await signInWithEmail(email, password);
     setLoading(false);
     if (error) { toast.error(error.message || 'Invalid email or password.'); return; }
-    toast.success('Welcome back, Admin!');
+    toast.success('Welcome back!');
   }, [email, password, signInWithEmail]);
 
   function switchMode(newMode: LoginMode) {
@@ -174,7 +174,7 @@ export default function LoginPage() {
                     <Phone className="h-4 w-4" />
                     Phone OTP
                   </button>
-                  <button
+                    <button
                     onClick={() => switchMode('email')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-lg transition-all ${
                       mode === 'email'
@@ -183,7 +183,7 @@ export default function LoginPage() {
                     }`}
                   >
                     <Mail className="h-4 w-4" />
-                    Email / Admin
+                    Email
                   </button>
                 </div>
 
@@ -287,18 +287,13 @@ export default function LoginPage() {
                       onSubmit={handleEmailLogin}
                       className="space-y-5"
                     >
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium flex items-start gap-2">
-                        <Lock className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                        This login is for administrators and staff only.
-                      </div>
-
                       <div className="space-y-2">
                         <Label className="text-slate-700 font-semibold">Email Address</Label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                           <Input
                             type="email"
-                            placeholder="admin@sellsafe.gh"
+                            placeholder="you@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200 text-base font-medium focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
@@ -329,15 +324,20 @@ export default function LoginPage() {
                       </div>
 
                       <Button type="submit" className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" disabled={loading}>
-                        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Signing In…</> : 'Sign In as Admin'}
+                        {loading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Signing In…</> : 'Sign In'}
                       </Button>
                     </motion.form>
                   )}
 
                 </AnimatePresence>
 
+                <p className="mt-6 text-center text-sm text-slate-600">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/register" className="font-semibold text-primary hover:underline">Create account</Link>
+                </p>
+
                 {/* Footer */}
-                <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-500 leading-relaxed">
+                <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500 leading-relaxed">
                   By continuing, you agree to our{' '}
                   <Link href="/terms" className="font-semibold text-slate-700 hover:text-primary transition-colors">Terms of Service</Link>{' '}
                   and{' '}

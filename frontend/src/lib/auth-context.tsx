@@ -23,6 +23,7 @@ interface AuthContextType {
   signInWithOtp: (phone: string) => Promise<{ error: any }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: any }>;
+  signUpWithEmail: (email: string, password: string, full_name: string, role: 'buyer' | 'seller') => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -119,6 +120,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }
 
+  async function signUpWithEmail(email: string, password: string, full_name: string, role: 'buyer' | 'seller') {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name } },
+    });
+    if (error) return { error };
+    if (data?.user && data?.session) {
+      try {
+        await api.createProfile({ full_name, role });
+      } catch (e) {
+        // Profile may be created by backend trigger or on first getMe
+      }
+      await loadProfile();
+    }
+    return { error: null };
+  }
+
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -132,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, profileLoaded, signInWithOtp, verifyOtp, signInWithEmail, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, profileLoaded, signInWithOtp, verifyOtp, signInWithEmail, signUpWithEmail, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

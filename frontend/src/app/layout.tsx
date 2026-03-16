@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { Toaster } from '@/components/ui/sonner';
 import { OfflineIndicator } from '@/components/shared/OfflineIndicator';
+import { SimulationBanner } from '@/components/shared/SimulationBanner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <AuthProvider>
+          <SimulationBanner />
           <OfflineIndicator />
           {children}
           <Toaster position="top-right" richColors />

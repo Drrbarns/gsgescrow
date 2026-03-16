@@ -135,8 +135,9 @@ export async function processSuccessfulPayment(transactionId: string, reference:
 
   await supabaseAdmin.from('ledger_entries').insert(ledgerEntries);
 
-  // Generate delivery code
-  const deliveryCode = generateCode(7);
+  // Generate delivery code (fixed for simulation so buyer can use it)
+  const isSimulation = reference.startsWith('SIM_');
+  const deliveryCode = isSimulation ? 'SIM0000' : generateCode(7);
   const deliveryHash = await hashCode(deliveryCode);
 
   await supabaseAdmin.from('transaction_codes').insert({
@@ -170,5 +171,36 @@ export async function processSuccessfulPayment(transactionId: string, reference:
 
   return deliveryCode;
 }
+
+// POST /api/payments/simulate - Mark transaction as PAID without Paystack (simulation mode only)
+router.post('/simulate', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  if (!env.SIMULATION_MODE) {
+    res.status(404).json({ error: 'Simulation not enabled' });
+    return;
+  }
+  try {
+    const { transaction_id } = req.body;
+    const userId = req.user!.id;
+
+    const { data: txn, error: txnErr } = await supabaseAdmin
+      .from('transactions')
+      .select('id, short_id, status, buyer_id')
+      .eq('id', transaction_id)
+      .single();
+
+    if (txnErr || !txn) { res.status(404).json({ error: 'Transaction not found' }); return; }
+    if (txn.buyer_id !== userId) { res.status(403).json({ error: 'Not your transaction' }); return; }
+    if (txn.status !== 'SUBMITTED') { res.status(400).json({ error: 'Transaction already paid or invalid status' }); return; }
+
+    const ref = `SIM_${txn.id}`;
+    await processSuccessfulPayment(txn.id, ref);
+
+    const { data: updated } = await supabaseAdmin.from('transactions').select('short_id').eq('id', txn.id).single();
+    res.json({ data: { transaction_id: txn.id, short_id: updated?.short_id ?? txn.short_id, message: 'Simulated payment successful' } });
+  } catch (err: any) {
+    console.error('[PAYMENT_SIMULATE]', err.message);
+    res.status(500).json({ error: 'Simulation failed' });
+  }
+});
 
 export default router;

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -19,8 +20,10 @@ const navLinks = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const isLoginPage = pathname === '/login';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -81,9 +84,11 @@ export function Header() {
               <Link href="/login">
                 <Button size="sm" variant="ghost" className="rounded-full hidden sm:flex">Sign In</Button>
               </Link>
-              <Link href="/admin-login">
-                <Button size="sm" className="rounded-full">Admin Login</Button>
-              </Link>
+              {!isLoginPage && (
+                <Link href="/admin-login">
+                  <Button size="sm" className="rounded-full">Admin Login</Button>
+                </Link>
+              )}
             </>
           )}
 
@@ -210,12 +215,14 @@ export function Header() {
                   </button>
                 ) : (
                   <div className="flex gap-2">
-                    <Link href="/login" onClick={() => setOpen(false)} className="flex-1">
+                    <Link href="/login" onClick={() => setOpen(false)} className={isLoginPage ? 'w-full' : 'flex-1'}>
                       <Button variant="outline" size="sm" className="w-full rounded-xl border-slate-200">Sign In</Button>
                     </Link>
-                    <Link href="/admin-login" onClick={() => setOpen(false)} className="flex-1">
-                      <Button size="sm" className="w-full rounded-xl">Admin Login</Button>
-                    </Link>
+                    {!isLoginPage && (
+                      <Link href="/admin-login" onClick={() => setOpen(false)} className="flex-1">
+                        <Button size="sm" className="w-full rounded-xl">Admin Login</Button>
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

@@ -3,6 +3,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { CreateTransactionPayload, SellerDispatchPayload } from '../types';
 import { generateCode, hashCode } from '../utils/codes';
+import { env } from '../config/env';
 
 const router = Router();
 
@@ -108,6 +109,32 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
   } catch (err: any) {
     console.error('[LIST_TXN]', err.message);
     res.status(500).json({ error: 'Failed to list transactions' });
+  }
+});
+
+// GET /api/transactions/:id/simulation-delivery-code - In simulation mode, return fixed delivery code for testing
+router.get('/:id/simulation-delivery-code', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  if (!env.SIMULATION_MODE) {
+    res.status(404).json({ error: 'Not available' });
+    return;
+  }
+  try {
+    const { data: txn } = await supabaseAdmin
+      .from('transactions')
+      .select('id, buyer_id, status')
+      .eq('id', req.params.id)
+      .single();
+    if (!txn || txn.buyer_id !== req.user!.id) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+    if (txn.status !== 'PAID' && txn.status !== 'DISPATCHED' && txn.status !== 'IN_TRANSIT' && txn.status !== 'DELIVERED_PENDING') {
+      res.status(400).json({ error: 'Transaction not in a state with delivery code' });
+      return;
+    }
+    res.json({ data: { delivery_code: 'SIM0000' } });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

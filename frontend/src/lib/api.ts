@@ -75,6 +75,12 @@ class ApiClient {
   verifyPayment(reference: string) {
     return this.request<{ data: any }>('/api/payments/verify', { method: 'POST', body: JSON.stringify({ reference }) });
   }
+  simulatePayment(transactionId: string) {
+    return this.request<{ data: { transaction_id: string; short_id: string } }>('/api/payments/simulate', { method: 'POST', body: JSON.stringify({ transaction_id: transactionId }) });
+  }
+  getSimulationDeliveryCode(transactionId: string) {
+    return this.request<{ data: { delivery_code: string } }>(`/api/transactions/${transactionId}/simulation-delivery-code`);
+  }
 
   // Payouts
   payRider(data: { transaction_id: string; rider_momo_number: string; delivery_code: string }) {

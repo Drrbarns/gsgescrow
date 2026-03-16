@@ -17,4 +17,6 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   APP_URL: process.env.APP_URL || 'http://localhost:3000',
   CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:3000').split(','),
+  /** When true, payment/payout endpoints allow simulation (no real Paystack). */
+  SIMULATION_MODE: process.env.SIMULATION_MODE === 'true',
 } as const;

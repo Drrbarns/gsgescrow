@@ -27,7 +27,7 @@ router.post('/profile', authenticateToken, async (req: Request, res: Response): 
         res.json({ data: existing });
       }
     } else {
-      const phone = req.user!.phone;
+      const phone = req.user!.phone ?? (req.user as any).email ?? '';
       const { data, error } = await supabaseAdmin
         .from('profiles')
         .insert({
