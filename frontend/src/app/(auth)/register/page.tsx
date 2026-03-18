@@ -51,14 +51,19 @@ export default function RegisterPage() {
         return;
       }
       setLoading(true);
-      const { error } = await signUpWithEmail(email.trim(), password, fullName.trim(), role);
+      const result = await signUpWithEmail(email.trim(), password, fullName.trim(), role);
       setLoading(false);
-      if (error) {
-        toast.error(error.message || 'Could not create account. Try again.');
+      if (result.error) {
+        toast.error(result.error.message || 'Could not create account. Try again.');
         return;
       }
-      toast.success('Account created! Welcome.');
-      router.push(role === 'seller' ? '/seller/dashboard' : '/hub');
+      if (result.needsConfirmation) {
+        toast.success('Account created! Check your email to confirm, then sign in.');
+        router.push('/login');
+      } else {
+        toast.success('Account created! Welcome.');
+        router.push(role === 'seller' ? '/seller/dashboard' : '/hub');
+      }
     },
     [fullName, email, password, confirmPassword, role, signUpWithEmail, router]
   );

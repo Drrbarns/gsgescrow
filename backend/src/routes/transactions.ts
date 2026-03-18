@@ -179,11 +179,11 @@ router.post('/:id/dispatch', authenticateToken, async (req: Request, res: Respon
     if (txn.status !== 'PAID') { res.status(400).json({ error: 'Transaction must be in PAID status' }); return; }
 
     const sellerPhone = req.user!.phone;
-    if (txn.seller_phone !== sellerPhone && req.user!.role !== 'admin') {
+    if (!env.SIMULATION_MODE && txn.seller_phone !== sellerPhone && req.user!.role !== 'admin') {
       res.status(403).json({ error: 'Phone does not match seller on transaction' }); return;
     }
 
-    const partialCode = generateCode(4);
+    const partialCode = env.SIMULATION_MODE ? 'SIM0' : generateCode(4);
     const partialHash = await hashCode(partialCode);
 
     const { error: updateErr } = await supabaseAdmin

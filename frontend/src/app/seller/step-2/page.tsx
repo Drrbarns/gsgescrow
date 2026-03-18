@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
+import { SIMULATION_MODE } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -134,14 +135,20 @@ export default function SellerStep2() {
                 <div className="flex justify-between font-bold text-lg"><span>Net Payout</span><span className="text-green-700">GHS {calcNetPayout(selected).toFixed(2)}</span></div>
               </div>
 
+              {SIMULATION_MODE && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
+                  <p className="font-medium text-amber-800">Simulation: use delivery code <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">SIM0000</code> and partial code <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">SIM0</code></p>
+                  <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => { setDeliveryCode('SIM0000'); setPartialCode('SIM0'); }}>Fill codes</Button>
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Delivery Code (7 characters) *</Label>
-                  <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder="ABC1234" className="font-mono text-lg tracking-widest" />
+                  <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder={SIMULATION_MODE ? 'SIM0000' : 'ABC1234'} className="font-mono text-lg tracking-widest" />
                 </div>
                 <div className="space-y-2">
                   <Label>Partial Code (4 characters) *</Label>
-                  <Input value={partialCode} onChange={e => setPartialCode(e.target.value.toUpperCase())} maxLength={4} placeholder="AB12" className="font-mono text-lg tracking-widest" />
+                  <Input value={partialCode} onChange={e => setPartialCode(e.target.value.toUpperCase())} maxLength={4} placeholder={SIMULATION_MODE ? 'SIM0' : 'AB12'} className="font-mono text-lg tracking-widest" />
                 </div>
               </div>
 

@@ -23,7 +23,7 @@ interface AuthContextType {
   signInWithOtp: (phone: string) => Promise<{ error: any }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: any }>;
-  signUpWithEmail: (email: string, password: string, full_name: string, role: 'buyer' | 'seller') => Promise<{ error: any }>;
+  signUpWithEmail: (email: string, password: string, full_name: string, role: 'buyer' | 'seller') => Promise<{ error: any; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -125,18 +125,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name } },
+      options: { data: { full_name, role } },
     });
     if (error) return { error };
-    if (data?.user && data?.session) {
-      try {
-        await api.createProfile({ full_name, role });
-      } catch (e) {
-        // Profile may be created by backend trigger or on first getMe
+    if (data?.user) {
+      if (data.session) {
+        // Auto-confirmed: update profile role if trigger set it to 'buyer'
+        try {
+          await api.createProfile({ full_name, role });
+        } catch {
+          // Profile created by trigger; role update may fail — that's ok
+        }
+        await loadProfile();
       }
-      await loadProfile();
+      // If no session, email confirmation is required — user will get an email
     }
-    return { error: null };
+    return { error: null, needsConfirmation: !data?.session };
   }
 
   async function signOut() {
