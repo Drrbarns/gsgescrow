@@ -97,8 +97,14 @@ class ApiClient {
         const supabase = await this.getSupabase();
         const uid = await this.getUserId();
         if (!uid) return { data: [], total: 0 };
+        const { data: userData } = await supabase.auth.getUser();
+        const userPhone = userData.user?.phone || '';
+        const userEmail = userData.user?.email || '';
+        const orFilters = [`buyer_id.eq.${uid}`, `seller_id.eq.${uid}`];
+        if (userPhone) orFilters.push(`seller_phone.eq.${userPhone}`);
+        if (userEmail) orFilters.push(`seller_phone.eq.${userEmail}`);
         let query = supabase.from('transactions').select('*', { count: 'exact' })
-          .or(`buyer_id.eq.${uid},seller_id.eq.${uid}`)
+          .or(orFilters.join(','))
           .order('created_at', { ascending: false });
         if (params?.status) query = query.eq('status', params.status);
         if (params?.platform) query = query.eq('source_platform', params.platform);
@@ -131,16 +137,69 @@ class ApiClient {
     }
   }
   dispatchTransaction(id: string, data: Record<string, unknown>) {
-    return this.request<{ data: any }>(`/api/transactions/${id}/dispatch`, { method: 'POST', body: JSON.stringify(data) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/transactions/${id}/dispatch`, { method: 'POST', body: JSON.stringify(data) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const uid = await this.getUserId();
+        if (!uid) throw new Error('Not authenticated');
+        const { error } = await supabase.from('transactions').update({
+          seller_id: uid,
+          status: 'DISPATCHED',
+          dispatched_at: new Date().toISOString(),
+          seller_business_location: data.seller_business_location,
+          rider_name: data.rider_name,
+          rider_phone: data.rider_phone,
+          rider_telco: data.rider_telco,
+          pickup_address: data.pickup_address,
+          additional_info: data.additional_info,
+          seller_payout_destination: data.seller_payout_destination,
+        }).eq('id', id);
+        if (error) throw new Error(error.message);
+        const partialCode = 'SIM0';
+        await supabase.from('transaction_codes').update({
+          partial_code_hash: '$2a$10$sim_partial_placeholder',
+          partial_code_expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+        }).eq('transaction_id', id);
+        return { data: { partial_code: partialCode, message: 'Dispatch confirmed (simulated).' } };
+      }
+    );
   }
   verifyDelivery(id: string, deliveryCode: string) {
-    return this.request<{ data: any }>(`/api/transactions/${id}/verify-delivery`, { method: 'POST', body: JSON.stringify({ delivery_code: deliveryCode }) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/transactions/${id}/verify-delivery`, { method: 'POST', body: JSON.stringify({ delivery_code: deliveryCode }) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        await supabase.from('transactions').update({
+          status: 'DELIVERED_CONFIRMED',
+          delivered_at: new Date().toISOString(),
+        }).eq('id', id);
+        return { data: { message: 'Delivery confirmed (simulated).' } };
+      }
+    );
   }
   requestReplacement(id: string) {
-    return this.request<{ data: any }>(`/api/transactions/${id}/request-replacement`, { method: 'POST' });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/transactions/${id}/request-replacement`, { method: 'POST' }),
+      async () => {
+        const supabase = await this.getSupabase();
+        await supabase.from('transactions').update({ status: 'REPLACEMENT_PENDING' }).eq('id', id);
+        return { data: { message: 'Replacement requested (simulated).' } };
+      }
+    );
   }
   trackTransaction(query: string) {
-    return this.request<{ data: any[] }>(`/api/transactions/track/${encodeURIComponent(query)}`);
+    return this.requestWithFallback<{ data: any[] }>(
+      () => this.request<{ data: any[] }>(`/api/transactions/track/${encodeURIComponent(query)}`),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data } = await supabase.from('transactions')
+          .select('short_id, status, product_name, product_type, created_at, dispatched_at, delivered_at, completed_at')
+          .or(`short_id.ilike.%${query}%,buyer_phone.ilike.%${query}%,seller_phone.ilike.%${query}%`)
+          .order('created_at', { ascending: false }).limit(10);
+        return { data: data || [] };
+      }
+    );
   }
 
   // Payments
@@ -172,15 +231,40 @@ class ApiClient {
     );
   }
   getSimulationDeliveryCode(transactionId: string) {
-    return this.request<{ data: { delivery_code: string } }>(`/api/transactions/${transactionId}/simulation-delivery-code`);
+    return this.requestWithFallback<{ data: { delivery_code: string } }>(
+      () => this.request<{ data: { delivery_code: string } }>(`/api/transactions/${transactionId}/simulation-delivery-code`),
+      async () => ({ data: { delivery_code: 'SIM0000' } })
+    );
   }
 
   // Payouts
   payRider(data: { transaction_id: string; rider_momo_number: string; delivery_code: string }) {
-    return this.request<{ data: any }>('/api/payouts/rider', { method: 'POST', body: JSON.stringify(data) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/payouts/rider', { method: 'POST', body: JSON.stringify(data) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        await supabase.from('transactions').update({
+          rider_momo_number: data.rider_momo_number,
+          status: 'DELIVERED_PENDING',
+        }).eq('id', data.transaction_id);
+        return { data: { message: 'Rider payout simulated', payout_id: 'sim_' + Date.now() } };
+      }
+    );
   }
   paySeller(data: { transaction_id: string; delivery_code: string; partial_code: string }) {
-    return this.request<{ data: any }>('/api/payouts/seller', { method: 'POST', body: JSON.stringify(data) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/payouts/seller', { method: 'POST', body: JSON.stringify(data) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data: txn } = await supabase.from('transactions').select('product_total, seller_platform_fee, rider_release_fee').eq('id', data.transaction_id).single();
+        const amount = txn ? parseFloat(txn.product_total) - parseFloat(txn.seller_platform_fee) - parseFloat(txn.rider_release_fee) : 0;
+        await supabase.from('transactions').update({
+          status: 'COMPLETED',
+          completed_at: new Date().toISOString(),
+        }).eq('id', data.transaction_id);
+        return { data: { message: 'Seller payout simulated', amount } };
+      }
+    );
   }
   listPayouts(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
