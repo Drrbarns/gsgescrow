@@ -70,8 +70,11 @@ class ApiClient {
         const buyerPlatformFee = parseFloat((pt * buyerFeePercent / 100).toFixed(2));
         const sellerPlatformFee = parseFloat((pt * 0.75 / 100).toFixed(2));
         const grandTotal = pt + df + riderReleaseFee + buyerPlatformFee;
+        const { data: userData } = await supabase.auth.getUser();
+        const buyerPhone = userData.user?.phone || userData.user?.email || '';
         const { data: txn, error } = await supabase.from('transactions').insert({
-          buyer_id: uid, seller_phone: data.seller_phone, seller_name: data.seller_name,
+          buyer_id: uid, buyer_phone: buyerPhone,
+          seller_phone: data.seller_phone, seller_name: data.seller_name,
           buyer_name: data.buyer_name, listing_link: data.listing_link,
           source_platform: data.source_platform, product_type: data.product_type,
           product_name: data.product_name, delivery_address: data.delivery_address,
