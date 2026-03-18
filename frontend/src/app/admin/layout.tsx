@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <SidebarNav />
               </SheetContent>
             </Sheet>
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-base sm:text-lg font-semibold truncate">
               {sidebarLinks.find(l => l.href === pathname)?.label || 'Admin'}
             </h2>
           </div>

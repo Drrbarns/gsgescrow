@@ -58,13 +58,13 @@ export default function AdminTransactions() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="flex flex-wrap gap-3 py-4">
-          <div className="flex flex-1 min-w-[200px] gap-2">
+        <CardContent className="flex flex-wrap gap-3 px-3 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-1 min-w-0 w-full sm:w-auto gap-2">
             <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} />
-            <Button variant="secondary" onClick={fetchData} size="icon"><Search className="h-4 w-4" /></Button>
+            <Button variant="secondary" onClick={fetchData} size="icon" className="shrink-0"><Search className="h-4 w-4" /></Button>
           </div>
           <Select value={statusFilter || 'all'} onValueChange={v => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               {Object.entries(TRANSACTION_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -75,6 +75,7 @@ export default function AdminTransactions() {
 
       {loading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
         <Card>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -113,6 +114,7 @@ export default function AdminTransactions() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
       )}
 
@@ -125,12 +127,12 @@ export default function AdminTransactions() {
       )}
 
       <Dialog open={!!flagDialog} onOpenChange={() => setFlagDialog(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg">
           <DialogHeader><DialogTitle>Flag Transaction</DialogTitle></DialogHeader>
           <Textarea placeholder="Reason for flagging..." value={flagReason} onChange={e => setFlagReason(e.target.value)} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFlagDialog(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleFlag}>Flag</Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setFlagDialog(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button variant="destructive" onClick={handleFlag} className="w-full sm:w-auto">Flag</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

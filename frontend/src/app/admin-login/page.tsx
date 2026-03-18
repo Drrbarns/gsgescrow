@@ -118,7 +118,7 @@ export default function AdminLoginPage() {
       </div>
 
       {/* Right Panel — Login Form */}
-      <div className="flex-1 flex items-center justify-center p-6 relative">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 relative">
         {/* Subtle right-panel glow */}
         <div className="absolute top-[30%] right-[20%] w-[400px] h-[400px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
 
@@ -142,15 +142,15 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Form card */}
-          <div className="rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          <div className="rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
             <div className="h-1.5 w-full bg-gradient-to-r from-primary to-blue-500" />
 
-            <div className="p-8 sm:p-10">
+            <div className="p-5 sm:p-10">
               <div className="mb-8">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-5">
                   <LayoutDashboard className="h-7 w-7 text-primary" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 mb-2">Admin Sign In</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">Admin Sign In</h2>
                 <p className="text-slate-500 text-sm">Enter your credentials to access the control panel</p>
               </div>
 
@@ -164,7 +164,7 @@ export default function AdminLoginPage() {
                       placeholder="admin@sellsafe.gh"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 text-base font-medium placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:bg-white transition-all"
+                      className="h-12 sm:h-14 pl-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 text-base font-medium placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:bg-white transition-all"
                       autoFocus
                     />
                   </div>
@@ -179,7 +179,7 @@ export default function AdminLoginPage() {
                       placeholder="••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-14 pl-12 pr-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 text-base font-medium placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:bg-white transition-all"
+                      className="h-12 sm:h-14 pl-12 pr-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 text-base font-medium placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:bg-white transition-all"
                     />
                     <button
                       type="button"
@@ -194,7 +194,7 @@ export default function AdminLoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all mt-4"
+                  className="w-full h-12 sm:h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all mt-4"
                 >
                   {loading
                     ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating…</>

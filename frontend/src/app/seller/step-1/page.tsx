@@ -103,30 +103,30 @@ export default function SellerStep1() {
             animate={{ scale: 1, opacity: 1 }}
             className="w-full max-w-lg"
           >
-            <div className="rounded-[2rem] bg-white shadow-2xl shadow-green-500/10 border border-green-100 overflow-hidden text-center">
-              <div className="bg-green-500 py-10 px-6 text-white">
+            <div className="rounded-xl sm:rounded-[2rem] bg-white shadow-2xl shadow-green-500/10 border border-green-100 overflow-hidden text-center max-w-full">
+              <div className="bg-green-500 py-6 px-4 sm:py-10 sm:px-6 text-white">
                 <motion.div 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
-                  className="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
+                  className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
                 >
-                  <CheckCircle2 className="h-10 w-10 text-green-500" />
+                  <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-500" />
                 </motion.div>
-                <h2 className="text-3xl font-bold mb-2">Dispatch Confirmed!</h2>
-                <p className="text-green-100 font-medium">Your partial code has been generated securely.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Dispatch Confirmed!</h2>
+                <p className="text-green-100 font-medium text-sm sm:text-base">Your partial code has been generated securely.</p>
               </div>
               
-              <div className="p-8">
-                <div className="mb-8">
+              <div className="p-4 sm:p-8">
+                <div className="mb-6 sm:mb-8">
                   <p className="text-sm text-slate-500 uppercase tracking-wider font-bold mb-2">Your Partial Code</p>
-                  <div className="inline-flex items-center justify-center w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-6">
-                    <span className="font-mono text-4xl tracking-[0.3em] font-extrabold text-slate-900">{partialCode}</span>
+                  <div className="inline-flex items-center justify-center w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-4 sm:px-4 sm:py-6 overflow-hidden">
+                    <span className="font-mono text-2xl sm:text-4xl tracking-[0.2em] sm:tracking-[0.3em] font-extrabold text-slate-900">{partialCode}</span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-left mb-8">
-                  <div className="flex items-start gap-4">
+                <div className="rounded-xl sm:rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5 text-left mb-6 sm:mb-8">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <div className="bg-amber-100 p-2 rounded-full text-amber-600 shrink-0 mt-0.5">
                       <AlertTriangle className="h-5 w-5" />
                     </div>
@@ -139,7 +139,7 @@ export default function SellerStep1() {
                   </div>
                 </div>
 
-                <Button onClick={() => router.push('/hub')} className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/25">
+                <Button onClick={() => router.push('/hub')} className="w-full h-12 sm:h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/25">
                   Go to Dashboard
                 </Button>
               </div>
@@ -157,15 +157,15 @@ export default function SellerStep1() {
       
       <main className="flex-1 pb-24">
         {/* Header Section */}
-        <div className="bg-slate-950 pt-12 pb-32 text-white px-4">
+        <div className="bg-slate-950 pt-8 pb-24 sm:pt-12 sm:pb-32 text-white px-4">
           <div className="mx-auto max-w-4xl">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white font-bold text-xl shadow-lg shadow-primary/30">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4">
+              <div className="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-primary text-white font-bold text-base sm:text-xl shadow-lg shadow-primary/30 shrink-0">
                 1
               </div>
               <div>
-                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Accept & Dispatch Order</h1>
-                <p className="text-slate-400 mt-1">Select a paid order, fill in dispatch details, and confirm.</p>
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">Accept & Dispatch Order</h1>
+                <p className="text-slate-400 mt-1 text-sm sm:text-base">Select a paid order, fill in dispatch details, and confirm.</p>
               </div>
             </div>
           </div>
@@ -184,12 +184,12 @@ export default function SellerStep1() {
                 className="space-y-4"
               >
                 {transactions.length === 0 ? (
-                  <div className="rounded-3xl bg-white shadow-xl border border-slate-100 p-16 text-center">
-                    <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                      <Package className="h-10 w-10 text-slate-300" />
+                  <div className="rounded-xl sm:rounded-3xl bg-white shadow-xl border border-slate-100 p-8 sm:p-16 text-center">
+                    <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+                      <Package className="h-8 w-8 sm:h-10 sm:w-10 text-slate-300" />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">No pending orders</h3>
-                    <p className="text-slate-500 max-w-md mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No pending orders</h3>
+                    <p className="text-slate-500 max-w-md mx-auto text-sm sm:text-base">
                       You don't have any paid orders waiting to be dispatched right now.
                     </p>
                   </div>
@@ -202,7 +202,7 @@ export default function SellerStep1() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}
                         onClick={() => setSelected(txn)}
-                        className="group rounded-2xl bg-white shadow-sm border border-slate-200 p-6 cursor-pointer hover:shadow-md hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="group rounded-xl sm:rounded-2xl bg-white shadow-sm border border-slate-200 p-4 sm:p-6 cursor-pointer hover:shadow-md hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 max-w-full overflow-hidden"
                       >
                         <div className="flex items-start gap-4">
                           <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
@@ -220,7 +220,7 @@ export default function SellerStep1() {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Product Total</p>
-                          <p className="text-xl font-extrabold text-slate-900">GHS {parseFloat(txn.product_total).toFixed(2)}</p>
+                          <p className="text-lg sm:text-xl font-extrabold text-slate-900">GHS {parseFloat(txn.product_total).toFixed(2)}</p>
                         </div>
                       </motion.div>
                     ))}
@@ -238,24 +238,24 @@ export default function SellerStep1() {
                   <ArrowLeft className="h-4 w-4" /> Back to Orders
                 </Button>
 
-                <div className="rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                <div className="rounded-xl sm:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden max-w-full">
                   
                   {/* Order Summary Header */}
                   <div className="bg-slate-50 border-b border-slate-100 p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-1">{selected.product_name}</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">{selected.product_name}</h2>
                         <p className="text-slate-500 font-medium">
                           <span className="font-mono">{selected.short_id}</span> &middot; Buyer: {selected.buyer_name} ({selected.buyer_phone})
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Product Total</p>
-                        <p className="text-2xl font-extrabold text-primary">GHS {parseFloat(selected.product_total).toFixed(2)}</p>
+                        <p className="text-xl sm:text-2xl font-extrabold text-primary">GHS {parseFloat(selected.product_total).toFixed(2)}</p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-white p-4 rounded-xl border border-slate-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm bg-white p-3 sm:p-4 rounded-xl border border-slate-200 overflow-hidden">
                       <div>
                         <span className="text-slate-400 block mb-1 text-xs uppercase font-bold">Delivery Address</span>
                         <p className="font-medium text-slate-900 line-clamp-2">{selected.delivery_address}</p>
@@ -272,7 +272,7 @@ export default function SellerStep1() {
                   </div>
 
                   {/* Form Content */}
-                  <div className="p-6 sm:p-8 space-y-10">
+                  <div className="p-4 sm:p-8 space-y-8 sm:space-y-10">
                     
                     {/* Section: Seller Info */}
                     <div>
@@ -281,7 +281,7 @@ export default function SellerStep1() {
                       </h3>
                       <div className="space-y-2">
                         <Label className="text-slate-600 font-semibold">Your Business Location *</Label>
-                        <Input value={businessLocation} onChange={e => setBusinessLocation(e.target.value)} placeholder="Where are you operating from?" className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+                        <Input value={businessLocation} onChange={e => setBusinessLocation(e.target.value)} placeholder="Where are you operating from?" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                       </div>
                     </div>
 
@@ -293,16 +293,16 @@ export default function SellerStep1() {
                       <div className="grid gap-5 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">Rider Name *</Label>
-                          <Input value={riderName} onChange={e => setRiderName(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+                          <Input value={riderName} onChange={e => setRiderName(e.target.value)} className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">Rider Phone *</Label>
-                          <Input value={riderPhone} onChange={e => setRiderPhone(e.target.value)} placeholder="024XXXXXXX" className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+                          <Input value={riderPhone} onChange={e => setRiderPhone(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">Rider Telco *</Label>
                           <Select value={riderTelco} onValueChange={v => setRiderTelco(v || '')}>
-                            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select telco" /></SelectTrigger>
+                            <SelectTrigger className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select telco" /></SelectTrigger>
                             <SelectContent>
                               {MOMO_PROVIDERS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                             </SelectContent>
@@ -310,7 +310,7 @@ export default function SellerStep1() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">Pickup Address *</Label>
-                          <Input value={pickupAddress} onChange={e => setPickupAddress(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+                          <Input value={pickupAddress} onChange={e => setPickupAddress(e.target.value)} className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                           <Label className="text-slate-600 font-semibold">Additional Info (Optional)</Label>
@@ -328,7 +328,7 @@ export default function SellerStep1() {
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">MoMo Provider *</Label>
                           <Select value={momoProvider} onValueChange={v => setMomoProvider(v ?? '')}>
-                            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select provider" /></SelectTrigger>
+                            <SelectTrigger className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select provider" /></SelectTrigger>
                             <SelectContent>
                               {MOMO_PROVIDERS.map(p => <SelectItem key={p.value} value={p.bank_code}>{p.label}</SelectItem>)}
                             </SelectContent>
@@ -336,11 +336,11 @@ export default function SellerStep1() {
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">MoMo Number *</Label>
-                          <Input value={momoNumber} onChange={e => setMomoNumber(e.target.value)} placeholder="024XXXXXXX" className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+                          <Input value={momoNumber} onChange={e => setMomoNumber(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                       </div>
 
-                      <div className="rounded-2xl bg-blue-50/50 border border-blue-100 p-5 flex items-center justify-between">
+                      <div className="rounded-xl sm:rounded-2xl bg-blue-50/50 border border-blue-100 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <ShieldCheck className="h-5 w-5 text-blue-600" />
                           <span className="font-medium text-blue-900">Seller Platform Fee (0.75%)</span>
@@ -352,7 +352,7 @@ export default function SellerStep1() {
                     <Button 
                       onClick={handleDispatch} 
                       disabled={submitting} 
-                      className="w-full h-14 rounded-xl text-lg font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
+                      className="w-full h-12 sm:h-14 rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
                     >
                       {submitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Confirming Dispatch...</> : 'Confirm Dispatch & Get Code'}
                     </Button>

@@ -24,7 +24,7 @@ export default function ProtectionPage() {
       <Header />
       <main className="flex-1">
         {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-24 pb-48 text-white">
+        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <Image 
               src="/images/protection-handshake.png" 
@@ -51,7 +51,7 @@ export default function ProtectionPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-6"
+              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
             >
               How Your Money is <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-primary">Protected</span>
             </motion.h1>
@@ -59,7 +59,7 @@ export default function ProtectionPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-lg text-slate-300"
+              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300 leading-relaxed"
             >
               Every cedis you pay is held in a secure, immutable escrow vault until you physically confirm delivery. Zero scams. Zero stress.
             </motion.p>
@@ -67,22 +67,22 @@ export default function ProtectionPage() {
         </section>
 
         {/* Protection Layers - Floating Grid */}
-        <section className="relative z-20 mx-auto max-w-5xl px-4 sm:px-6 -mt-32 pb-24">
+        <section className="relative z-20 mx-auto max-w-5xl px-4 sm:px-6 -mt-20 sm:-mt-32 pb-12 sm:pb-24">
           <div className="grid gap-6 md:grid-cols-2">
             
             {/* Main Feature - Spans 2 columns on desktop */}
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fade} custom={0} className="md:col-span-2">
-              <div className="rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 p-8 sm:p-12 overflow-hidden relative">
+              <div className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 p-5 sm:p-8 lg:p-12 overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                   <Lock className="w-64 h-64" />
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <Lock className="h-12 w-12" />
+                  <div className="flex h-16 w-16 sm:h-24 sm:w-24 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600">
+                    <Lock className="h-8 w-8 sm:h-12 sm:w-12" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-3">1. The Escrow Vault</h3>
-                    <p className="text-slate-600 leading-relaxed text-lg">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">1. The Escrow Vault</h3>
+                    <p className="text-slate-600 leading-relaxed text-base sm:text-lg">
                       When you pay through Sell-Safe Buy-Safe, your money goes into a secure, regulated escrow account — <strong className="text-slate-900">never directly to the seller</strong>. The seller cannot access your funds until you explicitly confirm that you received the correct item in good condition.
                     </p>
                   </div>
@@ -117,11 +117,11 @@ export default function ProtectionPage() {
               },
             ].map((layer, i) => (
               <motion.div key={layer.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fade} custom={i + 1}>
-                <div className="rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-8 h-full hover:shadow-2xl transition-shadow duration-300">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl mb-6 ${layer.color}`}>
-                    <layer.icon className="h-7 w-7" />
+                <div className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-8 h-full hover:shadow-2xl transition-shadow duration-300">
+                  <div className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl mb-4 sm:mb-6 ${layer.color}`}>
+                    <layer.icon className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3">{layer.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 sm:mb-3">{layer.title}</h3>
                   <p className="text-slate-600 leading-relaxed">{layer.desc}</p>
                 </div>
               </motion.div>
@@ -130,12 +130,12 @@ export default function ProtectionPage() {
         </section>
 
         {/* Common Scenarios - Bento Grid Style */}
-        <section className="bg-slate-900 py-24 text-white relative overflow-hidden">
+        <section className="bg-slate-900 py-12 sm:py-24 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.apply/noise.svg')] opacity-20 mix-blend-overlay"></div>
           
           <div className="mx-auto max-w-5xl px-4 sm:px-6 relative z-10">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold mb-4">What Happens When...</h2>
+            <div className="text-center mb-8 sm:mb-16">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">What Happens When...</h2>
               <p className="text-slate-400">Clear answers for every possible edge case.</p>
             </div>
             
@@ -149,7 +149,7 @@ export default function ProtectionPage() {
                 { scenario: 'Seller is a scammer?', answer: 'Your money is NEVER sent directly to the seller. Even if they vanish, your funds are safe in escrow.' },
               ].map((item, i) => (
                 <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fade} custom={i}>
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-6 h-full backdrop-blur-sm hover:bg-white/10 transition-colors">
+                  <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 h-full backdrop-blur-sm hover:bg-white/10 transition-colors">
                     <p className="font-bold text-sm flex items-start gap-3 mb-3 text-white">
                       <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" /> 
                       {item.scenario}
@@ -166,13 +166,13 @@ export default function ProtectionPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-24 bg-white">
+        <section className="py-12 sm:py-24 bg-white">
           <div className="mx-auto max-w-2xl px-4 text-center">
-            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-8">
-              <ShieldCheck className="h-10 w-10" />
+            <div className="inline-flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-6 sm:mb-8">
+              <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Ready to Transact Safely?</h2>
-            <p className="text-lg text-slate-600 mb-10">Join thousands of smart Ghanaians who refuse to risk their money online.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">Ready to Transact Safely?</h2>
+            <p className="text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 leading-relaxed">Join thousands of smart Ghanaians who refuse to risk their money online.</p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Link href="/buyer/step-1">
                 <Button size="lg" className="w-full sm:w-auto h-14 px-8 rounded-xl text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all gap-2">

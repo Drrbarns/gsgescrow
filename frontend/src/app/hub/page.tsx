@@ -75,7 +75,7 @@ export default function HubPage() {
       
       <main className="flex-1">
         {/* Premium Header Section */}
-        <section className="bg-white pt-16 pb-32 relative overflow-hidden border-b border-slate-200">
+        <section className="bg-white pt-10 pb-20 sm:pt-16 sm:pb-32 relative overflow-hidden border-b border-slate-200">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-0 right-[20%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-[100px]" />
             <div className="absolute bottom-0 left-[10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[100px]" />
@@ -97,7 +97,7 @@ export default function HubPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="text-3xl font-black tracking-tight sm:text-4xl text-slate-900"
+                  className="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl text-slate-900"
                 >
                   Transaction Hub
                 </motion.h1>
@@ -115,16 +115,16 @@ export default function HubPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className="flex items-center gap-4 bg-white shadow-xl shadow-slate-200/50 border border-slate-100 rounded-2xl p-5"
+                className="flex items-center gap-4 bg-white shadow-xl shadow-slate-200/50 border border-slate-100 rounded-xl p-4 sm:rounded-2xl sm:p-5"
               >
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Escrows</p>
-                  <p className="text-3xl font-black text-slate-900">{total}</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Escrows</p>
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900">{total}</p>
                 </div>
                 <div className="w-px h-12 bg-slate-100 mx-2"></div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active</p>
-                  <p className="text-3xl font-black text-primary">
+                  <p className="text-2xl sm:text-3xl font-black text-primary">
                     {transactions.filter(t => !['COMPLETED', 'CANCELLED'].includes(t.status)).length}
                   </p>
                 </div>
@@ -134,14 +134,14 @@ export default function HubPage() {
         </section>
 
         {/* Main Content Area */}
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 relative z-20 -mt-20 pb-24">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 relative z-20 -mt-12 sm:-mt-20 pb-12 sm:pb-24">
           
           {/* Filters Bar */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl shadow-lg border border-slate-100 p-4 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between"
+            className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-slate-100 p-3 sm:p-4 mb-6 sm:mb-8 flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between"
           >
             <div className="flex-1 w-full relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -181,7 +181,7 @@ export default function HubPage() {
           </motion.div>
 
           {/* Data Area */}
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden min-h-[400px]">
+          <div className="bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-xl border border-slate-100 overflow-hidden min-h-[400px]">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
@@ -196,9 +196,9 @@ export default function HubPage() {
                 <p className="text-slate-500 max-w-sm mb-8">
                   You haven't made any secure transactions matching these filters. Start buying or selling safely today!
                 </p>
-                <div className="flex gap-4">
-                  <Button onClick={() => router.push('/buyer/step-1')} className="rounded-xl px-6">Start as Buyer</Button>
-                  <Button onClick={() => router.push('/seller/step-1')} variant="outline" className="rounded-xl px-6">Start as Seller</Button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+                  <Button onClick={() => router.push('/buyer/step-1')} className="w-full sm:w-auto rounded-xl px-6">Start as Buyer</Button>
+                  <Button onClick={() => router.push('/seller/step-1')} variant="outline" className="w-full sm:w-auto rounded-xl px-6">Start as Seller</Button>
                 </div>
               </div>
             ) : (
@@ -302,7 +302,7 @@ export default function HubPage() {
                   {transactions.map(txn => (
                     <div 
                       key={txn.id} 
-                      className="p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
+                      className="px-3 py-4 sm:p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
                       onClick={() => router.push(`/tracking?q=${txn.short_id}`)}
                     >
                       <div className="flex items-start justify-between mb-3">

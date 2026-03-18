@@ -90,7 +90,7 @@ export default function TrackingPage() {
 
       <main className="flex-1">
         {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-24 pb-48 text-white">
+        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
           {/* Abstract Background Elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-0 left-[20%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]" />
@@ -110,7 +110,7 @@ export default function TrackingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-6"
+              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
             >
               Track Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Transaction</span>
             </motion.h1>
@@ -118,7 +118,7 @@ export default function TrackingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-lg text-slate-300 mb-10"
+              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300 mb-8 sm:mb-10"
             >
               Enter your secure Transaction ID or phone number to see the live status of your funds and delivery.
             </motion.p>
@@ -131,7 +131,7 @@ export default function TrackingPage() {
                 e.preventDefault();
                 handleSearch();
               }}
-              className="mx-auto max-w-2xl flex gap-3 p-2 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl"
+              className="mx-auto max-w-2xl flex flex-col sm:flex-row gap-3 p-2 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/20 shadow-2xl"
             >
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
@@ -145,7 +145,7 @@ export default function TrackingPage() {
               </div>
               <Button 
                 type="submit" 
-                className="h-14 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 transition-all" 
+                className="h-14 w-full sm:w-auto px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 transition-all" 
                 disabled={loading}
               >
                 {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Track Order'}
@@ -155,19 +155,19 @@ export default function TrackingPage() {
         </section>
 
         {/* Floating Results Section */}
-        <section className="relative z-20 mx-auto max-w-4xl px-4 -mt-20 pb-24">
+        <section className="relative z-20 mx-auto max-w-4xl px-4 -mt-16 sm:-mt-20 pb-12 sm:pb-24">
           <AnimatePresence mode="wait">
             {!loading && searched && results.length === 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="rounded-3xl bg-white shadow-xl border border-slate-100 p-16 text-center"
+                className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl border border-slate-100 p-8 sm:p-16 text-center"
               >
                 <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                   <Search className="h-10 w-10 text-slate-300" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">No transaction found</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No transaction found</h3>
                 <p className="text-slate-500 max-w-md mx-auto">
                   We couldn't find any active escrow matching that ID or phone number. Please double-check and try again.
                 </p>
@@ -185,7 +185,7 @@ export default function TrackingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="mb-8 rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+                  className="mb-6 sm:mb-8 rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
                 >
                   {/* Header */}
                   <div className="bg-slate-50/50 border-b border-slate-100 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -195,7 +195,7 @@ export default function TrackingPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
                             {tx.sbs_id || tx.id}
                           </h2>
                           {statusInfo && (
@@ -214,7 +214,7 @@ export default function TrackingPage() {
                   {/* Body */}
                   <div className="p-6 sm:p-10">
                     {isTerminal ? (
-                      <div className="rounded-2xl bg-red-50 border border-red-100 p-6 flex items-start gap-4">
+                      <div className="rounded-xl sm:rounded-2xl bg-red-50 border border-red-100 p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
                         <AlertTriangle className="h-6 w-6 text-red-600 shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-lg font-bold text-red-900 mb-1">Transaction {statusInfo?.label || tx.status}</h4>
@@ -224,8 +224,8 @@ export default function TrackingPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="py-8">
-                        <div className="relative flex items-center justify-between max-w-3xl mx-auto">
+                      <div className="py-4 sm:py-8 overflow-x-auto">
+                        <div className="relative flex items-center justify-between max-w-3xl mx-auto min-w-[480px] px-2 sm:px-0">
                           {/* Background Track */}
                           <div className="absolute left-[10%] right-[10%] top-1/2 h-1 -translate-y-1/2 bg-slate-100 rounded-full" />
                           
@@ -284,7 +284,7 @@ export default function TrackingPage() {
                     )}
 
                     {/* Details Grid */}
-                    <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4 pt-8 border-t border-slate-100">
+                    <div className="mt-6 sm:mt-10 grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-4 pt-6 sm:pt-8 border-t border-slate-100">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Buyer</p>
                         <p className="font-semibold text-slate-900">{tx.buyer_phone || '—'}</p>

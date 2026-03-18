@@ -39,7 +39,7 @@ export default function AdminSettings() {
   if (loading) return <div className="space-y-4">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className="space-y-4 max-w-2xl w-full">
       <Card>
         <CardHeader><CardTitle>Platform Settings</CardTitle></CardHeader>
         <CardContent className="space-y-6">
@@ -47,16 +47,17 @@ export default function AdminSettings() {
             <div key={s.key} className="space-y-2">
               <Label className="text-sm font-medium">{s.key.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</Label>
               {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   value={editValues[s.key] || ''}
                   onChange={e => setEditValues(prev => ({ ...prev, [s.key]: e.target.value }))}
-                  className="flex-1"
+                  className="flex-1 w-full"
                 />
                 <Button
                   size="sm"
                   onClick={() => handleSave(s.key)}
                   disabled={saving === s.key || editValues[s.key] === (typeof s.value === 'string' ? s.value : JSON.stringify(s.value))}
+                  className="w-full sm:w-auto shrink-0"
                 >
                   {saving === s.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 </Button>

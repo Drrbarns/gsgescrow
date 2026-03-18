@@ -61,43 +61,43 @@ export default function BuyerStep3() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">3</div>
-            <h1 className="text-2xl font-bold">Replacement Confirmation</h1>
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm sm:text-base shrink-0">3</div>
+            <h1 className="text-xl sm:text-2xl font-bold">Replacement Confirmation</h1>
           </div>
-          <p className="text-muted-foreground">Confirm delivery of your replacement item using your delivery code.</p>
+          <p className="text-muted-foreground text-sm sm:text-base">Confirm delivery of your replacement item using your delivery code.</p>
         </div>
 
         {transactions.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <RefreshCw className="mx-auto h-12 w-12 text-muted-foreground/40 mb-4" />
-              <p className="text-muted-foreground">No pending replacements found.</p>
-              <Button variant="link" onClick={() => router.push('/hub')} className="mt-2">Go to Transaction Hub</Button>
+          <Card className="rounded-xl sm:rounded-2xl">
+            <CardContent className="py-8 sm:py-12 text-center px-4 sm:px-6">
+              <RefreshCw className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/40 mb-4" />
+              <p className="text-muted-foreground text-sm sm:text-base">No pending replacements found.</p>
+              <Button variant="link" onClick={() => router.push('/hub')} className="mt-2 text-sm sm:text-base">Go to Transaction Hub</Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
             {transactions.map(txn => (
-              <Card key={txn.id}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{txn.product_name}</CardTitle>
-                  <CardDescription>{txn.short_id} &middot; Seller: {txn.seller_name}</CardDescription>
+              <Card key={txn.id} className="rounded-xl sm:rounded-2xl">
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">{txn.product_name}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">{txn.short_id} &middot; Seller: {txn.seller_name}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 sm:px-6">
                   <div className="space-y-2">
-                    <Label>Delivery Code (7 characters)</Label>
+                    <Label className="text-sm">Delivery Code (7 characters)</Label>
                     <Input
                       value={codes[txn.id] || ''}
                       onChange={e => setCodes(prev => ({ ...prev, [txn.id]: e.target.value.toUpperCase() }))}
                       maxLength={7}
                       placeholder="ABC1234"
-                      className="font-mono text-lg tracking-widest"
+                      className="h-12 sm:h-14 font-mono text-base sm:text-lg tracking-widest rounded-xl"
                     />
                   </div>
-                  <Button onClick={() => handleConfirm(txn.id)} disabled={submitting === txn.id} className="w-full rounded-full">
+                  <Button onClick={() => handleConfirm(txn.id)} disabled={submitting === txn.id} className="w-full rounded-full h-12 sm:h-14 text-sm sm:text-base">
                     {submitting === txn.id ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : (
                       <><CheckCircle2 className="mr-2 h-4 w-4" /> Confirm Replacement Delivered</>
                     )}

@@ -56,35 +56,35 @@ export default function FraudMonitorPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8 flex items-center justify-between">
+      <main className="mx-auto max-w-6xl px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-orange-500" /> Fraud Monitor
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" /> Fraud Monitor
             </h1>
-            <p className="text-muted-foreground">Transactions flagged by automated fraud scoring.</p>
+            <p className="text-sm sm:text-base text-muted-foreground">Transactions flagged by automated fraud scoring.</p>
           </div>
           <Link href="/admin">
-            <Button variant="outline" className="rounded-full gap-2"><ArrowRight className="h-4 w-4" /> Back to Dashboard</Button>
+            <Button variant="outline" className="rounded-full gap-2 w-full sm:w-auto"><ArrowRight className="h-4 w-4" /> Back to Dashboard</Button>
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
           <Card className="rounded-2xl border-red-200 bg-red-50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-extrabold text-red-700">{transactions.filter(t => (t.fraud_score || 0) >= 75).length}</p>
+            <CardContent className="pt-4 sm:pt-6 text-center">
+              <p className="text-2xl sm:text-3xl font-extrabold text-red-700">{transactions.filter(t => (t.fraud_score || 0) >= 75).length}</p>
               <p className="text-xs text-red-600 mt-1">High Risk (75+)</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-orange-200 bg-orange-50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-extrabold text-orange-700">{transactions.filter(t => (t.fraud_score || 0) >= 50 && (t.fraud_score || 0) < 75).length}</p>
+            <CardContent className="pt-4 sm:pt-6 text-center">
+              <p className="text-2xl sm:text-3xl font-extrabold text-orange-700">{transactions.filter(t => (t.fraud_score || 0) >= 50 && (t.fraud_score || 0) < 75).length}</p>
               <p className="text-xs text-orange-600 mt-1">Medium Risk (50-74)</p>
             </CardContent>
           </Card>
           <Card className="rounded-2xl border-green-200 bg-green-50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-extrabold text-green-700">{transactions.filter(t => (t.fraud_score || 0) < 50).length}</p>
+            <CardContent className="pt-4 sm:pt-6 text-center">
+              <p className="text-2xl sm:text-3xl font-extrabold text-green-700">{transactions.filter(t => (t.fraud_score || 0) < 50).length}</p>
               <p className="text-xs text-green-600 mt-1">Low Risk (&lt;50)</p>
             </CardContent>
           </Card>
@@ -104,10 +104,10 @@ export default function FraudMonitorPage() {
           <div className="space-y-4">
             {transactions.map(txn => (
               <Card key={txn.id} className="rounded-2xl hover:shadow-md transition-shadow">
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                <CardContent className="px-3 py-3 sm:px-6 sm:py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="font-mono text-sm font-bold">{txn.short_id}</span>
                         <Badge className={`text-xs ${getScoreColor(txn.fraud_score || 0)}`}>
                           Score: {txn.fraud_score || 0}
@@ -130,8 +130,8 @@ export default function FraudMonitorPage() {
                       )}
                     </div>
 
-                    <Link href={`/admin/transactions/${txn.id}`}>
-                      <Button variant="outline" size="sm" className="rounded-full gap-1.5 shrink-0">
+                    <Link href={`/admin/transactions/${txn.id}`} className="self-start sm:self-auto">
+                      <Button variant="outline" size="sm" className="rounded-full gap-1.5 shrink-0 w-full sm:w-auto">
                         <Eye className="h-3.5 w-3.5" /> Review
                       </Button>
                     </Link>

@@ -93,15 +93,15 @@ export default function BuyerStep2() {
     return (
       <>
         <Header />
-        <main className="mx-auto max-w-lg px-4 py-16">
-          <Card className="border-green-200 bg-green-50 text-center">
-            <CardHeader>
-              <CheckCircle2 className="mx-auto h-16 w-16 text-green-600 mb-4" />
-              <CardTitle className="text-green-800">Rider Payment Sent!</CardTitle>
-              <CardDescription className="text-green-700">The rider payout has been queued and will be processed shortly.</CardDescription>
+        <main className="mx-auto max-w-lg px-4 py-8 sm:py-16">
+          <Card className="border-green-200 bg-green-50 text-center rounded-xl sm:rounded-2xl">
+            <CardHeader className="px-4 sm:px-6">
+              <CheckCircle2 className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-green-600 mb-4" />
+              <CardTitle className="text-green-800 text-xl sm:text-2xl">Rider Payment Sent!</CardTitle>
+              <CardDescription className="text-green-700 text-sm sm:text-base">The rider payout has been queued and will be processed shortly.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button onClick={() => router.push('/hub')} className="rounded-full">Back to Hub</Button>
+            <CardContent className="px-4 sm:px-6">
+              <Button onClick={() => router.push('/hub')} className="w-full sm:w-auto h-12 sm:h-14 rounded-xl sm:rounded-full">Back to Hub</Button>
             </CardContent>
           </Card>
         </main>
@@ -113,28 +113,28 @@ export default function BuyerStep2() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">2</div>
-            <h1 className="text-2xl font-bold">Confirm Delivery & Pay Rider</h1>
+      <main className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm sm:text-base shrink-0">2</div>
+            <h1 className="text-xl sm:text-2xl font-bold">Confirm Delivery & Pay Rider</h1>
           </div>
-          <p className="text-muted-foreground">Select your dispatched order, then confirm delivery or request replacement.</p>
+          <p className="text-muted-foreground text-sm sm:text-base">Select your dispatched order, then confirm delivery or request replacement.</p>
         </div>
 
         {!selected ? (
           <div className="space-y-4">
             {transactions.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-muted-foreground">No dispatched transactions found.</CardContent></Card>
+              <Card className="rounded-xl sm:rounded-2xl"><CardContent className="py-8 sm:py-12 text-center text-muted-foreground text-sm sm:text-base">No dispatched transactions found.</CardContent></Card>
             ) : (
               transactions.map(txn => (
-                <Card key={txn.id} className="cursor-pointer hover:border-primary transition-colors" onClick={() => setSelected(txn)}>
-                  <CardContent className="flex items-center justify-between py-4">
-                    <div>
-                      <p className="font-semibold">{txn.product_name}</p>
-                      <p className="text-sm text-muted-foreground">{txn.short_id} &middot; GHS {txn.grand_total}</p>
+                <Card key={txn.id} className="cursor-pointer hover:border-primary transition-colors rounded-xl sm:rounded-2xl" onClick={() => setSelected(txn)}>
+                  <CardContent className="flex items-center justify-between py-3 sm:py-4 px-4 sm:px-6 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm sm:text-base truncate">{txn.product_name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{txn.short_id} &middot; GHS {txn.grand_total}</p>
                     </div>
-                    <Badge className={TRANSACTION_STATUSES[txn.status]?.color}>{TRANSACTION_STATUSES[txn.status]?.label}</Badge>
+                    <Badge className={`${TRANSACTION_STATUSES[txn.status]?.color} shrink-0 text-xs`}>{TRANSACTION_STATUSES[txn.status]?.label}</Badge>
                   </CardContent>
                 </Card>
               ))
@@ -144,13 +144,13 @@ export default function BuyerStep2() {
           <div className="space-y-6">
             <Button variant="ghost" onClick={() => setSelected(null)} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{selected.product_name}</CardTitle>
-                <CardDescription>{selected.short_id} &middot; Seller: {selected.seller_name}</CardDescription>
+            <Card className="rounded-xl sm:rounded-2xl">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-lg sm:text-xl">{selected.product_name}</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{selected.short_id} &middot; Seller: {selected.seller_name}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="rounded-xl bg-muted/50 p-4 grid grid-cols-2 gap-3 text-sm">
+              <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+                <div className="rounded-xl bg-muted/50 p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div><span className="text-muted-foreground">Product Total</span><p className="font-medium">GHS {selected.product_total}</p></div>
                   <div><span className="text-muted-foreground">Delivery Fee</span><p className="font-medium">GHS {selected.delivery_fee}</p></div>
                   <div><span className="text-muted-foreground">Rider</span><p className="font-medium">{selected.rider_name} ({selected.rider_phone})</p></div>
@@ -159,7 +159,7 @@ export default function BuyerStep2() {
 
                 {selected.product_type === 'non_food' && (
                   <>
-                    <Button variant="outline" onClick={handleRequestReplacement} disabled={submitting} className="w-full gap-2 rounded-full">
+                    <Button variant="outline" onClick={handleRequestReplacement} disabled={submitting} className="w-full gap-2 rounded-full h-12 sm:h-14 text-sm sm:text-base">
                       <RefreshCw className="h-4 w-4" /> Waiting for Replacement
                     </Button>
                     <div className="text-center text-sm text-muted-foreground">— OR —</div>
@@ -169,7 +169,7 @@ export default function BuyerStep2() {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Product Delivered — Pay Rider</h3>
+                  <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base"><Truck className="h-4 w-4" /> Product Delivered — Pay Rider</h3>
                   {SIMULATION_MODE && simDeliveryCode && (
                     <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
                       <p className="font-medium text-amber-800">Simulation: use delivery code <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">{simDeliveryCode}</code></p>
@@ -177,17 +177,17 @@ export default function BuyerStep2() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label>Delivery Code (7 characters) *</Label>
-                    <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder={SIMULATION_MODE ? 'SIM0000' : 'ABC1234'} className="font-mono text-lg tracking-widest" />
+                    <Label className="text-sm">Delivery Code (7 characters) *</Label>
+                    <Input value={deliveryCode} onChange={e => setDeliveryCode(e.target.value.toUpperCase())} maxLength={7} placeholder={SIMULATION_MODE ? 'SIM0000' : 'ABC1234'} className="h-12 sm:h-14 font-mono text-base sm:text-lg tracking-widest rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Rider MoMo Number *</Label>
-                    <Input value={riderMomo} onChange={e => setRiderMomo(e.target.value)} placeholder="024XXXXXXX" />
+                    <Label className="text-sm">Rider MoMo Number *</Label>
+                    <Input value={riderMomo} onChange={e => setRiderMomo(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl" />
                   </div>
-                  <div className="rounded-xl bg-muted/50 p-3 text-sm">
+                  <div className="rounded-xl bg-muted/50 p-3 text-xs sm:text-sm">
                     <p>Rider will receive: <span className="font-bold">GHS {(parseFloat(selected.delivery_fee) + parseFloat(selected.rider_release_fee)).toFixed(2)}</span></p>
                   </div>
-                  <Button onClick={handlePayRider} disabled={submitting} size="lg" className="w-full rounded-full">
+                  <Button onClick={handlePayRider} disabled={submitting} size="lg" className="w-full rounded-full h-12 sm:h-14 text-sm sm:text-base">
                     {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : 'Confirm & Pay Rider'}
                   </Button>
                 </div>

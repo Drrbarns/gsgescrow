@@ -84,16 +84,16 @@ export default function AdminPayouts() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="flex flex-wrap gap-3 py-4">
+        <CardContent className="flex flex-wrap gap-3 px-3 py-3 sm:px-6 sm:py-4">
           <Select value={statusFilter || 'all'} onValueChange={v => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               {['PENDING', 'QUEUED', 'PROCESSING', 'SUCCESS', 'FAILED', 'HELD'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={typeFilter || 'all'} onValueChange={v => { setTypeFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-            <SelectTrigger className="w-[140px]"><SelectValue placeholder="All Types" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="All Types" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="RIDER">Rider</SelectItem>
@@ -105,6 +105,7 @@ export default function AdminPayouts() {
 
       {loading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
         <Card>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -143,6 +144,7 @@ export default function AdminPayouts() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
       )}
 
@@ -156,12 +158,12 @@ export default function AdminPayouts() {
 
       {/* Hold Dialog */}
       <Dialog open={!!holdDialog} onOpenChange={() => setHoldDialog(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg">
           <DialogHeader><DialogTitle>Hold Payout</DialogTitle></DialogHeader>
           <Textarea placeholder="Reason for holding (required)..." value={holdReason} onChange={e => setHoldReason(e.target.value)} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setHoldDialog(null)}>Cancel</Button>
-            <Button onClick={handleHold}>Hold Payout</Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setHoldDialog(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleHold} className="w-full sm:w-auto">Hold Payout</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

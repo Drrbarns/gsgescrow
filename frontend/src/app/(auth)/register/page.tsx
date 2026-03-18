@@ -78,7 +78,7 @@ export default function RegisterPage() {
           <div className="absolute bottom-[-20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px]" />
         </div>
 
-        <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-12 lg:gap-16 relative z-10 py-12">
+        <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-8 lg:gap-16 relative z-10 py-6 sm:py-12">
           <div className="flex-1 hidden md:block relative">
             <div className="relative w-full aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl">
               <Image
@@ -107,9 +107,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="w-full max-w-md">
-            <div className="rounded-[2rem] bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div className="rounded-2xl sm:rounded-[2rem] bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
               <div className="h-1.5 w-full bg-gradient-to-r from-primary to-blue-500" />
-              <div className="p-8 sm:p-10">
+              <div className="p-5 sm:p-10">
                 <div className="text-center mb-8">
                   <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-primary border border-slate-100 shadow-sm">
                     <Shield className="h-8 w-8" />

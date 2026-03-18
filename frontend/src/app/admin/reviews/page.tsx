@@ -39,7 +39,7 @@ export default function AdminReviews() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {reviews.map(r => (
           <Card key={r.id}>
-            <CardContent className="pt-4 space-y-3">
+            <CardContent className="px-3 pt-3 sm:px-6 sm:pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map(n => (

@@ -97,7 +97,7 @@ export default function LoginPage() {
           <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px]" />
         </div>
 
-        <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-12 lg:gap-16 relative z-10 py-12">
+        <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-8 lg:gap-16 relative z-10 py-6 sm:py-12">
 
           {/* Left Side: Image + Value Prop */}
           <div className="flex-1 hidden md:block relative">

@@ -7,7 +7,7 @@ function SectionHeading({ id, children }: { id?: string; children: React.ReactNo
   return (
     <h2
       id={id}
-      className="mb-4 mt-12 scroll-mt-24 text-2xl font-bold tracking-tight first:mt-0"
+      className="mb-3 sm:mb-4 mt-8 sm:mt-12 scroll-mt-24 text-xl sm:text-2xl font-bold tracking-tight first:mt-0"
     >
       {children}
     </h2>
@@ -15,15 +15,15 @@ function SectionHeading({ id, children }: { id?: string; children: React.ReactNo
 }
 
 function SubHeading({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-2 mt-6 text-lg font-semibold">{children}</h3>;
+  return <h3 className="mb-2 mt-5 sm:mt-6 text-base sm:text-lg font-semibold">{children}</h3>;
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="mb-4 leading-relaxed text-muted-foreground">{children}</p>;
+  return <p className="mb-4 text-sm sm:text-base leading-relaxed sm:leading-relaxed text-muted-foreground">{children}</p>;
 }
 
 function Li({ children }: { children: React.ReactNode }) {
-  return <li className="text-muted-foreground">{children}</li>;
+  return <li className="text-sm sm:text-base text-muted-foreground leading-relaxed">{children}</li>;
 }
 
 export default function TermsPage() {
@@ -34,15 +34,15 @@ export default function TermsPage() {
       <Header />
 
       <main className="flex-1">
-        <section className="bg-gradient-to-b from-primary/5 to-transparent py-16 sm:py-20">
+        <section className="bg-gradient-to-b from-primary/5 to-transparent py-10 sm:py-16 lg:py-20">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
               Legal &amp; Policies
             </h1>
             <p className="mt-3 text-muted-foreground">
               Last updated: {lastUpdated}
             </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm">
+            <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-2 sm:gap-3 text-sm">
               <a href="#terms" className="rounded-full border border-border px-4 py-1.5 hover:bg-accent transition-colors">
                 Terms of Service
               </a>
@@ -56,7 +56,7 @@ export default function TermsPage() {
           </div>
         </section>
 
-        <article className="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+        <article className="mx-auto max-w-3xl px-4 pb-12 sm:pb-20 sm:px-6">
           {/* TERMS OF SERVICE */}
           <SectionHeading id="terms">Terms of Service</SectionHeading>
 
@@ -80,7 +80,7 @@ export default function TermsPage() {
             {APP_NAME} acts as a neutral escrow intermediary between buyers and sellers.
             When a buyer initiates a transaction:
           </P>
-          <ul className="mb-4 ml-6 list-disc space-y-1">
+          <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
             <Li>Funds are collected via Paystack and held securely by the Platform.</Li>
             <Li>The seller is notified to dispatch the product.</Li>
             <Li>Upon confirmed delivery, funds are released to the seller and delivery rider (if applicable).</Li>
@@ -127,7 +127,7 @@ export default function TermsPage() {
           </P>
 
           <SubHeading>7. Prohibited Activities</SubHeading>
-          <ul className="mb-4 ml-6 list-disc space-y-1">
+          <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
             <Li>Using the Platform for illegal goods or services.</Li>
             <Li>Creating fraudulent transactions or providing false information.</Li>
             <Li>Circumventing the escrow process (e.g., paying sellers directly after initiating).</Li>
@@ -167,7 +167,7 @@ export default function TermsPage() {
             of the revised Terms.
           </P>
 
-          <Separator className="my-12" />
+          <Separator className="my-8 sm:my-12" />
 
           {/* PRIVACY POLICY */}
           <SectionHeading id="privacy">Privacy Policy</SectionHeading>
@@ -179,7 +179,7 @@ export default function TermsPage() {
           </P>
 
           <SubHeading>1. Information We Collect</SubHeading>
-          <ul className="mb-4 ml-6 list-disc space-y-1">
+          <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
             <Li><strong>Account Data:</strong> Phone number, full name, Ghana Card name (optional).</Li>
             <Li><strong>Transaction Data:</strong> Product details, prices, delivery addresses, seller and buyer phone numbers.</Li>
             <Li><strong>Financial Data:</strong> Mobile money details for payouts (processed via Paystack; we do not store card numbers).</Li>
@@ -188,7 +188,7 @@ export default function TermsPage() {
           </ul>
 
           <SubHeading>2. How We Use Your Data</SubHeading>
-          <ul className="mb-4 ml-6 list-disc space-y-1">
+          <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
             <Li>To facilitate escrow transactions and payouts.</Li>
             <Li>To verify identity and prevent fraud.</Li>
             <Li>To communicate transaction updates via SMS.</Li>
@@ -226,7 +226,7 @@ export default function TermsPage() {
             Contact us at privacy@gsgbrands.com to exercise these rights.
           </P>
 
-          <Separator className="my-12" />
+          <Separator className="my-8 sm:my-12" />
 
           {/* COOKIE POLICY */}
           <SectionHeading id="cookies">Cookie Policy</SectionHeading>
@@ -266,9 +266,9 @@ export default function TermsPage() {
             contact us at legal@gsgbrands.com or call +233 XX XXX XXXX.
           </P>
 
-          <Separator className="my-12" />
+          <Separator className="my-8 sm:my-12" />
 
-          <div className="rounded-2xl bg-muted/50 p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl sm:rounded-2xl bg-muted/50 p-4 sm:p-6 text-center text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Have Questions?</p>
             <p className="mt-1">
               Reach out to our support team at{' '}

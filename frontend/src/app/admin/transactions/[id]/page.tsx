@@ -46,12 +46,12 @@ export default function TransactionDetail() {
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => router.back()} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{txn.short_id}</h1>
-          <p className="text-muted-foreground">{txn.product_name}</p>
+          <h1 className="text-xl sm:text-2xl font-bold">{txn.short_id}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">{txn.product_name}</p>
         </div>
-        <Badge className={`${statusInfo.color} text-sm px-3 py-1`}>{statusInfo.label}</Badge>
+        <Badge className={`${statusInfo.color} text-sm px-3 py-1 self-start sm:self-auto`}>{statusInfo.label}</Badge>
       </div>
 
       {/* Details Grid */}
@@ -110,6 +110,7 @@ export default function TransactionDetail() {
         <Card>
           <CardHeader><CardTitle className="text-base">Ledger Entries</CardTitle></CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader><TableRow><TableHead>Bucket</TableHead><TableHead>Direction</TableHead><TableHead>Amount</TableHead><TableHead>Ref</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
               <TableBody>
@@ -124,6 +125,7 @@ export default function TransactionDetail() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -133,6 +135,7 @@ export default function TransactionDetail() {
         <Card>
           <CardHeader><CardTitle className="text-base">Payouts</CardTitle></CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Status</TableHead><TableHead>Attempts</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
               <TableBody>
@@ -147,16 +150,17 @@ export default function TransactionDetail() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button variant="outline" className="gap-2" onClick={async () => { await api.flagTransaction(txn.id, 'Admin review'); toast.success('Flagged'); }}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={async () => { await api.flagTransaction(txn.id, 'Admin review'); toast.success('Flagged'); }}>
           <Flag className="h-4 w-4" /> Flag
         </Button>
-        <Button variant="outline" className="gap-2" onClick={() => router.push(`/admin/disputes?txn=${txn.id}`)}>
+        <Button variant="outline" className="gap-2 w-full sm:w-auto" onClick={() => router.push(`/admin/disputes?txn=${txn.id}`)}>
           <AlertTriangle className="h-4 w-4" /> Disputes
         </Button>
       </div>

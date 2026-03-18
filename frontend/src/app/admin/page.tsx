@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{kpi.value}</p>
+                <p className="text-xl sm:text-2xl font-bold">{kpi.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{kpi.sub}</p>
               </CardContent>
             </Card>
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
       {/* Export Actions */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Download className="h-4 w-4" /> Quick Exports</CardTitle>
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2"><Download className="h-4 w-4" /> Quick Exports</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">

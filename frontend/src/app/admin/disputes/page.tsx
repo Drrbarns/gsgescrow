@@ -70,9 +70,9 @@ export default function AdminDisputes() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="flex gap-3 py-4">
+        <CardContent className="flex flex-wrap gap-3 px-3 py-3 sm:px-6 sm:py-4">
           <Select value={statusFilter || 'all'} onValueChange={v => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               {['OPEN', 'UNDER_REVIEW', 'RESOLVED', 'REJECTED'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -85,21 +85,23 @@ export default function AdminDisputes() {
         <div className="space-y-3">
           {disputes.map(d => (
             <Card key={d.id}>
-              <CardContent className="flex items-start justify-between py-4">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge className={statusColors[d.status]}>{d.status}</Badge>
-                    <span className="font-mono text-xs text-muted-foreground">{d.transactions?.short_id}</span>
+              <CardContent className="px-3 py-3 sm:px-6 sm:py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={statusColors[d.status]}>{d.status}</Badge>
+                      <span className="font-mono text-xs text-muted-foreground">{d.transactions?.short_id}</span>
+                    </div>
+                    <p className="text-sm font-medium">{d.transactions?.product_name}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{d.reason}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(d.created_at), 'dd MMM yyyy HH:mm')}</p>
                   </div>
-                  <p className="text-sm font-medium">{d.transactions?.product_name}</p>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{d.reason}</p>
-                  <p className="text-xs text-muted-foreground">{format(new Date(d.created_at), 'dd MMM yyyy HH:mm')}</p>
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button variant="ghost" size="sm" onClick={() => openDetail(d.id)}><Eye className="h-4 w-4" /></Button>
-                  {d.status !== 'RESOLVED' && d.status !== 'REJECTED' && (
-                    <Button variant="outline" size="sm" onClick={() => setResolveDialog(d)}><CheckCircle className="h-4 w-4 mr-1" /> Resolve</Button>
-                  )}
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => openDetail(d.id)}><Eye className="h-4 w-4" /></Button>
+                    {d.status !== 'RESOLVED' && d.status !== 'REJECTED' && (
+                      <Button variant="outline" size="sm" onClick={() => setResolveDialog(d)}><CheckCircle className="h-4 w-4 mr-1" /> Resolve</Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -117,7 +119,7 @@ export default function AdminDisputes() {
 
       {/* Detail Dialog */}
       <Dialog open={!!detail} onOpenChange={() => setDetail(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg">
           <DialogHeader><DialogTitle>Dispute Details</DialogTitle></DialogHeader>
           {detail && (
             <div className="space-y-4">
@@ -150,7 +152,7 @@ export default function AdminDisputes() {
 
       {/* Resolve Dialog */}
       <Dialog open={!!resolveDialog} onOpenChange={() => setResolveDialog(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg">
           <DialogHeader><DialogTitle>Resolve Dispute</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -174,9 +176,9 @@ export default function AdminDisputes() {
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Internal notes..." />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveDialog(null)}>Cancel</Button>
-            <Button onClick={handleResolve}>Resolve Dispute</Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setResolveDialog(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleResolve} className="w-full sm:w-auto">Resolve Dispute</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

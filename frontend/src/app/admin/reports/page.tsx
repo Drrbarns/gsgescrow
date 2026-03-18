@@ -53,20 +53,20 @@ export default function AdminReports() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardContent className="flex flex-wrap gap-4 items-end py-4">
-          <div className="space-y-1">
+        <CardContent className="flex flex-wrap gap-3 sm:gap-4 items-end px-3 py-3 sm:px-6 sm:py-4">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs">From</Label>
-            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-44" />
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full sm:w-44" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs">To</Label>
-            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-44" />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full sm:w-44" />
           </div>
-          <Button onClick={fetchReport} disabled={loading} className="gap-2">
+          <Button onClick={fetchReport} disabled={loading} className="gap-2 w-full sm:w-auto">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileBarChart className="h-4 w-4" />} Generate Report
           </Button>
           {report && (
-            <Button variant="outline" onClick={exportCsv} className="gap-2"><Download className="h-4 w-4" /> Export CSV</Button>
+            <Button variant="outline" onClick={exportCsv} className="gap-2 w-full sm:w-auto"><Download className="h-4 w-4" /> Export CSV</Button>
           )}
         </CardContent>
       </Card>
@@ -76,21 +76,22 @@ export default function AdminReports() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Collected</CardTitle></CardHeader>
-              <CardContent><p className="text-2xl font-bold">GHS {totalCollected.toFixed(2)}</p></CardContent>
+              <CardContent><p className="text-xl sm:text-2xl font-bold">GHS {totalCollected.toFixed(2)}</p></CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Paid Out</CardTitle></CardHeader>
-              <CardContent><p className="text-2xl font-bold">GHS {totalPaidOut.toFixed(2)}</p></CardContent>
+              <CardContent><p className="text-xl sm:text-2xl font-bold">GHS {totalPaidOut.toFixed(2)}</p></CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Net Revenue (Fees)</CardTitle></CardHeader>
-              <CardContent><p className="text-2xl font-bold text-primary">GHS {totalFees.toFixed(2)}</p></CardContent>
+              <CardContent><p className="text-xl sm:text-2xl font-bold text-primary">GHS {totalFees.toFixed(2)}</p></CardContent>
             </Card>
           </div>
 
           <Card>
             <CardHeader><CardTitle className="text-base">Transactions ({report.transactions?.length || 0})</CardTitle></CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -119,6 +120,7 @@ export default function AdminReports() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </>

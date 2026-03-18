@@ -54,7 +54,7 @@ export default function ReviewsPage() {
 
       <main className="flex-1">
         {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-24 pb-48 text-white">
+        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <Image 
               src="/images/happy-customer.png" 
@@ -81,7 +81,7 @@ export default function ReviewsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-6"
+              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
             >
               Real <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-primary">Reviews</span>
             </motion.h1>
@@ -89,7 +89,7 @@ export default function ReviewsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-lg text-slate-300"
+              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300"
             >
               Every review here is tied to a real, completed escrow transaction. No fake reviews, just genuine experiences from buyers and sellers across Ghana.
             </motion.p>
@@ -97,11 +97,11 @@ export default function ReviewsPage() {
         </section>
 
         {/* Floating Reviews Grid */}
-        <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 -mt-32 pb-24">
+        <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 -mt-20 sm:-mt-32 pb-12 sm:pb-24">
           {loading && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="rounded-3xl bg-white p-8 shadow-xl border border-slate-100">
+                <div key={i} className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white p-5 sm:p-8 shadow-xl border border-slate-100">
                   <Skeleton className="h-4 w-24 mb-4" />
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-3/4 mb-6" />
@@ -118,12 +118,12 @@ export default function ReviewsPage() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl bg-white shadow-xl border border-slate-100 p-16 text-center max-w-3xl mx-auto"
+              className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl border border-slate-100 p-8 sm:p-16 text-center max-w-3xl mx-auto"
             >
               <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
                 <PackageSearch className="h-10 w-10 text-slate-300" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">No reviews yet</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No reviews yet</h3>
               <p className="text-slate-500 max-w-md mx-auto">
                 Reviews will appear here once buyers complete transactions and share their experience.
               </p>
@@ -138,9 +138,9 @@ export default function ReviewsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="group rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                  className="group rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-6 lg:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
                     <StarRating rating={review.rating} />
                     <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
                       <ShieldCheck className="h-3 w-3" />
@@ -148,7 +148,7 @@ export default function ReviewsPage() {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 mb-3 text-lg leading-tight">
+                  <h3 className="font-bold text-slate-900 mb-2 sm:mb-3 text-base sm:text-lg leading-tight">
                     {review.product_name}
                   </h3>
 
@@ -156,7 +156,7 @@ export default function ReviewsPage() {
                     "{review.comment}"
                   </p>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+                  <div className="mt-6 sm:mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
                         {review.seller_name?.charAt(0).toUpperCase() || 'S'}
