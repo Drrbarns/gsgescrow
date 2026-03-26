@@ -10,10 +10,9 @@ import {
   ShieldCheck, Truck, PackageCheck, Banknote,
   ShoppingBag, Store, Copy, Check, MessageCircle,
   Smartphone, Shield, Lock, Zap,
-  CheckCircle2, Star
+  CheckCircle2, Star, Share2, Download, ExternalLink, Sparkles
 } from 'lucide-react';
-import { APP_TAGLINE } from '@/lib/constants';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type InputHTMLAttributes } from 'react';
 import { api } from '@/lib/api';
 import { LiveStats } from '@/components/shared/LiveStats';
 import { WhatsAppSupportButton } from '@/components/shared/WhatsAppShare';
@@ -27,19 +26,11 @@ const fadeUp = {
   }),
 };
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
 const steps = [
   {
     icon: ShieldCheck,
     title: 'Buyer Pays Safely',
-    description: 'The buyer makes a secure payment through Paystack. Funds are held in escrow — the seller never receives money upfront.',
+    description: 'The buyer makes a secure payment. Funds are held with licensed PSPs (Paystack, Hubtel, Moolre, Flutterwave) so the seller never receives money upfront.',
   },
   {
     icon: Truck,
@@ -54,13 +45,13 @@ const steps = [
   {
     icon: Banknote,
     title: 'Funds Released',
-    description: 'After confirmation, the seller and rider are paid out automatically. Fast, transparent, and dispute-free.',
+    description: 'After confirmation, seller payout is released and delivery fees are settled with full traceability.',
   },
 ];
 
 export default function HomePage() {
   const [copied, setCopied] = useState(false);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<Record<string, number> | null>(null);
   const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sellsafe.com';
 
   useEffect(() => {
@@ -110,7 +101,7 @@ export default function HomePage() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                   </span>
-                  Ghana&apos;s #1 Escrow Platform
+                  Ghana&apos;s #1 Secure Platform For Selling or Buying • Licensed PSP Integration
                 </div>
 
                 <h1 className="text-[2rem] leading-[1.1] sm:text-5xl lg:text-[4.25rem] lg:leading-[1.08] font-extrabold tracking-tight mb-5 sm:mb-7 text-slate-900">
@@ -124,7 +115,7 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-base sm:text-lg lg:text-xl text-slate-600 lg:text-slate-500 mb-7 sm:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  Buy and sell online with <strong className="text-slate-800 lg:text-slate-700">zero risk</strong>. We hold funds securely until the buyer receives and approves the item. No scams, no chargebacks &mdash; just safe business.
+                  You want to buy or sell from social media, websites, telemarketing, or any digital platform. Bring the deal here. We hold funds securely with licensed PSPs until the buyer receives and approves the item. No scams, no chargebacks &mdash; just safe business.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
@@ -203,7 +194,7 @@ export default function HomePage() {
                         <Shield className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-slate-900">Escrow Secured</p>
+                        <p className="font-bold text-sm text-slate-900">Transaction Secured</p>
                         <p className="text-xs text-slate-400">Transaction #TX-892A</p>
                       </div>
                     </div>
@@ -225,7 +216,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <Button className="w-full rounded-xl gap-2 font-semibold shadow-sm" disabled>
-                    <Lock className="h-4 w-4" /> Funds Locked in Escrow
+                    <Lock className="h-4 w-4" /> Funds Locked with PSPs
                   </Button>
                 </motion.div>
 
@@ -285,7 +276,7 @@ export default function HomePage() {
         {/* LOGO CLOUD / TRUST INDICATORS */}
         <section className="py-8 sm:py-12 bg-white border-y border-slate-100 overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-400 mb-6 sm:mb-10 uppercase tracking-[0.2em]">Trusted Payment Partners</p>
+            <p className="text-center text-[10px] sm:text-xs font-bold text-slate-400 mb-6 sm:mb-10 uppercase tracking-[0.2em]">Trusted Payment Service Providers (PSPs)</p>
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-4 sm:gap-12 md:gap-20 items-center justify-items-center">
               <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
@@ -316,6 +307,9 @@ export default function HomePage() {
                 <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">AT Money</span>
               </div>
             </div>
+            <p className="text-center text-xs text-slate-500 mt-6">
+              Paystack, Hubtel, Moolre, Flutterwave (MTN MoMo, Telecel Cash, AT Money, ATM Cards)
+            </p>
           </div>
         </section>
 
@@ -405,6 +399,62 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* CUSTOMER EXPERIENCE */}
+        <section className="py-16 sm:py-24 bg-white border-t border-slate-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary mb-4">
+                <Sparkles className="h-4 w-4" /> Customer Experience
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">Fast Access + Strong Social Presence</h3>
+              <p className="text-sm sm:text-base text-slate-600">Let customers pin the website like an app and quickly find your official social touchpoints.</p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 sm:p-8 shadow-sm">
+                <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 text-xs font-semibold mb-4">
+                    <Download className="h-3.5 w-3.5" /> Add To Home Screen
+                  </div>
+                  <p className="text-sm text-slate-600 mb-5">Save <span className="font-semibold text-slate-900">www.gsgbrands.com.gh</span> to your home screen for app-like shopping access.</p>
+                  <div className="space-y-4 text-sm">
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="font-bold text-slate-900 mb-2">iPhone (Safari)</p>
+                      <p className="text-slate-600">Open Safari, visit the site, tap <span className="inline-flex items-center gap-1 font-semibold"><Share2 className="h-3.5 w-3.5" /> Share</span>, then choose <strong>Add to Home Screen</strong>.</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="font-bold text-slate-900 mb-2">Android (Chrome)</p>
+                      <p className="text-slate-600">Open Chrome, visit the site, tap the 3-dot menu, then choose <strong>Add to Home screen</strong>.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-8 text-white shadow-sm">
+                <div className="absolute -bottom-12 -right-12 h-44 w-44 rounded-full bg-primary/30 blur-3xl" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold mb-4">
+                    <ExternalLink className="h-3.5 w-3.5" /> Mainhub + Social
+                  </div>
+                  <h4 className="text-xl font-bold mb-2">Discovery Should Feel Connected</h4>
+                  <p className="text-slate-200 text-sm mb-5">MAINHUB remains a key part of the customer journey and visibility strategy across channels.</p>
+
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-white/20 bg-white/10 p-4">
+                      <p className="text-xs uppercase tracking-wider text-slate-300 mb-1">TikTok</p>
+                      <p className="font-semibold text-base">@gsgbrandsgh</p>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white text-slate-900 px-4 py-2 text-sm font-bold">
+                      Follow us on TikTok: @gsgbrandsgh
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* LIVE STATS */}
         <LiveStats stats={stats} />
 
@@ -422,7 +472,7 @@ export default function HomePage() {
                 <h3 className="text-2xl font-bold mb-3 relative z-10">Zero Scams. 100% Confidence.</h3>
                 <p className="text-muted-foreground max-w-md relative z-10 mb-6">Buyers inspect before funds are released. Sellers know the money is secured before they ship. The ultimate win-win.</p>
                 <ul className="space-y-3 relative z-10">
-                  {['72-hour auto-release protection', 'Photo/Video evidence for disputes', 'Instant refunds if seller defaults'].map((item, i) => (
+                  {['24-hour auto-release protection', 'Photo/Video/SMS evidence for disputes', 'Instant refunds if seller defaults'].map((item, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm font-medium"><CheckCircle2 className="h-5 w-5 text-green-500" /> {item}</li>
                   ))}
                 </ul>
@@ -438,13 +488,13 @@ export default function HomePage() {
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={2} className="rounded-3xl bg-card border shadow-sm p-8">
                 <Truck className="h-10 w-10 text-blue-500 mb-4" />
                 <h3 className="text-xl font-bold mb-2">Rider Protection</h3>
-                <p className="text-muted-foreground text-sm">Delivery fees are secured in escrow too. Riders get paid instantly upon delivery confirmation.</p>
+                <p className="text-muted-foreground text-sm">Delivery fees are secured with PSPs. Rider payout excludes PSP transaction fees and is released on confirmation.</p>
               </motion.div>
 
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={3} className="md:col-span-2 rounded-3xl bg-card border shadow-sm p-8 flex flex-col sm:flex-row items-center gap-8">
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold mb-3">Share Anywhere</h3>
-                  <p className="text-muted-foreground mb-6">Generate a secure payment link and send it via WhatsApp, Instagram DM, or SMS. It's that easy.</p>
+                  <p className="text-muted-foreground mb-6">Generate a secure payment link and send it via WhatsApp, Instagram DM, or SMS. It is that easy.</p>
                   <div className="flex items-center gap-2 bg-muted p-2 rounded-xl">
                     <Input value={shareUrl} readOnly className="border-none bg-transparent focus-visible:ring-0" />
                     <Button size="sm" onClick={handleCopy} className="rounded-lg shrink-0 gap-2">
@@ -505,6 +555,6 @@ export default function HomePage() {
 }
 
 // Simple Input mock since we didn't import it at the top to save space
-function Input({ className, ...props }: any) {
+function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement> & { className?: string }) {
   return <input className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`} {...props} />
 }

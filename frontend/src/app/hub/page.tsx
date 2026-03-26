@@ -17,15 +17,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Loader2, Search, MoreHorizontal, Eye, Truck, CheckCircle, 
   AlertCircle, Banknote, ChevronLeft, ChevronRight, 
-  LayoutDashboard, Filter, ArrowRightLeft, Clock
+  LayoutDashboard, Filter, ArrowRightLeft, Clock, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+type HubTransaction = {
+  id: string;
+  status: string;
+  short_id: string;
+  product_name: string;
+  buyer_name?: string;
+  buyer_phone?: string;
+  seller_name?: string;
+  seller_phone?: string;
+  grand_total: string;
+  created_at: string;
+  platform?: string;
+};
+
+type ContinueAction = {
+  label: string;
+  route: string;
+};
+
 export default function HubPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<HubTransaction[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -66,6 +85,21 @@ export default function HubPage() {
 
   const totalPages = Math.ceil(total / limit);
   const role = profile?.role;
+  const submittedCount = transactions.filter((t) => t.status === 'SUBMITTED').length;
+  const paidCount = transactions.filter((t) => t.status === 'PAID').length;
+  const dispatchedCount = transactions.filter((t) => t.status === 'DISPATCHED').length;
+  const deliveredConfirmedCount = transactions.filter((t) => t.status === 'DELIVERED_CONFIRMED').length;
+  const actionRequired = transactions.filter((t) =>
+    ['SUBMITTED', 'PAID', 'DISPATCHED', 'DELIVERED_CONFIRMED'].includes(t.status)
+  );
+
+  function getContinueAction(txn: HubTransaction): ContinueAction | null {
+    if (txn.status === 'SUBMITTED' && role !== 'seller') return { label: 'Continue Payment', route: '/buyer/step-1' };
+    if (txn.status === 'PAID' && role !== 'buyer') return { label: 'Continue Dispatch', route: '/seller/step-1' };
+    if (txn.status === 'DISPATCHED' && role !== 'seller') return { label: 'Continue Delivery', route: '/buyer/step-2' };
+    if (txn.status === 'DELIVERED_CONFIRMED' && role !== 'buyer') return { label: 'Continue Payout', route: '/seller/step-2' };
+    return null;
+  }
 
   if (authLoading) return null;
 
@@ -107,7 +141,7 @@ export default function HubPage() {
                   transition={{ delay: 0.2 }}
                   className="mt-2 text-slate-600 max-w-xl font-medium"
                 >
-                  Manage all your secure escrow payments, track deliveries, and release funds from one central dashboard.
+                  Manage all your secure PSP payments, track deliveries, and release funds from one central dashboard.
                 </motion.p>
               </div>
               
@@ -118,7 +152,7 @@ export default function HubPage() {
                 className="flex items-center gap-4 bg-white shadow-xl shadow-slate-200/50 border border-slate-100 rounded-xl p-4 sm:rounded-2xl sm:p-5"
               >
                 <div>
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Escrows</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Transactions</p>
                   <p className="text-2xl sm:text-3xl font-black text-slate-900">{total}</p>
                 </div>
                 <div className="w-px h-12 bg-slate-100 mx-2"></div>
@@ -181,6 +215,64 @@ export default function HubPage() {
           </motion.div>
 
           {/* Data Area */}
+          {actionRequired.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">Action required on {actionRequired.length} transaction(s).</p>
+                <p className="text-xs text-amber-800 mt-1">Use the quick actions below to move transactions to completion.</p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                {role !== 'seller' && submittedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/buyer/step-1')}
+                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
+                    <p className="font-bold text-slate-900 mt-1">Pending Payment ({submittedCount})</p>
+                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Go to payment <ArrowRight className="h-3 w-3" /></p>
+                  </button>
+                )}
+
+                {role !== 'buyer' && paidCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/seller/step-1')}
+                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
+                    <p className="font-bold text-slate-900 mt-1">Ready to Dispatch ({paidCount})</p>
+                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Dispatch now <ArrowRight className="h-3 w-3" /></p>
+                  </button>
+                )}
+
+                {role !== 'seller' && dispatchedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/buyer/step-2')}
+                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
+                    <p className="font-bold text-slate-900 mt-1">Confirm Delivery ({dispatchedCount})</p>
+                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Confirm now <ArrowRight className="h-3 w-3" /></p>
+                  </button>
+                )}
+
+                {role !== 'buyer' && deliveredConfirmedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/seller/step-2')}
+                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
+                    <p className="font-bold text-slate-900 mt-1">Collect Payout ({deliveredConfirmedCount})</p>
+                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Collect now <ArrowRight className="h-3 w-3" /></p>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-xl border border-slate-100 overflow-hidden min-h-[400px]">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
@@ -194,7 +286,7 @@ export default function HubPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No transactions yet</h3>
                 <p className="text-slate-500 max-w-sm mb-8">
-                  You haven't made any secure transactions matching these filters. Start buying or selling safely today!
+                  You have not made any secure transactions matching these filters. Start buying or selling safely today!
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
                   <Button onClick={() => router.push('/buyer/step-1')} className="w-full sm:w-auto rounded-xl px-6">Start as Buyer</Button>
@@ -255,6 +347,16 @@ export default function HubPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
+                              {getContinueAction(txn) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="mr-2"
+                                  onClick={() => router.push(getContinueAction(txn)!.route)}
+                                >
+                                  {getContinueAction(txn)!.label}
+                                </Button>
+                              )}
                               <DropdownMenu>
                                 <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 hover:bg-accent hover:text-accent-foreground">
                                     <MoreHorizontal className="h-5 w-5 text-slate-400" />
@@ -322,6 +424,19 @@ export default function HubPage() {
                         </div>
                         <span className="font-bold text-lg text-primary">GHS {parseFloat(txn.grand_total).toFixed(2)}</span>
                       </div>
+                      {getContinueAction(txn) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full mt-3"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(getContinueAction(txn)!.route);
+                          }}
+                        >
+                          {getContinueAction(txn)!.label}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>

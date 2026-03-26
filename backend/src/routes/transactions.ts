@@ -13,9 +13,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
     const payload: CreateTransactionPayload = req.body;
     const buyerId = req.user!.id;
 
-    const buyerFeePercent = 0.5;
-    const sellerFeePercent = 0.75;
-    const riderReleaseFee = 1.0;
+    const buyerFeePercent = 0.35;
+    const sellerFeePercent = 0.65;
+    const riderReleaseFee = payload.delivery_fee > 0 ? 1.0 : 0.0;
 
     const buyerPlatformFee = parseFloat((payload.product_total * buyerFeePercent / 100).toFixed(2));
     const sellerPlatformFee = parseFloat((payload.product_total * sellerFeePercent / 100).toFixed(2));

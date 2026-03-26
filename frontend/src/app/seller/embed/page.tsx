@@ -28,9 +28,9 @@ export default function SellerEmbedPage() {
   const badgeUrl = `${baseUrl}/badge/${encodeURIComponent(phone)}`;
   const buyUrl = `${baseUrl}/buyer/step-1?seller_phone=${encodeURIComponent(phone)}`;
 
-  const embedCode = `<a href="${badgeUrl}" target="_blank" rel="noopener" style="display:inline-block;background:linear-gradient(135deg,#6b21a8,#9333ea);color:white;padding:10px 20px;border-radius:24px;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s">🛡️ Buy Safely via Escrow</a>`;
+  const embedCode = `<a href="${badgeUrl}" target="_blank" rel="noopener" style="display:inline-block;background:linear-gradient(135deg,#6b21a8,#9333ea);color:white;padding:10px 20px;border-radius:24px;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s">🛡️ Buy Safely via PSPs</a>`;
 
-  const whatsAppBioLink = `✅ I use escrow protection\n🛡️ Pay safely: ${badgeUrl}`;
+  const whatsAppBioLink = `✅ I use secure PSP protection\n🛡️ Pay safely: ${badgeUrl}`;
 
   function handleCopy(text: string, label: string) {
     navigator.clipboard.writeText(text);
@@ -112,7 +112,7 @@ export default function SellerEmbedPage() {
                 <p className="text-xs text-muted-foreground mb-2">Preview:</p>
                 <a href={badgeUrl} target="_blank" rel="noopener"
                   style={{ display: 'inline-block', background: 'linear-gradient(135deg,#6b21a8,#9333ea)', color: 'white', padding: '10px 20px', borderRadius: '24px', fontFamily: 'system-ui,sans-serif', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-                  🛡️ Buy Safely via Escrow
+                  🛡️ Buy Safely via PSPs
                 </a>
               </div>
             </CardContent>

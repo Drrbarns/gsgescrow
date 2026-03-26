@@ -17,8 +17,8 @@ export const SOURCE_PLATFORMS = [
 ] as const;
 
 export const PRODUCT_TYPES = [
-  { value: 'food', label: 'Food Item (No Replacement)' },
-  { value: 'non_food', label: 'Non-Food (Replacement Eligible)' },
+  { value: 'food', label: 'Food Item / Services (No Replacement)' },
+  { value: 'non_food', label: 'Non-Food Item (Replacement Eligible)' },
 ] as const;
 
 export const TRANSACTION_STATUSES: Record<string, { label: string; color: string }> = {

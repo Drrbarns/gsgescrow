@@ -16,7 +16,7 @@ export function EscrowTimer({ autoReleaseAt, status }: Props) {
     if (!autoReleaseAt) return;
 
     const target = new Date(autoReleaseAt).getTime();
-    const totalDuration = 72 * 60 * 60 * 1000; // 72 hours
+    const totalDuration = 24 * 60 * 60 * 1000; // 24 hours
 
     function update() {
       const now = Date.now();
@@ -42,7 +42,7 @@ export function EscrowTimer({ autoReleaseAt, status }: Props) {
   if (!['PAID', 'DISPATCHED', 'IN_TRANSIT', 'DELIVERED_PENDING'].includes(status)) return null;
 
   const statusMessages: Record<string, string> = {
-    PAID: 'Funds secured in escrow. Waiting for seller to dispatch.',
+    PAID: 'Funds secured with PSPs. Waiting for seller to dispatch.',
     DISPATCHED: 'Item dispatched. Funds remain protected until you confirm delivery.',
     IN_TRANSIT: 'Your item is on the way. Funds are safe.',
     DELIVERED_PENDING: 'Please confirm delivery to release funds.',
@@ -55,7 +55,7 @@ export function EscrowTimer({ autoReleaseAt, status }: Props) {
           <Shield className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-sm">Escrow Protection Active</p>
+          <p className="font-semibold text-sm">Transaction Protection Active</p>
           <p className="text-xs text-muted-foreground mt-0.5">{statusMessages[status]}</p>
 
           {autoReleaseAt && (

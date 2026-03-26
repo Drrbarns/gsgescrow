@@ -17,12 +17,12 @@ export function WhatsAppShare({ transactionId, role, sellerName, productName, am
 
   function getMessage(): string {
     if (role === 'buyer' && transactionId) {
-      return `Hello ${sellerName || 'there'},\n\nI have securely placed an order for "${productName || 'my item'}" (GHS ${amount?.toFixed(2) || '0.00'}) using Sell-Safe Buy-Safe Escrow.\n\nMy payment is currently held in a secure vault and will be automatically released to you once I confirm delivery.\n\nPlease view the transaction and dispatch the order here:\n${appUrl}/seller/step-1\n\nTransaction ID: ${transactionId}\n\nThank you! 🤝`;
+      return `Hello ${sellerName || 'there'},\n\nI have securely placed an order for "${productName || 'my item'}" (GHS ${amount?.toFixed(2) || '0.00'}) using Sell-Safe Buy-Safe.\n\nMy payment is currently secured with licensed PSPs and will be released after delivery confirmation.\n\nPlease view the transaction and dispatch the order here:\n${appUrl}/seller/step-1\n\nTransaction ID: ${transactionId}\n\nThank you! 🤝`;
     }
     if (role === 'seller') {
-      return `Hello! For your security and peace of mind, I process all payments through Sell-Safe Buy-Safe (Escrow).\n\nYour funds will be held securely and only released to me after you have received and approved your order.\n\nPlease complete your secure payment here:\n${appUrl}/buyer/step-1\n\nThank you for your business! 🛡️`;
+      return `Hello! For your security and peace of mind, I process all payments through Sell-Safe Buy-Safe (Licensed PSP model).\n\nYour funds are secured and only released after you receive and approve your order.\n\nPlease complete your secure payment here:\n${appUrl}/buyer/step-1\n\nThank you for your business! 🛡️`;
     }
-    return `Experience zero-risk online shopping with Sell-Safe Buy-Safe — Ghana's premium escrow platform. Your funds are held securely and only released when delivery is confirmed. Buy and sell with 100% confidence.\n\n${appUrl} 🛡️`;
+    return `Experience zero-risk online shopping with Sell-Safe Buy-Safe — Ghana's secure transaction platform. Funds are secured with licensed PSPs and only released when delivery is confirmed.\n\n${appUrl} 🛡️`;
   }
 
   function handleShare() {

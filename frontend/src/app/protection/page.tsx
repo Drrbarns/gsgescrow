@@ -45,7 +45,7 @@ export default function ProtectionPage() {
               className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-green-300 backdrop-blur-md border border-white/10 mb-6"
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>Bank-Grade Escrow Security</span>
+              <span>Licensed and Secure PSPs</span>
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
@@ -61,7 +61,7 @@ export default function ProtectionPage() {
               transition={{ delay: 0.2 }}
               className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300 leading-relaxed"
             >
-              Every cedis you pay is held in a secure, immutable escrow vault until you physically confirm delivery. Zero scams. Zero stress.
+              Every cedi you pay is held in a licensed and secure PSPs vault until you physically confirm delivery. Zero scams. Zero stress.
             </motion.p>
           </div>
         </section>
@@ -81,9 +81,9 @@ export default function ProtectionPage() {
                     <Lock className="h-8 w-8 sm:h-12 sm:w-12" />
                   </div>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">1. The Escrow Vault</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">1. PSPs Vault</h3>
                     <p className="text-slate-600 leading-relaxed text-base sm:text-lg">
-                      When you pay through Sell-Safe Buy-Safe, your money goes into a secure, regulated escrow account — <strong className="text-slate-900">never directly to the seller</strong>. The seller cannot access your funds until you explicitly confirm that you received the correct item in good condition.
+                      When you pay through Sell-Safe Buy-Safe, your money goes into a secure, regulated PSPs account — <strong className="text-slate-900">never directly to the seller or this platform</strong>. The seller cannot access your funds until you explicitly confirm that you received the correct item in good condition.
                     </p>
                   </div>
                 </div>
@@ -99,20 +99,20 @@ export default function ProtectionPage() {
               },
               {
                 icon: Clock,
-                title: '3. 72-Hour Auto-Release',
-                desc: 'After delivery is attempted, a 72-hour countdown starts. If you don\'t raise a dispute within this window, funds auto-release. This balances buyer inspection time with seller cash flow.',
+                title: '3. 24-Hour Auto-Release',
+                desc: 'After delivery is attempted, a 24-hour countdown starts. If you don\'t raise a dispute through replacement or support within this window, funds auto-release.',
                 color: 'bg-amber-50 text-amber-600',
               },
               {
                 icon: RefreshCw,
                 title: '4. Replacement Guarantee',
-                desc: 'For non-food items, if what you receive doesn\'t match the listing, you can request a replacement before funds are released. The seller must comply or face a dispute.',
+                desc: 'For non-food items, if what you receive doesn\'t match the listing, you can request replacement before funds are released. Food/services are not eligible for replacement.',
                 color: 'bg-green-50 text-green-600',
               },
               {
                 icon: Scale,
                 title: '5. Evidence-Based Disputes',
-                desc: 'If something goes wrong, our specialized admin team reviews photographic and video evidence from both parties. Decisions are based purely on facts, not accusations.',
+                desc: 'If something goes wrong, our admin team reviews photographic evidence, call logs, SMS, tracking and video from both parties. Decisions are based on facts, not accusations.',
                 color: 'bg-red-50 text-red-600',
               },
             ].map((layer, i) => (
@@ -141,12 +141,12 @@ export default function ProtectionPage() {
             
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
-                { scenario: 'Seller sends wrong item?', answer: 'Request a replacement (non-food) or open a dispute with photo evidence. Funds remain locked.' },
+                { scenario: 'Seller sends wrong item?', answer: 'Request a replacement (non-food). Buyer may cover return rider cost if rejection is unjustified.' },
                 { scenario: 'Seller doesn\'t ship?', answer: 'After the agreed timeframe, raise a dispute. Admin reviews and issues a full refund.' },
                 { scenario: 'Item is damaged?', answer: 'Take photos immediately and open a dispute. Our team reviews evidence from both parties.' },
                 { scenario: 'Rider doesn\'t deliver?', answer: 'The no-show policy kicks in. Upload evidence and the admin team investigates within 24 hours.' },
-                { scenario: 'I forget to confirm?', answer: 'The 72-hour auto-release countdown protects the seller. Ensure you inspect within this window.' },
-                { scenario: 'Seller is a scammer?', answer: 'Your money is NEVER sent directly to the seller. Even if they vanish, your funds are safe in escrow.' },
+                { scenario: 'I forget to confirm?', answer: 'The 24-hour auto-release countdown protects both parties. Inspect quickly and confirm or raise dispute.' },
+                { scenario: 'Seller is a scammer?', answer: 'Your money is NEVER sent directly to the seller. Even if they vanish, your funds remain protected with PSPs.' },
               ].map((item, i) => (
                 <motion.div key={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fade} custom={i}>
                   <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 h-full backdrop-blur-sm hover:bg-white/10 transition-colors">
@@ -162,6 +162,19 @@ export default function ProtectionPage() {
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="py-6 sm:py-10 bg-slate-50">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 grid gap-4 md:grid-cols-2">
+            <Link href="/seller-protection" className="rounded-2xl bg-white border p-5 hover:border-primary/30 transition-colors">
+              <p className="font-bold text-slate-900">Seller Protection</p>
+              <p className="text-sm text-slate-600 mt-1">Read seller-side safeguards, replacement rules, and dispute outcomes.</p>
+            </Link>
+            <Link href="/platform-limitations" className="rounded-2xl bg-white border p-5 hover:border-primary/30 transition-colors">
+              <p className="font-bold text-slate-900">Platform Limitations</p>
+              <p className="text-sm text-slate-600 mt-1">Review dispute scope, liability caps, and legal limits before transacting.</p>
+            </Link>
           </div>
         </section>
 

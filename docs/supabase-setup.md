@@ -33,7 +33,7 @@ psql "$DATABASE_URL" -f supabase/migrations/003_storage.sql
 | `transactions` | Core transaction records |
 | `transaction_codes` | Delivery + partial code hashes |
 | `payouts` | Rider and seller payout records |
-| `ledger_entries` | Internal escrow accounting |
+| `ledger_entries` | Internal transaction accounting |
 | `disputes` | Dispute tickets |
 | `dispute_evidence` | Evidence file metadata |
 | `reviews` | Buyer reviews |

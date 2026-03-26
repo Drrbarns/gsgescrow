@@ -10,8 +10,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Sell-Safe Buy-Safe | Secure Every Transaction',
-  description: 'Escrow-powered transaction security for online buying and selling in Ghana. Pay safely, sell confidently.',
-  keywords: ['escrow', 'ghana', 'online shopping', 'secure payment', 'buyer protection'],
+  description: 'Licensed PSP-powered transaction security for online buying and selling in Ghana. Pay safely, sell confidently.',
+  keywords: ['secure transactions', 'ghana', 'online shopping', 'psp payments', 'buyer protection'],
   manifest: '/manifest.json',
   other: {
     'apple-mobile-web-app-capable': 'yes',

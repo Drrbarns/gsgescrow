@@ -54,7 +54,7 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
       <div style="text-align:center"><div class="badge">${d.escrow_status || 'Payment Confirmed'}</div></div>
       <div class="footer">
         <p>GSG BRANDS • sellbuysafe.gsgbrands.com.gh</p>
-        <p>This is an official escrow receipt</p>
+        <p>This is an official secure transaction receipt</p>
       </div>
       </body></html>
     `);

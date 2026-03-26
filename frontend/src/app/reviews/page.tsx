@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
-import { Star, MessageSquareQuote, PackageSearch, ShieldCheck } from 'lucide-react';
+import { Star, PackageSearch, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
@@ -91,7 +91,7 @@ export default function ReviewsPage() {
               transition={{ delay: 0.2 }}
               className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300"
             >
-              Every review here is tied to a real, completed escrow transaction. No fake reviews, just genuine experiences from buyers and sellers across Ghana.
+              Every review here is tied to a real, completed secure transaction. No fake reviews, just genuine experiences from buyers and sellers across Ghana.
             </motion.p>
           </div>
         </section>
@@ -153,7 +153,7 @@ export default function ReviewsPage() {
                   </h3>
 
                   <p className="text-slate-600 leading-relaxed flex-1 italic">
-                    "{review.comment}"
+                    &ldquo;{review.comment}&rdquo;
                   </p>
 
                   <div className="mt-6 sm:mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">

@@ -42,6 +42,8 @@ export function Footer() {
             <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider">Resources</h3>
             <nav className="flex flex-col gap-2">
               <Link href="/protection" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Buyer Protection</Link>
+              <Link href="/seller-protection" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Seller Protection</Link>
+              <Link href="/platform-limitations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Platform Limitations</Link>
               <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
               <Link href="/terms#privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
             </nav>

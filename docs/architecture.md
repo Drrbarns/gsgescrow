@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Sell-Safe Buy-Safe is an escrow-style transaction security platform for online buying and selling in Ghana. It holds funds safely until delivery is confirmed, protecting both buyers and sellers.
+Sell-Safe Buy-Safe is a secure transaction platform for online buying and selling in Ghana, powered by licensed payment service providers (PSPs). It holds funds safely until delivery is confirmed, protecting both buyers and sellers.
 
 ## Stack
 

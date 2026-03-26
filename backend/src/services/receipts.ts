@@ -31,7 +31,7 @@ export async function createPaymentReceipt(transactionId: string) {
     grand_total: txn.grand_total,
     paid_at: txn.paid_at,
     payment_reference: txn.paystack_reference,
-    escrow_status: 'Funds held securely in escrow',
+    escrow_status: 'Funds held securely with licensed PSPs',
     protection_message: 'Your money is protected until you confirm delivery',
   };
 

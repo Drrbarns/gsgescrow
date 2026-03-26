@@ -16,7 +16,16 @@ const TIER_COLORS: Record<string, { gradient: string; text: string; accent: stri
 
 export default function SellerBadgePage({ params }: { params: Promise<{ phone: string }> }) {
   const { phone } = use(params);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{
+    found: boolean;
+    name: string;
+    tier: string;
+    is_verified: boolean;
+    total_transactions: number;
+    completed: number;
+    avg_rating: number;
+    trust_score: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,9 +49,9 @@ export default function SellerBadgePage({ params }: { params: Promise<{ phone: s
         <div className="text-center">
           <Shield className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
           <h1 className="text-xl font-bold">Seller Not Found</h1>
-          <p className="text-muted-foreground mt-2">This seller hasn't used Sell-Safe Buy-Safe yet.</p>
+          <p className="text-muted-foreground mt-2">This seller has not used Sell-Safe Buy-Safe yet.</p>
           <Link href="/" className="mt-6 inline-block">
-            <Button className="rounded-full gap-2">Learn About Escrow <ArrowRight className="h-4 w-4" /></Button>
+            <Button className="rounded-full gap-2">Learn About Secure PSPs <ArrowRight className="h-4 w-4" /></Button>
           </Link>
         </div>
       </div>

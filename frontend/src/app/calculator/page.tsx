@@ -38,14 +38,14 @@ export default function CalculatorPage() {
   const calc = useMemo(() => {
     const pt = parseFloat(productTotal) || 0;
     const df = parseFloat(deliveryFee) || 0;
-    const riderReleaseFee = 1.0;
-    const buyerFeePercent = 0.5;
-    const sellerFeePercent = 0.75;
+    const riderReleaseFee = df > 0 ? 1.0 : 0.0;
+    const buyerFeePercent = 0.35;
+    const sellerFeePercent = 0.65;
     const buyerFee = parseFloat((pt * buyerFeePercent / 100).toFixed(2));
     const sellerFee = parseFloat((pt * sellerFeePercent / 100).toFixed(2));
     const buyerPays = pt + df + riderReleaseFee + buyerFee;
-    const sellerReceives = pt - sellerFee - riderReleaseFee;
-    const riderReceives = df + riderReleaseFee;
+    const sellerReceives = pt - sellerFee;
+    const riderReceives = df;
 
     return { pt, df, riderReleaseFee, buyerFee, sellerFee, buyerPays, sellerReceives: Math.max(0, sellerReceives), riderReceives };
   }, [productTotal, deliveryFee]);
@@ -87,7 +87,7 @@ export default function CalculatorPage() {
               transition={{ delay: 0.1 }}
               className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
             >
-              Calculate Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Escrow</span>
+              Calculate Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Platform Fee</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -95,7 +95,7 @@ export default function CalculatorPage() {
               transition={{ delay: 0.2 }}
               className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300"
             >
-              See exactly how much the buyer pays and the seller receives. Our micro-fees ensure your funds are 100% protected until delivery is confirmed.
+              See exactly how much the buyer pays and the seller receives. Our micro-fees for platform maintenance and PSP transaction processing keep every order protected until delivery is confirmed.
             </motion.p>
           </div>
         </section>
@@ -154,9 +154,9 @@ export default function CalculatorPage() {
                   <Lock className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-amber-900">Bank-Grade Security</h4>
+                  <h4 className="text-sm font-semibold text-amber-900">Licensed and Secure PSPs</h4>
                   <p className="text-sm text-amber-700/80 mt-1 leading-relaxed">
-                    Funds are held in a secure vault. The seller only receives the money after the buyer confirms they have received the exact item ordered.
+                    Funds are held with licensed PSPs. The seller only receives money after buyer confirmation, and PSP/telco fees may apply.
                   </p>
                 </div>
               </div>
@@ -195,11 +195,11 @@ export default function CalculatorPage() {
                       </div>
                     )}
                     <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-1.5">Platform Protection <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">0.5%</span></span>
+                      <span className="flex items-center gap-1.5">Platform Fee <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">0.35%</span></span>
                       <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.buyerFee} /></span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span>Rider Release Fee</span>
+                      <span>Rider Release (PSP Fee)</span>
                       <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.riderReleaseFee} /></span>
                     </div>
                   </div>
@@ -240,13 +240,10 @@ export default function CalculatorPage() {
                       <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.pt} /></span>
                     </div>
                     <div className="flex justify-between items-center text-red-500">
-                      <span className="flex items-center gap-1.5">Escrow Fee <span className="text-[10px] bg-red-50 px-1.5 py-0.5 rounded text-red-600">0.75%</span></span>
+                      <span className="flex items-center gap-1.5">Platform Fee <span className="text-[10px] bg-red-50 px-1.5 py-0.5 rounded text-red-600">0.65%</span></span>
                       <span className="font-medium">- GHS <AnimatedNumber value={calc.sellerFee} /></span>
                     </div>
-                    <div className="flex justify-between items-center text-red-500">
-                      <span>Rider Release Fee</span>
-                      <span className="font-medium">- GHS <AnimatedNumber value={calc.riderReleaseFee} /></span>
-                    </div>
+                    <p className="text-[11px] text-slate-500">PSPs/Telco fees may apply and are not paid out to the seller.</p>
                   </div>
                   
                   <Separator className="my-4" />

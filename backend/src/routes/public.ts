@@ -26,14 +26,14 @@ router.get('/fee-calculator', async (req: Request, res: Response): Promise<void>
     const productTotal = parseFloat(req.query.amount as string) || 0;
     const deliveryFee = parseFloat(req.query.delivery as string) || 0;
 
-    const buyerFeePercent = 0.5;
-    const sellerFeePercent = 0.75;
-    const riderReleaseFee = 1.0;
+    const buyerFeePercent = 0.35;
+    const sellerFeePercent = 0.65;
+    const riderReleaseFee = deliveryFee > 0 ? 1.0 : 0.0;
 
     const buyerPlatformFee = parseFloat((productTotal * buyerFeePercent / 100).toFixed(2));
     const sellerPlatformFee = parseFloat((productTotal * sellerFeePercent / 100).toFixed(2));
     const grandTotal = productTotal + deliveryFee + riderReleaseFee + buyerPlatformFee;
-    const sellerReceives = productTotal - sellerPlatformFee - riderReleaseFee;
+    const sellerReceives = productTotal - sellerPlatformFee;
 
     res.json({
       data: {
@@ -45,7 +45,7 @@ router.get('/fee-calculator', async (req: Request, res: Response): Promise<void>
         grand_total: grandTotal,
         buyer_pays: grandTotal,
         seller_receives: Math.max(0, sellerReceives),
-        rider_receives: deliveryFee + riderReleaseFee,
+        rider_receives: deliveryFee,
       },
     });
   } catch {

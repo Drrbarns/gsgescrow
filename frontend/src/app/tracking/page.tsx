@@ -104,7 +104,7 @@ export default function TrackingPage() {
               className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-blue-200 backdrop-blur-md border border-white/10 mb-6"
             >
               <MapPin className="h-4 w-4" />
-              <span>Real-Time Escrow Tracking</span>
+              <span>Real-Time Order Tracking</span>
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
@@ -120,7 +120,7 @@ export default function TrackingPage() {
               transition={{ delay: 0.2 }}
               className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300 mb-8 sm:mb-10"
             >
-              Enter your secure Transaction ID or phone number to see the live status of your funds and delivery.
+              Enter your secure Transaction ID or phone number to see the live status of your order.
             </motion.p>
 
             <motion.form
@@ -169,7 +169,7 @@ export default function TrackingPage() {
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No transaction found</h3>
                 <p className="text-slate-500 max-w-md mx-auto">
-                  We couldn't find any active escrow matching that ID or phone number. Please double-check and try again.
+                  We could not find any active order matching that ID or phone number. Please double-check and try again.
                 </p>
               </motion.div>
             )}

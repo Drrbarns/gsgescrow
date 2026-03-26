@@ -80,7 +80,7 @@ export default function TransactionDetail() {
         <CardContent className="space-y-2 text-sm">
           <div className="flex justify-between"><span>Product Total</span><span>GHS {parseFloat(txn.product_total).toFixed(2)}</span></div>
           <div className="flex justify-between"><span>Delivery Fee</span><span>GHS {parseFloat(txn.delivery_fee).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Rider Release Fee</span><span>GHS {parseFloat(txn.rider_release_fee).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Rider Release (PSP Fee)</span><span>GHS {parseFloat(txn.rider_release_fee).toFixed(2)}</span></div>
           <div className="flex justify-between"><span>Buyer Platform Fee</span><span>GHS {parseFloat(txn.buyer_platform_fee).toFixed(2)}</span></div>
           <div className="flex justify-between"><span>Seller Platform Fee</span><span>GHS {parseFloat(txn.seller_platform_fee).toFixed(2)}</span></div>
           <Separator />

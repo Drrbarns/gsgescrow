@@ -97,7 +97,7 @@ export function SellerLookup({ phone, onPhoneChange, compact = false }: Props) {
                   <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                   <div>
                     <p className="text-xs font-medium text-amber-800">New seller — no transaction history yet</p>
-                    <p className="text-[10px] text-amber-600 mt-0.5">This doesn't mean they're untrustworthy. Escrow protects you either way.</p>
+                    <p className="text-[10px] text-amber-600 mt-0.5">This does not mean they are untrustworthy. PSP-secured transactions protect you either way.</p>
                   </div>
                 </div>
               )}
@@ -150,7 +150,7 @@ export function SellerLookup({ phone, onPhoneChange, compact = false }: Props) {
                 <div className="rounded-xl bg-amber-50 p-3 text-center">
                   <AlertTriangle className="mx-auto h-5 w-5 text-amber-500 mb-1" />
                   <p className="text-xs font-medium text-amber-800">This seller has no history on our platform</p>
-                  <p className="text-[10px] text-amber-600 mt-0.5">Don't worry — escrow protection covers you regardless</p>
+                  <p className="text-[10px] text-amber-600 mt-0.5">Do not worry - transaction protection covers you regardless.</p>
                 </div>
               )}
             </motion.div>

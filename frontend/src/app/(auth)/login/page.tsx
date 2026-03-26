@@ -117,7 +117,7 @@ export default function LoginPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-bold backdrop-blur-md border border-white/20 mb-4"
                 >
                   <ShieldCheck className="h-4 w-4" />
-                  <span>Bank-Grade Escrow</span>
+                  <span>Licensed and Secure PSPs</span>
                 </motion.div>
                 <motion.h2
                   initial={{ opacity: 0, y: 20 }}

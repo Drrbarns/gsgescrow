@@ -128,9 +128,10 @@ export async function processSuccessfulPayment(transactionId: string, reference:
 
   // Create ledger credits
   const ledgerEntries = [
-    { transaction_id: transactionId, bucket: 'PRODUCT' as const, direction: 'CREDIT' as const, amount: txn.product_total, ref: reference, description: 'Product escrow' },
-    { transaction_id: transactionId, bucket: 'DELIVERY' as const, direction: 'CREDIT' as const, amount: txn.delivery_fee + txn.rider_release_fee, ref: reference, description: 'Delivery + rider fee escrow' },
+    { transaction_id: transactionId, bucket: 'PRODUCT' as const, direction: 'CREDIT' as const, amount: txn.product_total, ref: reference, description: 'Product funds secured with PSPs' },
+    { transaction_id: transactionId, bucket: 'DELIVERY' as const, direction: 'CREDIT' as const, amount: txn.delivery_fee, ref: reference, description: 'Delivery fee secured with PSPs' },
     { transaction_id: transactionId, bucket: 'PLATFORM' as const, direction: 'CREDIT' as const, amount: txn.buyer_platform_fee, ref: reference, description: 'Buyer platform fee' },
+    { transaction_id: transactionId, bucket: 'PLATFORM' as const, direction: 'CREDIT' as const, amount: txn.rider_release_fee, ref: reference, description: 'PSP transaction fee' },
   ];
 
   await supabaseAdmin.from('ledger_entries').insert(ledgerEntries);
@@ -164,9 +165,9 @@ export async function processSuccessfulPayment(transactionId: string, reference:
   // Generate payment receipt
   createPaymentReceipt(transactionId).catch(err => console.error('[RECEIPT]', err.message));
 
-  // Schedule auto-release (72 hours after delivery)
+  // Schedule auto-release window (24 hours)
   await supabaseAdmin.from('transactions').update({
-    auto_release_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+    auto_release_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   }).eq('id', transactionId);
 
   return deliveryCode;

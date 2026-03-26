@@ -34,7 +34,7 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
     const valid = await verifyCode(delivery_code, codes.delivery_code_hash);
     if (!valid) { res.status(400).json({ error: 'Invalid delivery code' }); return; }
 
-    const payoutAmount = txn.delivery_fee + txn.rider_release_fee;
+    const payoutAmount = txn.delivery_fee;
     const idempotencyKey = `rider_${transaction_id}_${uuidv4()}`;
 
     // Check for existing rider payout
@@ -148,7 +148,7 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       res.status(409).json({ error: 'Seller payout already exists' }); return;
     }
 
-    const sellerAmount = txn.product_total - txn.seller_platform_fee - txn.rider_release_fee;
+    const sellerAmount = txn.product_total - txn.seller_platform_fee;
     const idempotencyKey = `seller_${transaction_id}_${uuidv4()}`;
 
     const { data: payout, error: payoutErr } = await supabaseAdmin

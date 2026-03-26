@@ -63,12 +63,12 @@ class ApiClient {
         const supabase = await this.getSupabase();
         const uid = await this.getUserId();
         if (!uid) throw new Error('Not authenticated');
-        const buyerFeePercent = 0.5;
-        const riderReleaseFee = 1.0;
+        const buyerFeePercent = 0.35;
         const pt = Number(data.product_total) || 0;
         const df = Number(data.delivery_fee) || 0;
+        const riderReleaseFee = df > 0 ? 1.0 : 0.0;
         const buyerPlatformFee = parseFloat((pt * buyerFeePercent / 100).toFixed(2));
-        const sellerPlatformFee = parseFloat((pt * 0.75 / 100).toFixed(2));
+        const sellerPlatformFee = parseFloat((pt * 0.65 / 100).toFixed(2));
         const grandTotal = pt + df + riderReleaseFee + buyerPlatformFee;
         const { data: userData } = await supabase.auth.getUser();
         const buyerPhone = userData.user?.phone || userData.user?.email || '';
@@ -256,8 +256,8 @@ class ApiClient {
       () => this.request<{ data: any }>('/api/payouts/seller', { method: 'POST', body: JSON.stringify(data) }),
       async () => {
         const supabase = await this.getSupabase();
-        const { data: txn } = await supabase.from('transactions').select('product_total, seller_platform_fee, rider_release_fee').eq('id', data.transaction_id).single();
-        const amount = txn ? parseFloat(txn.product_total) - parseFloat(txn.seller_platform_fee) - parseFloat(txn.rider_release_fee) : 0;
+        const { data: txn } = await supabase.from('transactions').select('product_total, seller_platform_fee').eq('id', data.transaction_id).single();
+        const amount = txn ? parseFloat(txn.product_total) - parseFloat(txn.seller_platform_fee) : 0;
         await supabase.from('transactions').update({
           status: 'COMPLETED',
           completed_at: new Date().toISOString(),

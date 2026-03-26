@@ -75,9 +75,9 @@ export default function TermsPage() {
             binding agreements.
           </P>
 
-          <SubHeading>2. How the Escrow Service Works</SubHeading>
+          <SubHeading>2. How the Secure PSP Service Works</SubHeading>
           <P>
-            {APP_NAME} acts as a neutral escrow intermediary between buyers and sellers.
+            {APP_NAME} acts as a neutral secure-transaction intermediary between buyers and sellers using licensed PSP rails.
             When a buyer initiates a transaction:
           </P>
           <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
@@ -92,10 +92,10 @@ export default function TermsPage() {
             authenticity, or condition unless a dispute is filed.
           </P>
 
-          <SubHeading>3. Escrow Holds &amp; Disputes</SubHeading>
+          <SubHeading>3. PSP Holds &amp; Disputes</SubHeading>
           <P>
-            Funds remain in escrow until the buyer confirms delivery or a dispute is
-            resolved. If the buyer does not confirm delivery within 72 hours of the
+            Funds remain secured with PSPs until the buyer confirms delivery or a dispute is
+            resolved. If the buyer does not confirm delivery within 24 hours of the
             delivery status being marked, the Platform may auto-release funds to the
             seller after review. Either party may open a dispute within 48 hours
             of delivery. The Platform will review evidence from both parties and
@@ -130,7 +130,7 @@ export default function TermsPage() {
           <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
             <Li>Using the Platform for illegal goods or services.</Li>
             <Li>Creating fraudulent transactions or providing false information.</Li>
-            <Li>Circumventing the escrow process (e.g., paying sellers directly after initiating).</Li>
+            <Li>Circumventing the secure payment process (e.g., paying sellers directly after initiating).</Li>
             <Li>Attempting to exploit, hack, or interfere with Platform operations.</Li>
             <Li>Impersonating another user.</Li>
           </ul>
@@ -139,7 +139,7 @@ export default function TermsPage() {
           <P>
             We reserve the right to suspend or permanently ban accounts engaged in
             prohibited activities, repeated disputes in bad faith, or violation of
-            these Terms. Funds in escrow during suspension will be handled on a
+            these Terms. Funds secured during suspension will be handled on a
             case-by-case basis.
           </P>
 
@@ -189,7 +189,7 @@ export default function TermsPage() {
 
           <SubHeading>2. How We Use Your Data</SubHeading>
           <ul className="mb-4 ml-4 sm:ml-6 list-disc space-y-1">
-            <Li>To facilitate escrow transactions and payouts.</Li>
+            <Li>To facilitate secure PSP-backed transactions and payouts.</Li>
             <Li>To verify identity and prevent fraud.</Li>
             <Li>To communicate transaction updates via SMS.</Li>
             <Li>To resolve disputes and enforce our Terms.</Li>

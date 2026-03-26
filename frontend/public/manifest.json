@@ -1,7 +1,7 @@
 {
   "name": "Sell-Safe Buy-Safe",
   "short_name": "SellBuySafe",
-  "description": "Escrow-powered transaction security for online buying and selling in Ghana",
+  "description": "Licensed PSP-powered transaction security for online buying and selling in Ghana",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

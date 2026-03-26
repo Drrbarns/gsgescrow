@@ -12,18 +12,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Loader2, ArrowLeft, AlertTriangle, Package, CheckCircle2, Store, Truck, Banknote, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
+type SellerDispatchTransaction = {
+  id: string;
+  short_id: string;
+  product_name: string;
+  buyer_name: string;
+  buyer_phone: string;
+  product_total: number;
+  delivery_address: string;
+  delivery_date?: string;
+  product_type: 'food' | 'non_food';
+};
+
 export default function SellerStep1() {
   const router = useRouter();
-  const { user, profile, loading: authLoading } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [selected, setSelected] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
+  const [transactions, setTransactions] = useState<SellerDispatchTransaction[]>([]);
+  const [selected, setSelected] = useState<SellerDispatchTransaction | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [businessLocation, setBusinessLocation] = useState('');
@@ -32,8 +42,8 @@ export default function SellerStep1() {
   const [riderTelco, setRiderTelco] = useState('');
   const [pickupAddress, setPickupAddress] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
-  const [payoutType, setPayoutType] = useState('momo');
   const [momoProvider, setMomoProvider] = useState('');
+  const [momoName, setMomoName] = useState('');
   const [momoNumber, setMomoNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [partialCode, setPartialCode] = useState('');
@@ -44,7 +54,7 @@ export default function SellerStep1() {
 
   useEffect(() => {
     if (user) fetchTransactions();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   async function fetchTransactions() {
     try {
@@ -57,13 +67,13 @@ export default function SellerStep1() {
     }
   }
 
-  const sellerFee = selected ? parseFloat((selected.product_total * 0.75 / 100).toFixed(2)) : 0;
+  const sellerFee = selected ? parseFloat((selected.product_total * 0.65 / 100).toFixed(2)) : 0;
 
   async function handleDispatch() {
     if (!businessLocation || !riderName || !riderPhone || !riderTelco || !pickupAddress) {
       toast.error('Please fill all required fields'); return;
     }
-    if (!momoProvider || !momoNumber) { toast.error('Please provide payout destination'); return; }
+    if (!momoProvider || !momoNumber || !momoName) { toast.error('Please provide payout destination'); return; }
 
     setSubmitting(true);
     try {
@@ -77,15 +87,15 @@ export default function SellerStep1() {
         additional_info: additionalInfo || undefined,
         seller_payout_destination: {
           type: 'mobile_money',
-          name: profile?.full_name || '',
+          name: momoName,
           account_number: momoNumber,
           bank_code: momoProvider,
         },
       });
       setPartialCode(data.partial_code);
       toast.success('Dispatch confirmed!');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to dispatch');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to dispatch');
     } finally {
       setSubmitting(false);
     }
@@ -190,7 +200,7 @@ export default function SellerStep1() {
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No pending orders</h3>
                     <p className="text-slate-500 max-w-md mx-auto text-sm sm:text-base">
-                      You don't have any paid orders waiting to be dispatched right now.
+                      You do not have any paid orders waiting to be dispatched right now.
                     </p>
                   </div>
                 ) : (
@@ -266,7 +276,7 @@ export default function SellerStep1() {
                       </div>
                       <div className="col-span-2 sm:col-span-1">
                         <span className="text-slate-400 block mb-1 text-xs uppercase font-bold">Type</span>
-                        <p className="font-medium text-slate-900">{selected.product_type === 'food' ? 'Food (No Replacement)' : 'Non-Food'}</p>
+                        <p className="font-medium text-slate-900">{selected.product_type === 'food' ? 'Food/Services (No Replacement)' : 'Non-Food Item (Replacement Eligible)'}</p>
                       </div>
                     </div>
                   </div>
@@ -296,8 +306,9 @@ export default function SellerStep1() {
                           <Input value={riderName} onChange={e => setRiderName(e.target.value)} className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-slate-600 font-semibold">Rider Phone *</Label>
+                          <Label className="text-slate-600 font-semibold">Rider Phone (Calls/SMS) *</Label>
                           <Input value={riderPhone} onChange={e => setRiderPhone(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
+                          <p className="text-xs text-slate-500">This can be different from the rider payout MoMo number entered at delivery confirmation.</p>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-600 font-semibold">Rider Telco *</Label>
@@ -335,7 +346,11 @@ export default function SellerStep1() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-slate-600 font-semibold">MoMo Number *</Label>
+                          <Label className="text-slate-600 font-semibold">Name On MOMO Number *</Label>
+                          <Input value={momoName} onChange={e => setMomoName(e.target.value)} placeholder="Exact account name" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-slate-600 font-semibold">MOMO Number *</Label>
                           <Input value={momoNumber} onChange={e => setMomoNumber(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl bg-slate-50 border-slate-200" />
                         </div>
                       </div>
@@ -343,7 +358,7 @@ export default function SellerStep1() {
                       <div className="rounded-xl sm:rounded-2xl bg-blue-50/50 border border-blue-100 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <ShieldCheck className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium text-blue-900">Seller Platform Fee (0.75%)</span>
+                          <span className="font-medium text-blue-900">Seller Platform Fee (0.65%)</span>
                         </div>
                         <span className="font-bold text-lg text-blue-900">- GHS {sellerFee.toFixed(2)}</span>
                       </div>
