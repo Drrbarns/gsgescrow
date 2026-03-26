@@ -231,7 +231,7 @@ export default function SellerStep1() {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Product Total</p>
-                          <p className="text-lg sm:text-xl font-extrabold text-slate-900">GHS {parseFloat(txn.product_total).toFixed(2)}</p>
+                          <p className="text-lg sm:text-xl font-extrabold text-slate-900">GHS {Number(txn.product_total).toFixed(2)}</p>
                         </div>
                       </motion.div>
                     ))}
