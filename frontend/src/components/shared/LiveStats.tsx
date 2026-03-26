@@ -34,7 +34,7 @@ function AnimatedCounter({ target, duration = 2000, prefix = '', suffix = '' }: 
   return <span ref={ref}>{prefix}{formatNumber(count)}{suffix}</span>;
 }
 
-interface StatsData {
+export interface StatsData {
   total_transactions: number;
   total_volume_ghs: number;
   total_sellers: number;

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, type InputHTMLAttributes } from 'react';
 import { api } from '@/lib/api';
-import { LiveStats } from '@/components/shared/LiveStats';
+import { LiveStats, type StatsData } from '@/components/shared/LiveStats';
 import { WhatsAppSupportButton } from '@/components/shared/WhatsAppShare';
 
 const fadeUp = {
@@ -51,7 +51,7 @@ const steps = [
 
 export default function HomePage() {
   const [copied, setCopied] = useState(false);
-  const [stats, setStats] = useState<Record<string, number> | null>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sellsafe.com';
 
   useEffect(() => {
