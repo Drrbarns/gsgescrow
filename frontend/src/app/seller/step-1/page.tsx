@@ -75,6 +75,7 @@ export default function SellerStep1() {
     }
     if (!momoProvider || !momoNumber || !momoName) { toast.error('Please provide payout destination'); return; }
 
+    if (!selected) { toast.error('No transaction selected'); return; }
     setSubmitting(true);
     try {
       const { data } = await api.dispatchTransaction(selected.id, {
