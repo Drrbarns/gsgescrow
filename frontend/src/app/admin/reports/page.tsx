@@ -46,9 +46,9 @@ export default function AdminReports() {
     URL.revokeObjectURL(url);
   }
 
-  const totalCollected = report?.transactions?.reduce((s: number, t: any) => s + parseFloat(t.grand_total || 0), 0) || 0;
-  const totalPaidOut = report?.payouts?.filter((p: any) => p.status === 'SUCCESS').reduce((s: number, p: any) => s + parseFloat(p.amount || 0), 0) || 0;
-  const totalFees = report?.transactions?.reduce((s: number, t: any) => s + parseFloat(t.buyer_platform_fee || 0) + parseFloat(t.seller_platform_fee || 0), 0) || 0;
+  const totalCollected = report?.transactions?.reduce((s: number, t: any) => s + Number(t.grand_total || 0), 0) || 0;
+  const totalPaidOut = report?.payouts?.filter((p: any) => p.status === 'SUCCESS').reduce((s: number, p: any) => s + Number(p.amount || 0), 0) || 0;
+  const totalFees = report?.transactions?.reduce((s: number, t: any) => s + Number(t.buyer_platform_fee || 0) + Number(t.seller_platform_fee || 0), 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -111,9 +111,9 @@ export default function AdminReports() {
                       <TableCell className="font-mono text-xs">{t.short_id}</TableCell>
                       <TableCell>{t.buyer_name}</TableCell>
                       <TableCell>{t.seller_name}</TableCell>
-                      <TableCell>GHS {parseFloat(t.product_total).toFixed(2)}</TableCell>
-                      <TableCell>GHS {(parseFloat(t.buyer_platform_fee) + parseFloat(t.seller_platform_fee)).toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">GHS {parseFloat(t.grand_total).toFixed(2)}</TableCell>
+                      <TableCell>GHS {Number(t.product_total).toFixed(2)}</TableCell>
+                      <TableCell>GHS {(Number(t.buyer_platform_fee) + Number(t.seller_platform_fee)).toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">GHS {Number(t.grand_total).toFixed(2)}</TableCell>
                       <TableCell>{t.status}</TableCell>
                       <TableCell className="text-xs">{format(new Date(t.created_at), 'dd MMM yy')}</TableCell>
                     </TableRow>

@@ -190,7 +190,7 @@ export default function SellerDashboard() {
                   <span className="font-bold text-slate-600">Completion Rate</span>
                   <span className="font-black text-primary">{completionRate}%</span>
                 </div>
-                <Progress value={parseFloat(completionRate)} className="h-2.5 bg-slate-200" />
+                <Progress value={Number(completionRate)} className="h-2.5 bg-slate-200" />
               </div>
 
               <div>
@@ -239,7 +239,7 @@ export default function SellerDashboard() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm sm:text-base font-black text-slate-900">GHS {parseFloat(txn.product_total).toFixed(2)}</p>
+                      <p className="text-sm sm:text-base font-black text-slate-900">GHS {Number(txn.product_total).toFixed(2)}</p>
                       <Badge variant="outline" className={`mt-1 border-transparent ${TRANSACTION_STATUSES[txn.status]?.color || 'bg-slate-200'}`}>
                         {TRANSACTION_STATUSES[txn.status]?.label || txn.status}
                       </Badge>

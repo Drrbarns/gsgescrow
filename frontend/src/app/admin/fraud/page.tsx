@@ -114,7 +114,7 @@ export default function FraudMonitorPage() {
                         </Badge>
                         <Badge variant="secondary" className="text-xs">{txn.status}</Badge>
                       </div>
-                      <p className="text-sm">{txn.product_name} — <span className="font-semibold">GHS {parseFloat(txn.grand_total).toFixed(2)}</span></p>
+                      <p className="text-sm">{txn.product_name} — <span className="font-semibold">GHS {Number(txn.grand_total).toFixed(2)}</span></p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Buyer: {txn.buyer_name} | Seller: {txn.seller_name} | {new Date(txn.created_at).toLocaleDateString()}
                       </p>

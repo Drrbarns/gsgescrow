@@ -78,13 +78,13 @@ export default function TransactionDetail() {
       <Card>
         <CardHeader><CardTitle className="text-base">Financial Summary</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between"><span>Product Total</span><span>GHS {parseFloat(txn.product_total).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Delivery Fee</span><span>GHS {parseFloat(txn.delivery_fee).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Rider Release (PSP Fee)</span><span>GHS {parseFloat(txn.rider_release_fee).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Buyer Platform Fee</span><span>GHS {parseFloat(txn.buyer_platform_fee).toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Seller Platform Fee</span><span>GHS {parseFloat(txn.seller_platform_fee).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Product Total</span><span>GHS {Number(txn.product_total).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Delivery Fee</span><span>GHS {Number(txn.delivery_fee).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Rider Release (PSP Fee)</span><span>GHS {Number(txn.rider_release_fee).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Buyer Platform Fee</span><span>GHS {Number(txn.buyer_platform_fee).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Seller Platform Fee</span><span>GHS {Number(txn.seller_platform_fee).toFixed(2)}</span></div>
           <Separator />
-          <div className="flex justify-between font-bold"><span>Grand Total</span><span>GHS {parseFloat(txn.grand_total).toFixed(2)}</span></div>
+          <div className="flex justify-between font-bold"><span>Grand Total</span><span>GHS {Number(txn.grand_total).toFixed(2)}</span></div>
         </CardContent>
       </Card>
 
@@ -118,7 +118,7 @@ export default function TransactionDetail() {
                   <TableRow key={e.id}>
                     <TableCell><Badge variant="secondary">{e.bucket}</Badge></TableCell>
                     <TableCell className={e.direction === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>{e.direction}</TableCell>
-                    <TableCell>GHS {parseFloat(e.amount).toFixed(2)}</TableCell>
+                    <TableCell>GHS {Number(e.amount).toFixed(2)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{e.ref}</TableCell>
                     <TableCell className="text-xs">{format(new Date(e.created_at), 'dd MMM HH:mm')}</TableCell>
                   </TableRow>
@@ -142,7 +142,7 @@ export default function TransactionDetail() {
                 {txn.payouts.map((p: any) => (
                   <TableRow key={p.id}>
                     <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
-                    <TableCell>GHS {parseFloat(p.amount).toFixed(2)}</TableCell>
+                    <TableCell>GHS {Number(p.amount).toFixed(2)}</TableCell>
                     <TableCell><Badge variant={p.status === 'SUCCESS' ? 'default' : 'destructive'}>{p.status}</Badge></TableCell>
                     <TableCell>{p.attempts}</TableCell>
                     <TableCell className="text-xs">{format(new Date(p.created_at), 'dd MMM HH:mm')}</TableCell>

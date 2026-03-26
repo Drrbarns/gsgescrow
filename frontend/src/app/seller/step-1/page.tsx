@@ -67,7 +67,7 @@ export default function SellerStep1() {
     }
   }
 
-  const sellerFee = selected ? parseFloat((selected.product_total * 0.65 / 100).toFixed(2)) : 0;
+  const sellerFee = selected ? Number((selected.product_total * 0.65 / 100).toFixed(2)) : 0;
 
   async function handleDispatch() {
     if (!businessLocation || !riderName || !riderPhone || !riderTelco || !pickupAddress) {
@@ -262,7 +262,7 @@ export default function SellerStep1() {
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Product Total</p>
-                        <p className="text-xl sm:text-2xl font-extrabold text-primary">GHS {parseFloat(selected.product_total).toFixed(2)}</p>
+                        <p className="text-xl sm:text-2xl font-extrabold text-primary">GHS {Number(selected.product_total).toFixed(2)}</p>
                       </div>
                     </div>
 

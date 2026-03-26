@@ -185,7 +185,7 @@ export default function BuyerStep2() {
                     <Input value={riderMomo} onChange={e => setRiderMomo(e.target.value)} placeholder="024XXXXXXX" className="h-12 sm:h-14 rounded-xl" />
                   </div>
                   <div className="rounded-xl bg-muted/50 p-3 text-xs sm:text-sm">
-                    <p>Rider will receive: <span className="font-bold">GHS {(parseFloat(selected.delivery_fee) + parseFloat(selected.rider_release_fee)).toFixed(2)}</span></p>
+                    <p>Rider will receive: <span className="font-bold">GHS {(Number(selected.delivery_fee) + Number(selected.rider_release_fee)).toFixed(2)}</span></p>
                   </div>
                   <Button onClick={handlePayRider} disabled={submitting} size="lg" className="w-full rounded-full h-12 sm:h-14 text-sm sm:text-base">
                     {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : 'Confirm & Pay Rider'}

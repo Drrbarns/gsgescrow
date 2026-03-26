@@ -46,7 +46,7 @@ export default function SellerStep2() {
   }
 
   function calcNetPayout(txn: any) {
-    return parseFloat(txn.product_total) - parseFloat(txn.seller_platform_fee);
+    return Number(txn.product_total) - Number(txn.seller_platform_fee);
   }
 
   async function handleCollect() {
@@ -128,8 +128,8 @@ export default function SellerStep2() {
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
               <div className="rounded-xl bg-muted/50 p-3 sm:p-4 space-y-2 text-sm overflow-hidden">
-                <div className="flex justify-between gap-2"><span>Product Total</span><span className="shrink-0">GHS {parseFloat(selected.product_total).toFixed(2)}</span></div>
-                <div className="flex justify-between gap-2"><span>Platform Fee (0.65%)</span><span className="shrink-0">- GHS {parseFloat(selected.seller_platform_fee).toFixed(2)}</span></div>
+                <div className="flex justify-between gap-2"><span>Product Total</span><span className="shrink-0">GHS {Number(selected.product_total).toFixed(2)}</span></div>
+                <div className="flex justify-between gap-2"><span>Platform Fee (0.65%)</span><span className="shrink-0">- GHS {Number(selected.seller_platform_fee).toFixed(2)}</span></div>
                 <Separator />
                 <div className="flex justify-between font-bold text-base sm:text-lg gap-2"><span>Net Payout</span><span className="text-green-700 shrink-0">GHS {calcNetPayout(selected).toFixed(2)}</span></div>
               </div>

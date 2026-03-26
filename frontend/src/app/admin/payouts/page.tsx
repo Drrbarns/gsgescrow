@@ -123,7 +123,7 @@ export default function AdminPayouts() {
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.transactions?.short_id || '—'}</TableCell>
                   <TableCell><Badge variant="outline">{p.type}</Badge></TableCell>
-                  <TableCell className="font-medium">GHS {parseFloat(p.amount).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">GHS {Number(p.amount).toFixed(2)}</TableCell>
                   <TableCell><Badge className={statusColors[p.status]}>{p.status}</Badge></TableCell>
                   <TableCell>{p.attempts}/{p.max_attempts}</TableCell>
                   <TableCell className="text-sm">{format(new Date(p.created_at), 'dd MMM HH:mm')}</TableCell>

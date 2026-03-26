@@ -47,10 +47,10 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
       <div class="row"><span class="label">Buyer</span><span>${d.buyer_name}</span></div>
       <div class="row"><span class="label">Seller</span><span>${d.seller_name}</span></div>
       <hr/>
-      <div class="row"><span class="label">Product Total</span><span>GHS ${parseFloat(d.product_total).toFixed(2)}</span></div>
-      <div class="row"><span class="label">Delivery Fee</span><span>GHS ${parseFloat(d.delivery_fee).toFixed(2)}</span></div>
-      <div class="row"><span class="label">Platform Fee</span><span>GHS ${parseFloat(d.buyer_platform_fee).toFixed(2)}</span></div>
-      <div class="row total"><span>Grand Total</span><span>GHS ${parseFloat(d.grand_total).toFixed(2)}</span></div>
+      <div class="row"><span class="label">Product Total</span><span>GHS ${Number(d.product_total).toFixed(2)}</span></div>
+      <div class="row"><span class="label">Delivery Fee</span><span>GHS ${Number(d.delivery_fee).toFixed(2)}</span></div>
+      <div class="row"><span class="label">Platform Fee</span><span>GHS ${Number(d.buyer_platform_fee).toFixed(2)}</span></div>
+      <div class="row total"><span>Grand Total</span><span>GHS ${Number(d.grand_total).toFixed(2)}</span></div>
       <div style="text-align:center"><div class="badge">${d.escrow_status || 'Payment Confirmed'}</div></div>
       <div class="footer">
         <p>GSG BRANDS • sellbuysafe.gsgbrands.com.gh</p>
@@ -63,7 +63,7 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
   }
 
   function handleShareWhatsApp() {
-    const text = `🛡️ Sell-Safe Buy-Safe Receipt\n\nReceipt: ${receipt.receipt_number}\nTransaction: ${d.short_id}\nProduct: ${d.product_name}\nAmount: GHS ${parseFloat(d.grand_total).toFixed(2)}\nStatus: ${d.escrow_status || 'Confirmed'}\n\nVerify at: ${typeof window !== 'undefined' ? window.location.origin : ''}/tracking`;
+    const text = `🛡️ Sell-Safe Buy-Safe Receipt\n\nReceipt: ${receipt.receipt_number}\nTransaction: ${d.short_id}\nProduct: ${d.product_name}\nAmount: GHS ${Number(d.grand_total).toFixed(2)}\nStatus: ${d.escrow_status || 'Confirmed'}\n\nVerify at: ${typeof window !== 'undefined' ? window.location.origin : ''}/tracking`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 
@@ -88,11 +88,11 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
       <Separator className="my-4" />
 
       <div className="space-y-1.5 text-sm">
-        <div className="flex justify-between"><span>Product Total</span><span>GHS {parseFloat(d.product_total).toFixed(2)}</span></div>
-        <div className="flex justify-between"><span>Delivery Fee</span><span>GHS {parseFloat(d.delivery_fee).toFixed(2)}</span></div>
-        <div className="flex justify-between"><span>Platform Fee</span><span>GHS {parseFloat(d.buyer_platform_fee).toFixed(2)}</span></div>
+        <div className="flex justify-between"><span>Product Total</span><span>GHS {Number(d.product_total).toFixed(2)}</span></div>
+        <div className="flex justify-between"><span>Delivery Fee</span><span>GHS {Number(d.delivery_fee).toFixed(2)}</span></div>
+        <div className="flex justify-between"><span>Platform Fee</span><span>GHS {Number(d.buyer_platform_fee).toFixed(2)}</span></div>
         <Separator className="my-2" />
-        <div className="flex justify-between font-bold text-base"><span>Grand Total</span><span className="text-primary">GHS {parseFloat(d.grand_total).toFixed(2)}</span></div>
+        <div className="flex justify-between font-bold text-base"><span>Grand Total</span><span className="text-primary">GHS {Number(d.grand_total).toFixed(2)}</span></div>
       </div>
 
       {d.escrow_status && (

@@ -339,7 +339,7 @@ export default function HubPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="font-bold text-slate-900">GHS {parseFloat(txn.grand_total).toFixed(2)}</span>
+                              <span className="font-bold text-slate-900">GHS {Number(txn.grand_total).toFixed(2)}</span>
                             </TableCell>
                             <TableCell>
                               <Badge className={`${TRANSACTION_STATUSES[txn.status]?.color || 'bg-slate-100 text-slate-700'} rounded-full px-3 py-1 font-semibold uppercase tracking-wider text-[10px]`}>
@@ -422,7 +422,7 @@ export default function HubPage() {
                           <span>B: <span className="font-medium text-slate-700">{txn.buyer_name || txn.buyer_phone}</span></span>
                           <span>S: <span className="font-medium text-slate-700">{txn.seller_name || txn.seller_phone}</span></span>
                         </div>
-                        <span className="font-bold text-lg text-primary">GHS {parseFloat(txn.grand_total).toFixed(2)}</span>
+                        <span className="font-bold text-lg text-primary">GHS {Number(txn.grand_total).toFixed(2)}</span>
                       </div>
                       {getContinueAction(txn) && (
                         <Button

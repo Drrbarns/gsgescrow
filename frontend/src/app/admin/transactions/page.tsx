@@ -96,7 +96,7 @@ export default function AdminTransactions() {
                   <TableCell className="max-w-[180px] truncate">{txn.product_name}</TableCell>
                   <TableCell>{txn.buyer_name}</TableCell>
                   <TableCell>{txn.seller_name}</TableCell>
-                  <TableCell className="font-medium">GHS {parseFloat(txn.grand_total).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">GHS {Number(txn.grand_total).toFixed(2)}</TableCell>
                   <TableCell><Badge className={TRANSACTION_STATUSES[txn.status]?.color}>{TRANSACTION_STATUSES[txn.status]?.label}</Badge></TableCell>
                   <TableCell className="text-sm">{format(new Date(txn.created_at), 'dd MMM yy')}</TableCell>
                   <TableCell>
