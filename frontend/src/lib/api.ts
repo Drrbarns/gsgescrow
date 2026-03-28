@@ -97,15 +97,25 @@ class ApiClient {
         const supabase = await this.getSupabase();
         const uid = await this.getUserId();
         if (!uid) return { data: [], total: 0 };
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', uid)
+          .single();
+        const isAdmin = profileData?.role === 'admin';
         const { data: userData } = await supabase.auth.getUser();
         const userPhone = userData.user?.phone || '';
         const userEmail = userData.user?.email || '';
-        const orFilters = [`buyer_id.eq.${uid}`, `seller_id.eq.${uid}`];
-        if (userPhone) orFilters.push(`seller_phone.eq.${userPhone}`);
-        if (userEmail) orFilters.push(`seller_phone.eq.${userEmail}`);
-        let query = supabase.from('transactions').select('*', { count: 'exact' })
-          .or(orFilters.join(','))
+        let query = supabase
+          .from('transactions')
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false });
+        if (!isAdmin) {
+          const orFilters = [`buyer_id.eq.${uid}`, `seller_id.eq.${uid}`];
+          if (userPhone) orFilters.push(`seller_phone.eq.${userPhone}`);
+          if (userEmail) orFilters.push(`seller_phone.eq.${userEmail}`);
+          query = query.or(orFilters.join(','));
+        }
         if (params?.status) query = query.eq('status', params.status);
         if (params?.platform) query = query.eq('source_platform', params.platform);
         if (params?.search) query = query.or(`short_id.ilike.%${params.search}%,product_name.ilike.%${params.search}%`);

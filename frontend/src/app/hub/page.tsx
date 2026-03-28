@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Loader2, Search, MoreHorizontal, Eye, Truck, CheckCircle, 
   AlertCircle, Banknote, ChevronLeft, ChevronRight, 
-  LayoutDashboard, Filter, ArrowRightLeft, Clock, ArrowRight
+  LayoutDashboard, Filter, ArrowRightLeft, Clock, ArrowRight, ClipboardList
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -85,12 +85,44 @@ export default function HubPage() {
 
   const totalPages = Math.ceil(total / limit);
   const role = profile?.role;
+  const roleHeading = role === 'buyer' ? 'Buyer Command Center' : role === 'seller' ? 'Seller Command Center' : 'Transaction Hub';
+  const roleDescription =
+    role === 'buyer'
+      ? 'Pay pending orders, confirm deliveries, and keep every purchase protected in one place.'
+      : role === 'seller'
+        ? 'Dispatch paid orders, track active deliveries, and collect payouts from one control center.'
+        : 'Manage all secure PSP payments, track deliveries, and release funds from one central dashboard.';
   const submittedCount = transactions.filter((t) => t.status === 'SUBMITTED').length;
   const paidCount = transactions.filter((t) => t.status === 'PAID').length;
   const dispatchedCount = transactions.filter((t) => t.status === 'DISPATCHED').length;
   const deliveredConfirmedCount = transactions.filter((t) => t.status === 'DELIVERED_CONFIRMED').length;
+  const completedCount = transactions.filter((t) => t.status === 'COMPLETED').length;
+  const buyerPendingCount = role !== 'seller' ? submittedCount : 0;
+  const buyerConfirmCount = role !== 'seller' ? dispatchedCount : 0;
+  const sellerDispatchCount = role !== 'buyer' ? paidCount : 0;
+  const sellerPayoutCount = role !== 'buyer' ? deliveredConfirmedCount : 0;
+  const activeCount = transactions.filter((t) => !['COMPLETED', 'CANCELLED'].includes(t.status)).length;
+  const pageVolume = transactions.reduce((sum, txn) => sum + Number(txn.grand_total || 0), 0);
   const actionRequired = transactions.filter((t) =>
     ['SUBMITTED', 'PAID', 'DISPATCHED', 'DELIVERED_CONFIRMED'].includes(t.status)
+  );
+  const statusPriority: Record<string, number> = {
+    DELIVERED_CONFIRMED: 1,
+    DISPATCHED: 2,
+    PAID: 3,
+    SUBMITTED: 4,
+    COMPLETED: 5,
+    CANCELLED: 6,
+  };
+  const sortedTransactions = useMemo(
+    () =>
+      [...transactions].sort((a, b) => {
+        const rankA = statusPriority[a.status] ?? 9;
+        const rankB = statusPriority[b.status] ?? 9;
+        if (rankA !== rankB) return rankA - rankB;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }),
+    [transactions]
   );
 
   function getContinueAction(txn: HubTransaction): ContinueAction | null {
@@ -133,7 +165,7 @@ export default function HubPage() {
                   transition={{ delay: 0.1 }}
                   className="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl text-slate-900"
                 >
-                  Transaction Hub
+                  {roleHeading}
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0, y: 20 }}
@@ -141,7 +173,7 @@ export default function HubPage() {
                   transition={{ delay: 0.2 }}
                   className="mt-2 text-slate-600 max-w-xl font-medium"
                 >
-                  Manage all your secure PSP payments, track deliveries, and release funds from one central dashboard.
+                  {roleDescription}
                 </motion.p>
               </div>
               
@@ -159,7 +191,7 @@ export default function HubPage() {
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active</p>
                   <p className="text-2xl sm:text-3xl font-black text-primary">
-                    {transactions.filter(t => !['COMPLETED', 'CANCELLED'].includes(t.status)).length}
+                    {activeCount}
                   </p>
                 </div>
               </motion.div>
@@ -214,6 +246,45 @@ export default function HubPage() {
             </div>
           </motion.div>
 
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 mb-6 sm:mb-8">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Need your action</p>
+              <p className="mt-2 text-2xl font-black text-amber-600">{actionRequired.length}</p>
+              <p className="text-xs text-slate-500 mt-1">Transactions waiting on next step</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Page volume</p>
+              <p className="mt-2 text-2xl font-black text-slate-900">GHS {pageVolume.toFixed(2)}</p>
+              <p className="text-xs text-slate-500 mt-1">Total amount in this view</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Completed</p>
+              <p className="mt-2 text-2xl font-black text-emerald-600">{completedCount}</p>
+              <p className="text-xs text-slate-500 mt-1">Successfully finished transactions</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Quick links</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {role !== 'seller' && (
+                  <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/buyer/step-1')}>
+                    Pay Orders
+                  </Button>
+                )}
+                {role !== 'buyer' && (
+                  <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/seller/step-1')}>
+                    Dispatch
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/tracking')}>
+                  Track
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/calculator')}>
+                  Fee Calc
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Data Area */}
           {actionRequired.length > 0 && (
             <div className="mb-6 space-y-3">
@@ -223,50 +294,50 @@ export default function HubPage() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                {role !== 'seller' && submittedCount > 0 && (
+                {role !== 'seller' && buyerPendingCount > 0 && (
                   <button
                     type="button"
                     onClick={() => router.push('/buyer/step-1')}
                     className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
                   >
                     <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Pending Payment ({submittedCount})</p>
+                    <p className="font-bold text-slate-900 mt-1">Pending Payment ({buyerPendingCount})</p>
                     <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Go to payment <ArrowRight className="h-3 w-3" /></p>
                   </button>
                 )}
 
-                {role !== 'buyer' && paidCount > 0 && (
+                {role !== 'buyer' && sellerDispatchCount > 0 && (
                   <button
                     type="button"
                     onClick={() => router.push('/seller/step-1')}
                     className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
                   >
                     <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Ready to Dispatch ({paidCount})</p>
+                    <p className="font-bold text-slate-900 mt-1">Ready to Dispatch ({sellerDispatchCount})</p>
                     <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Dispatch now <ArrowRight className="h-3 w-3" /></p>
                   </button>
                 )}
 
-                {role !== 'seller' && dispatchedCount > 0 && (
+                {role !== 'seller' && buyerConfirmCount > 0 && (
                   <button
                     type="button"
                     onClick={() => router.push('/buyer/step-2')}
                     className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
                   >
                     <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Confirm Delivery ({dispatchedCount})</p>
+                    <p className="font-bold text-slate-900 mt-1">Confirm Delivery ({buyerConfirmCount})</p>
                     <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Confirm now <ArrowRight className="h-3 w-3" /></p>
                   </button>
                 )}
 
-                {role !== 'buyer' && deliveredConfirmedCount > 0 && (
+                {role !== 'buyer' && sellerPayoutCount > 0 && (
                   <button
                     type="button"
                     onClick={() => router.push('/seller/step-2')}
                     className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
                   >
                     <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Collect Payout ({deliveredConfirmedCount})</p>
+                    <p className="font-bold text-slate-900 mt-1">Collect Payout ({sellerPayoutCount})</p>
                     <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Collect now <ArrowRight className="h-3 w-3" /></p>
                   </button>
                 )}
@@ -310,7 +381,7 @@ export default function HubPage() {
                     </TableHeader>
                     <TableBody>
                       <AnimatePresence>
-                        {transactions.map((txn, idx) => (
+                        {sortedTransactions.map((txn, idx) => (
                           <motion.tr 
                             key={txn.id}
                             initial={{ opacity: 0, y: 10 }}
@@ -401,7 +472,7 @@ export default function HubPage() {
 
                 {/* Mobile View */}
                 <div className="md:hidden divide-y divide-slate-100">
-                  {transactions.map(txn => (
+                  {sortedTransactions.map(txn => (
                     <div 
                       key={txn.id} 
                       className="px-3 py-4 sm:p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
@@ -416,7 +487,13 @@ export default function HubPage() {
                           {TRANSACTION_STATUSES[txn.status]?.label || txn.status}
                         </Badge>
                       </div>
-                      <p className="font-medium text-slate-900 truncate mb-3">{txn.product_name}</p>
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <p className="font-medium text-slate-900 truncate">{txn.product_name}</p>
+                        <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-600">
+                          <ClipboardList className="inline-block h-3 w-3 mr-1" />
+                          {txn.platform || 'Direct'}
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
                         <div className="text-xs text-slate-500 flex flex-col gap-1">
                           <span>B: <span className="font-medium text-slate-700">{txn.buyer_name || txn.buyer_phone}</span></span>
