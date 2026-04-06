@@ -3,8 +3,8 @@ export const APP_TAGLINE = 'Secure Every Transaction. Protect Every Deal.';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-/** When false, real Paystack payments are used. Set NEXT_PUBLIC_SIMULATION_MODE=false when ready for production. */
-export const SIMULATION_MODE = process.env.NEXT_PUBLIC_SIMULATION_MODE !== 'false';
+/** Simulation is OFF by default. Set NEXT_PUBLIC_SIMULATION_MODE=true only for test environments. */
+export const SIMULATION_MODE = process.env.NEXT_PUBLIC_SIMULATION_MODE === 'true';
 
 export const SOURCE_PLATFORMS = [
   { value: 'facebook', label: 'Facebook' },
