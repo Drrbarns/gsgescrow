@@ -42,7 +42,7 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
 
     const result = await paystack.initializePayment({
       amount: txn.grand_total,
-      email: `${req.user!.phone}@sellbuysafe.gsgbrands.com.gh`,
+      email: `${req.user!.phone}@sellbuysafe.gsgbrands.com`,
       reference,
       callback_url: callbackUrl,
       metadata: {

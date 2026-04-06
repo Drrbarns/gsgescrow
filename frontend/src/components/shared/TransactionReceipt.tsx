@@ -53,7 +53,7 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
       <div class="row total"><span>Grand Total</span><span>GHS ${Number(d.grand_total).toFixed(2)}</span></div>
       <div style="text-align:center"><div class="badge">${d.escrow_status || 'Payment Confirmed'}</div></div>
       <div class="footer">
-        <p>GSG BRANDS • sellbuysafe.gsgbrands.com.gh</p>
+        <p>GSG BRANDS • sellbuysafe.gsgbrands.com</p>
         <p>This is an official secure transaction receipt</p>
       </div>
       </body></html>

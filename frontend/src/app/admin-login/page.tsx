@@ -57,8 +57,6 @@ export default function AdminLoginPage() {
 
       {/* Left Panel — Branding */}
       <div className="hidden lg:flex w-[45%] flex-col relative overflow-hidden bg-white border-r border-slate-200">
-        {/* Background grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px]" />
         {/* Glow blobs */}
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/5 blur-[100px] pointer-events-none" />

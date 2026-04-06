@@ -1,295 +1,200 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Calculator, ArrowRight, Shield, ShoppingBag, Store, Copy, Check, Lock, ArrowDownToLine, Sparkles } from 'lucide-react';
-import { WhatsAppShare } from '@/components/shared/WhatsAppShare';
+import { Copy, Check, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-
-// Animated counter component for premium feel
-function AnimatedNumber({ value }: { value: number }) {
-  return (
-    <motion.span
-      key={value}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="inline-block"
-    >
-      {value.toFixed(2)}
-    </motion.span>
-  );
-}
 
 export default function CalculatorPage() {
-  const [productTotal, setProductTotal] = useState('');
-  const [deliveryFee, setDeliveryFee] = useState('');
+  const [amount, setAmount] = useState('');
+  const [delivery, setDelivery] = useState('');
   const [copied, setCopied] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const calc = useMemo(() => {
-    const pt = parseFloat(productTotal) || 0;
-    const df = parseFloat(deliveryFee) || 0;
+    const pt = parseFloat(amount) || 0;
+    const df = parseFloat(delivery) || 0;
     const riderReleaseFee = df > 0 ? 1.0 : 0.0;
-    const buyerFeePercent = 0.35;
-    const sellerFeePercent = 0.65;
-    const buyerFee = parseFloat((pt * buyerFeePercent / 100).toFixed(2));
-    const sellerFee = parseFloat((pt * sellerFeePercent / 100).toFixed(2));
+    const buyerFee = pt * 0.0035;
+    const sellerFee = pt * 0.0065;
     const buyerPays = pt + df + riderReleaseFee + buyerFee;
     const sellerReceives = pt - sellerFee;
-    const riderReceives = df;
 
-    return { pt, df, riderReleaseFee, buyerFee, sellerFee, buyerPays, sellerReceives: Math.max(0, sellerReceives), riderReceives };
-  }, [productTotal, deliveryFee]);
+    return { 
+      pt, df, riderReleaseFee, buyerFee, sellerFee, buyerPays, 
+      sellerReceives: Math.max(0, sellerReceives) 
+    };
+  }, [amount, delivery]);
 
-  function handleCopySummary() {
-    const text = `Sell-Safe Buy-Safe Fee Summary\n\nProduct Price: GHS ${calc.pt.toFixed(2)}\nDelivery Fee: GHS ${calc.df.toFixed(2)}\n\nBuyer Pays: GHS ${calc.buyerPays.toFixed(2)}\nSeller Receives: GHS ${calc.sellerReceives.toFixed(2)}\nRider Receives: GHS ${calc.riderReceives.toFixed(2)}\n\nStart here: ${window.location.origin}/buyer/step-1`;
+  function handleCopyQuote() {
+    const text = `Sell-Safe Buy-Safe Quote\n\nItem Price: GHS ${calc.pt.toFixed(2)}\nDelivery: GHS ${calc.df.toFixed(2)}\n\nBuyer Pays: GHS ${calc.buyerPays.toFixed(2)}\nSeller Receives: GHS ${calc.sellerReceives.toFixed(2)}\n\nSecure this deal at: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (!isMounted) return null;
-
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-white selection:bg-primary/30">
       <Header />
-      
-      <main className="flex-1">
-        {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
-          {/* Abstract Background Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
-            <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-blue-500/20 blur-[120px]" />
-          </div>
 
-          <div className="relative mx-auto max-w-5xl px-4 text-center z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-blue-200 backdrop-blur-md border border-white/10 mb-6"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Transparent Pricing. Zero Hidden Fees.</span>
-            </motion.div>
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
-            >
-              Calculate Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Platform Fee</span>
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300"
-            >
-              See exactly how much the buyer pays and the seller receives. Our micro-fees for platform maintenance and PSP transaction processing keep every order protected until delivery is confirmed.
-            </motion.p>
-          </div>
-        </section>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight mb-4">
+            Transparent pricing.
+            <span className="block text-slate-400 mt-1">Zero surprises.</span>
+          </h1>
+          <p className="text-base sm:text-lg text-slate-500 font-medium">
+            Calculate exactly what you pay and what you receive. <br className="hidden sm:block" />
+            Industry-leading rates to keep your money perfectly safe.
+          </p>
+        </div>
 
-        {/* Floating Calculator Interface */}
-        <section className="relative z-20 mx-auto max-w-5xl px-4 -mt-20 sm:-mt-32 pb-12 sm:pb-24">
-          <div className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col lg:flex-row">
-            
-            {/* Left Side: Inputs */}
-            <div className="flex-1 p-5 sm:p-8 lg:p-12 lg:border-r border-slate-100">
-              <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <Calculator className="h-5 w-5" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Transaction Details</h2>
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-start max-w-5xl mx-auto">
+          
+          {/* Left: Inputs */}
+          <div className="lg:col-span-6 space-y-10 sm:space-y-12 lg:mt-4">
+            <div>
+              <label className="text-xs font-bold tracking-widest uppercase text-slate-400 block mb-4">
+                Item / Service Price
+              </label>
+              <div className="relative group">
+                <span className="absolute left-0 top-0 text-2xl sm:text-3xl font-light text-slate-300 group-focus-within:text-primary transition-colors">
+                  GHS
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full text-4xl sm:text-5xl font-bold bg-transparent border-b-[3px] border-slate-100 pb-3 pl-14 sm:pl-20 text-slate-900 placeholder-slate-200 focus:border-primary outline-none transition-all [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
               </div>
-
-              <div className="space-y-6 sm:space-y-8">
-                {/* Product Price Input */}
-                <div className="group relative">
-                  <label className="block text-sm font-semibold text-slate-500 mb-2 transition-colors group-focus-within:text-primary">
-                    Product / Service Price
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-4 text-xl font-medium text-slate-400">GHS</span>
-                    <Input
-                      type="number" min="0" step="0.01"
-                      value={productTotal} 
-                      onChange={e => setProductTotal(e.target.value)}
-                      placeholder="0.00" 
-                      className="h-14 sm:h-16 w-full pl-16 text-xl sm:text-2xl font-bold rounded-xl sm:rounded-2xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Delivery Fee Input */}
-                <div className="group relative">
-                  <label className="block text-sm font-semibold text-slate-500 mb-2 transition-colors group-focus-within:text-primary">
-                    Delivery Fee (Optional)
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-4 text-xl font-medium text-slate-400">GHS</span>
-                    <Input
-                      type="number" min="0" step="0.01"
-                      value={deliveryFee} 
-                      onChange={e => setDeliveryFee(e.target.value)}
-                      placeholder="0.00" 
-                      className="h-14 sm:h-16 w-full pl-16 text-xl sm:text-2xl font-bold rounded-xl sm:rounded-2xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 sm:mt-10 rounded-xl sm:rounded-2xl bg-amber-50/50 border border-amber-100 p-4 sm:p-5 flex gap-3 sm:gap-4 items-start">
-                <div className="mt-0.5 rounded-full bg-amber-100 p-1.5 text-amber-600">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-amber-900">Licensed and Secure PSPs</h4>
-                  <p className="text-sm text-amber-700/80 mt-1 leading-relaxed">
-                    Funds are held with licensed PSPs. The seller only receives money after buyer confirmation, and PSP/telco fees may apply.
-                  </p>
-                </div>
+              <div className="flex flex-wrap gap-2 mt-5">
+                {[100, 500, 1000, 5000].map(val => (
+                  <button 
+                    key={val} 
+                    onClick={() => setAmount(val.toString())} 
+                    className="px-4 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                  >
+                    + {val}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Right Side: Dynamic Receipt */}
-            <div className="flex-1 bg-slate-50 p-5 sm:p-8 lg:p-12 relative overflow-hidden">
-              {/* Decorative background pattern */}
-              <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            <div>
+              <label className="text-xs font-bold tracking-widest uppercase text-slate-400 block mb-4">
+                Delivery Fee <span className="font-medium text-slate-300 ml-2">(Optional)</span>
+              </label>
+              <div className="relative group">
+                <span className="absolute left-0 top-0 text-xl sm:text-2xl font-light text-slate-300 group-focus-within:text-primary transition-colors">
+                  GHS
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={delivery}
+                  onChange={(e) => setDelivery(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full text-3xl sm:text-4xl font-bold bg-transparent border-b-[3px] border-slate-100 pb-3 pl-12 sm:pl-16 text-slate-900 placeholder-slate-200 focus:border-primary outline-none transition-all [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+            
+            <div className="pt-2">
+              <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+                <Shield className="h-5 w-5 text-emerald-500 shrink-0" />
+                Payments are held securely in escrow until delivery is confirmed.
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Premium Receipt Card */}
+          <div className="lg:col-span-6 relative">
+            <div className="rounded-3xl bg-slate-900 text-white p-6 sm:p-8 shadow-2xl relative overflow-hidden ring-1 ring-white/10">
               
+              {/* Soft atmospheric glows */}
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-56 h-56 rounded-full bg-primary blur-[80px] opacity-30 mix-blend-screen pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-56 h-56 rounded-full bg-emerald-500 blur-[80px] opacity-20 mix-blend-screen pointer-events-none" />
+
               <div className="relative z-10">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Real-time Breakdown</h3>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-slate-400">
+                    Transaction Summary
+                  </h3>
+                  <button 
+                    onClick={handleCopyQuote}
+                    className="text-slate-400 hover:text-white transition-colors p-1"
+                    title="Copy Quote"
+                  >
+                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
 
-                {/* Buyer Section */}
-                <motion.div 
-                  className="rounded-xl sm:rounded-2xl bg-white border border-slate-200 p-4 sm:p-6 mb-4 shadow-sm"
-                  initial={false}
-                  animate={{ borderColor: calc.pt > 0 ? '#bfdbfe' : '#e2e8f0' }}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                      <ShoppingBag className="h-4 w-4" />
-                    </div>
-                    <span className="font-semibold text-slate-900">Buyer Pays</span>
-                  </div>
-                  
-                  <div className="space-y-3 text-sm text-slate-600">
-                    <div className="flex justify-between items-center">
-                      <span>Item Price</span>
-                      <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.pt} /></span>
-                    </div>
-                    {calc.df > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span>Delivery</span>
-                        <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.df} /></span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-1.5">Platform Fee <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">0.35%</span></span>
-                      <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.buyerFee} /></span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Rider Release (PSP Fee)</span>
-                      <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.riderReleaseFee} /></span>
-                    </div>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
+                <div className="space-y-4 text-base sm:text-lg">
                   <div className="flex justify-between items-end">
-                    <span className="font-semibold text-slate-500">Total Payment</span>
-                    <span className="text-xl sm:text-2xl font-bold text-blue-600">GHS <AnimatedNumber value={calc.buyerPays} /></span>
+                    <span className="text-slate-300 text-sm sm:text-base">Item Price</span>
+                    <span className="font-medium text-white">GHS {calc.pt.toFixed(2)}</span>
                   </div>
-                </motion.div>
-
-                {/* Flow Arrow */}
-                <div className="flex justify-center -my-2 relative z-20">
-                  <div className="bg-slate-50 p-1 rounded-full">
-                    <div className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20">
-                      <ArrowDownToLine className="h-4 w-4" />
+                  {calc.df > 0 && (
+                    <div className="flex justify-between items-end">
+                      <span className="text-slate-300 text-sm sm:text-base">Delivery Fee</span>
+                      <span className="font-medium text-white">GHS {calc.df.toFixed(2)}</span>
                     </div>
+                  )}
+                  
+                  <div className="w-full h-px bg-slate-800 my-5" />
+
+                  {/* Buyer side */}
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-400 text-sm sm:text-base">Buyer Fee <span className="text-slate-500 text-xs ml-1">(0.35%)</span></span>
+                    <span className="font-medium text-slate-300">GHS {calc.buyerFee.toFixed(2)}</span>
+                  </div>
+                  {calc.riderReleaseFee > 0 && (
+                    <div className="flex justify-between items-end mt-3">
+                      <span className="text-slate-400 text-sm sm:text-base">Delivery Support</span>
+                      <span className="font-medium text-slate-300">GHS {calc.riderReleaseFee.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-end mt-5 pt-5 border-t border-slate-800">
+                    <span className="text-lg sm:text-xl text-white font-medium">Buyer Total</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-white">GHS {calc.buyerPays.toFixed(2)}</span>
+                  </div>
+
+                  {/* Dashed separator */}
+                  <div className="w-full h-px bg-transparent border-t-[1.5px] border-dashed border-slate-800 my-7" />
+
+                  {/* Seller side */}
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-400 text-sm sm:text-base">Seller Fee <span className="text-slate-500 text-xs ml-1">(0.65%)</span></span>
+                    <span className="font-medium text-rose-400">- GHS {calc.sellerFee.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-end mt-5 pt-5 border-t border-slate-800">
+                    <span className="text-lg sm:text-xl text-white font-medium">Seller Receives</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-emerald-400">GHS {calc.sellerReceives.toFixed(2)}</span>
                   </div>
                 </div>
 
-                {/* Seller Section */}
-                <motion.div 
-                  className="rounded-xl sm:rounded-2xl bg-white border border-slate-200 p-4 sm:p-6 mt-4 shadow-sm"
-                  initial={false}
-                  animate={{ borderColor: calc.pt > 0 ? '#bbf7d0' : '#e2e8f0' }}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600">
-                      <Store className="h-4 w-4" />
-                    </div>
-                    <span className="font-semibold text-slate-900">Seller Receives</span>
-                  </div>
-                  
-                  <div className="space-y-3 text-sm text-slate-600">
-                    <div className="flex justify-between items-center">
-                      <span>Item Price</span>
-                      <span className="font-medium text-slate-900">GHS <AnimatedNumber value={calc.pt} /></span>
-                    </div>
-                    <div className="flex justify-between items-center text-red-500">
-                      <span className="flex items-center gap-1.5">Platform Fee <span className="text-[10px] bg-red-50 px-1.5 py-0.5 rounded text-red-600">0.65%</span></span>
-                      <span className="font-medium">- GHS <AnimatedNumber value={calc.sellerFee} /></span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">PSPs/Telco fees may apply and are not paid out to the seller.</p>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <div className="flex justify-between items-end">
-                    <span className="font-semibold text-slate-500">Net Payout</span>
-                    <span className="text-xl sm:text-2xl font-bold text-green-600">GHS <AnimatedNumber value={calc.sellerReceives} /></span>
-                  </div>
-                </motion.div>
-
-                {/* Actions */}
-                <div className="mt-6 sm:mt-8 space-y-3">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleCopySummary} 
-                      className="flex-1 h-12 rounded-xl border-slate-200 hover:bg-slate-100 hover:text-slate-900 font-medium transition-all"
-                    >
-                      <AnimatePresence mode="wait">
-                        {copied ? (
-                          <motion.div key="copied" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="flex items-center gap-2 text-green-600">
-                            <Check className="h-4 w-4" /> Copied!
-                          </motion.div>
-                        ) : (
-                          <motion.div key="copy" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="flex items-center gap-2">
-                            <Copy className="h-4 w-4 text-slate-400" /> Copy Breakdown
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </Button>
-                    <WhatsAppShare role="seller" className="flex-1 h-12 rounded-xl font-medium" />
-                  </div>
-
-                  <Link href="/buyer/step-1" className="block">
-                    <Button className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all gap-2 group">
-                      Start Secure Transaction 
-                      <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                <div className="mt-10 grid grid-cols-2 gap-3">
+                  <Link href="/buyer/step-1" className="flex items-center justify-center bg-primary hover:bg-primary/90 text-white rounded-xl py-3 font-bold transition-all text-sm shadow-lg shadow-primary/25">
+                    Start Buying
+                  </Link>
+                  <Link href="/seller/step-1" className="flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 font-bold transition-all text-sm backdrop-blur-sm border border-white/10">
+                    Start Selling
                   </Link>
                 </div>
-
               </div>
             </div>
           </div>
-        </section>
+
+        </div>
       </main>
+
       <Footer />
     </div>
   );

@@ -24,7 +24,7 @@ export default function SellerEmbedPage() {
   }, [loading, user, router]);
 
   const phone = profile?.phone || '';
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sellbuysafe.gsgbrands.com.gh';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sellbuysafe.gsgbrands.com';
   const badgeUrl = `${baseUrl}/badge/${encodeURIComponent(phone)}`;
   const buyUrl = `${baseUrl}/buyer/step-1?seller_phone=${encodeURIComponent(phone)}`;
 

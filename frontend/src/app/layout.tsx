@@ -7,9 +7,16 @@ import { OfflineIndicator } from '@/components/shared/OfflineIndicator';
 import { SimulationBanner } from '@/components/shared/SimulationBanner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+const siteUrl =
+  configuredAppUrl &&
+  /^https?:\/\//.test(configuredAppUrl) &&
+  !configuredAppUrl.includes('localhost')
+    ? configuredAppUrl
+    : 'https://sellbuysafe.gsgbrands.com';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://sellbuysafe.gsgbrands.com'),
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'Sell-Safe Buy-Safe | Secure Every Transaction',
     template: '%s | Sell-Safe Buy-Safe',
@@ -39,10 +46,10 @@ export const metadata: Metadata = {
     locale: 'en_GH',
     images: [
       {
-        url: '/opengraph-image',
-        width: 1200,
-        height: 630,
-        alt: 'Sell-Safe Buy-Safe - GSG Brands',
+        url: '/images/social-share-gsg.png',
+        width: 1024,
+        height: 683,
+        alt: 'GSG Brands',
       },
     ],
   },
@@ -51,7 +58,7 @@ export const metadata: Metadata = {
     title: 'Sell-Safe Buy-Safe | Secure Every Transaction',
     description:
       'Secure online buying and selling in Ghana with licensed PSP protection and delivery-verified payout flow.',
-    images: ['/twitter-image'],
+    images: ['/images/social-share-gsg.png'],
   },
   icons: {
     icon: [{ url: '/icon', type: 'image/png' }],

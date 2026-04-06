@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import { Star, PackageSearch, ShieldCheck } from 'lucide-react';
+import { Star, PackageSearch, ShieldCheck, Quote, Sparkles, TrendingUp, MessageSquareHeart } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 interface Review {
   id: string;
@@ -48,64 +49,75 @@ export default function ReviewsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0;
+
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-100">
       <Header />
 
       <main className="flex-1">
-        {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <Image 
-              src="/images/happy-customer.png" 
-              alt="Happy Customer" 
-              fill 
-              className="object-cover opacity-30 mix-blend-overlay"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent"></div>
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-500/20 blur-[120px]" />
-          </div>
+        <section className="relative overflow-hidden bg-white border-b border-slate-200">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(109,40,217,0.08),transparent_35%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.08),transparent_40%)]" />
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14 relative z-10">
+            <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 lg:gap-8 items-start">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary mb-4">
+                  <Sparkles className="h-4 w-4" />
+                  Verified Community Feedback
+                </div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 mb-4">
+                  Reviews That Build Trust
+                </h1>
+                <p className="max-w-2xl text-sm sm:text-base text-slate-600 leading-relaxed">
+                  Every review is attached to a completed secure transaction. No fake testimonials, no paid hype, just real buyer and seller experiences.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-2.5">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verified Orders Only
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                    <MessageSquareHeart className="h-3.5 w-3.5" /> Community Driven
+                  </div>
+                </div>
+              </div>
 
-          <div className="relative mx-auto max-w-4xl px-4 text-center z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-amber-200 backdrop-blur-md border border-white/10 mb-6"
-            >
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span>100% Verified Transactions</span>
-            </motion.div>
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
-            >
-              Real <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-primary">Reviews</span>
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300"
-            >
-              Every review here is tied to a real, completed secure transaction. No fake reviews, just genuine experiences from buyers and sellers across Ghana.
-            </motion.p>
+              <div className="rounded-3xl border border-slate-200 bg-white/90 backdrop-blur p-5 sm:p-6 shadow-sm">
+                <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">Snapshot</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs text-slate-500">Total reviews</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">{reviews.length}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs text-slate-500">Avg rating</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">{averageRating.toFixed(1)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                    <TrendingUp className="h-4 w-4" /> Reputation Matters
+                  </div>
+                  <p className="mt-1 text-xs text-amber-800/90">
+                    Sellers with consistent high ratings build stronger conversion and buyer confidence over time.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Floating Reviews Grid */}
-        <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 -mt-20 sm:-mt-32 pb-12 sm:pb-24">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 pb-12 sm:pb-24">
           {loading && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white p-5 sm:p-8 shadow-xl border border-slate-100">
+                <div key={i} className="rounded-3xl bg-white p-5 sm:p-7 shadow-sm border border-slate-200">
                   <Skeleton className="h-4 w-24 mb-4" />
                   <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-4/5 mb-2" />
                   <Skeleton className="h-4 w-3/4 mb-6" />
-                  <div className="pt-4 border-t border-slate-100 flex justify-between">
+                  <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                     <Skeleton className="h-3 w-20" />
                     <Skeleton className="h-3 w-16" />
                   </div>
@@ -115,50 +127,55 @@ export default function ReviewsPage() {
           )}
 
           {!loading && reviews.length === 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl border border-slate-100 p-8 sm:p-16 text-center max-w-3xl mx-auto"
+              className="rounded-3xl bg-white shadow-sm border border-slate-200 p-8 sm:p-14 text-center max-w-3xl mx-auto"
             >
-              <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                <PackageSearch className="h-10 w-10 text-slate-300" />
+              <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                <PackageSearch className="h-10 w-10 text-primary/50" />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No reviews yet</h3>
               <p className="text-slate-500 max-w-md mx-auto">
                 Reviews will appear here once buyers complete transactions and share their experience.
               </p>
+              <Link href="/buyer/step-1" className="inline-block mt-6">
+                <Button className="rounded-full px-6">Start a Transaction</Button>
+              </Link>
             </motion.div>
           )}
 
           {!loading && reviews.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {reviews.map((review, index) => (
                 <motion.div
                   key={review.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="group rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-6 lg:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                  transition={{ delay: index * 0.06 }}
+                  className="group rounded-3xl bg-white shadow-sm border border-slate-200 p-5 sm:p-6 hover:shadow-xl hover:shadow-slate-200/70 hover:-translate-y-0.5 transition-all duration-300 flex flex-col"
                 >
-                  <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <StarRating rating={review.rating} />
-                    <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <StarRating rating={review.rating} />
+                      <p className="mt-2 text-xs text-slate-500">{review.product_name}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
                       <ShieldCheck className="h-3 w-3" />
                       Verified
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 mb-2 sm:mb-3 text-base sm:text-lg leading-tight">
-                    {review.product_name}
-                  </h3>
-
-                  <p className="text-slate-600 leading-relaxed flex-1 italic">
+                  <div className="mb-3 text-primary/70">
+                    <Quote className="h-5 w-5" />
+                  </div>
+                  <p className="text-slate-700 leading-relaxed flex-1 italic text-sm sm:text-base">
                     &ldquo;{review.comment}&rdquo;
                   </p>
 
-                  <div className="mt-6 sm:mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs">
                         {review.seller_name?.charAt(0).toUpperCase() || 'S'}
                       </div>
                       <div className="flex flex-col">

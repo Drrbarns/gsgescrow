@@ -145,7 +145,6 @@ export default function HubPage() {
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-0 right-[20%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-[100px]" />
             <div className="absolute bottom-0 left-[10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[100px]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px]" />
           </div>
           
           <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">

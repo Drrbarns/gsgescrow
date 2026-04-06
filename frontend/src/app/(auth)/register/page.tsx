@@ -4,8 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,8 +68,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-      <Header />
-
       <main className="flex flex-1 items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px]" />
@@ -241,8 +237,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

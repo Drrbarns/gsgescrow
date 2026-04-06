@@ -15,8 +15,8 @@ export const env = {
   SUPABASE_JWT_SECRET: required('SUPABASE_JWT_SECRET'),
   PAYSTACK_SECRET_KEY: required('PAYSTACK_SECRET_KEY'),
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  APP_URL: process.env.APP_URL || 'http://localhost:3000',
-  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:3000').split(','),
+  APP_URL: process.env.APP_URL || 'https://sellbuysafe.gsgbrands.com',
+  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'https://sellbuysafe.gsgbrands.com').split(','),
   /** When true, payment/payout endpoints allow simulation (no real Paystack). */
   SIMULATION_MODE: process.env.SIMULATION_MODE === 'true',
 } as const;
