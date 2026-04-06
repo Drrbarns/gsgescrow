@@ -280,13 +280,6 @@ export default function HomePage() {
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-4 sm:gap-12 md:gap-20 items-center justify-items-center">
               <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#092E20] group-hover:border-[#092E20] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <span className="font-extrabold text-base sm:text-xl text-slate-400 group-hover:text-slate-900 transition-colors duration-300 tracking-tight">Paystack</span>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#FFCC00] group-hover:border-[#FFCC00] transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:-translate-y-1">
                   <Smartphone className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 group-hover:text-[#000000] transition-colors duration-300" />
                 </div>
@@ -308,7 +301,7 @@ export default function HomePage() {
               </div>
             </div>
             <p className="text-center text-xs text-slate-500 mt-6">
-              Paystack, Hubtel, Moolre, Flutterwave (MTN MoMo, Telecel Cash, AT Money, ATM Cards)
+              Moolre, Flutterwave (MTN MoMo, Telecel Cash, AT Money, ATM Cards)
             </p>
           </div>
         </section>
