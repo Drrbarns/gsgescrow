@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import { env } from '../config/env';
 import { supabaseAdmin, auditLog } from './supabase';
 import * as paystack from './paystack';
+import * as moolre from './moolre';
 
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) as any;
 
@@ -194,15 +195,45 @@ export function startNotificationWorker() {
     }
 
     for (const msg of messages) {
+      const ref = `sms_${transaction_id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      let channel: 'LOG' | 'SMS' = 'LOG';
+      let status = 'SENT';
+      let metadata: Record<string, unknown> = { type, transaction_id };
+
+      try {
+        if (msg.phone && moolre.isMoolreSmsConfigured()) {
+          const smsRes = await moolre.sendSmsPost({
+            messages: [
+              {
+                recipient: msg.phone,
+                message: `${msg.title}: ${msg.body}`.slice(0, 450),
+                ref,
+              },
+            ],
+          });
+
+          const smsSuccess = smsRes?.status === 1 || smsRes?.status === '1' || smsRes?.code === 'SMS01';
+          channel = 'SMS';
+          status = smsSuccess ? 'SENT' : 'FAILED';
+          metadata = { ...metadata, sms_ref: ref, sms_code: smsRes?.code, sms_message: smsRes?.message, sms_raw: smsRes };
+        } else {
+          metadata = { ...metadata, sms_skipped: true, reason: 'Moolre SMS not configured or phone missing' };
+        }
+      } catch (smsErr: any) {
+        channel = 'SMS';
+        status = 'FAILED';
+        metadata = { ...metadata, sms_ref: ref, sms_error: smsErr?.message || 'Moolre SMS send failed' };
+      }
+
       await supabaseAdmin.from('notifications').insert({
         user_id: msg.user_id,
         phone: msg.phone,
-        channel: 'LOG',
+        channel,
         title: msg.title,
         body: msg.body,
-        status: 'SENT',
-        sent_at: new Date().toISOString(),
-        metadata: { type, transaction_id },
+        status,
+        sent_at: status === 'SENT' ? new Date().toISOString() : null,
+        metadata,
       });
     }
   }, { connection, concurrency: 5 });

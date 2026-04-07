@@ -13,6 +13,10 @@ export function isMoolreConfigured() {
   return !!(env.MOOLRE_API_USER && env.MOOLRE_API_PUBKEY && env.MOOLRE_ACCOUNT_NUMBER);
 }
 
+export function isMoolreSmsConfigured() {
+  return !!(env.MOOLRE_API_VASKEY && env.MOOLRE_SMS_SENDER_ID);
+}
+
 export async function generatePaymentLink(params: {
   amount: number;
   externalref: string;
@@ -44,6 +48,38 @@ export async function generatePaymentLink(params: {
     },
   });
 
+  return data;
+}
+
+export async function sendSmsPost(params: {
+  senderid?: string;
+  messages: Array<{ recipient: string; message: string; ref?: string }>;
+}) {
+  if (!isMoolreSmsConfigured()) {
+    throw new Error('Moolre SMS credentials are not configured');
+  }
+  if (!params.messages?.length) {
+    throw new Error('At least one SMS message is required');
+  }
+
+  const payload = {
+    type: 1,
+    senderid: params.senderid || env.MOOLRE_SMS_SENDER_ID,
+    messages: params.messages.map((m) => ({
+      recipient: m.recipient,
+      message: m.message,
+      ref: m.ref || undefined,
+    })),
+  };
+
+  const headers: Record<string, string> = {
+    'X-API-VASKEY': env.MOOLRE_API_VASKEY,
+  };
+  if (env.MOOLRE_SMS_SCENARIO_KEY) {
+    headers['X-Scenario-Key'] = env.MOOLRE_SMS_SCENARIO_KEY;
+  }
+
+  const { data } = await client.post('/open/sms/send', payload, { headers });
   return data;
 }
 
