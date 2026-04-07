@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import * as paystack from '../services/paystack';
+import * as moolre from '../services/moolre';
 import { generateCode, hashCode } from '../utils/codes';
 import { notificationQueue } from '../services/queue';
 import { env } from '../config/env';
@@ -9,6 +10,31 @@ import { scoreFraudRisk } from '../services/fraud';
 import { createPaymentReceipt } from '../services/receipts';
 
 const router = Router();
+
+function isMoolreReference(reference: string) {
+  return reference.startsWith('MOO_');
+}
+
+function parseMoolreWebhook(body: any): { reference?: string; success: boolean } {
+  const reference =
+    body?.externalref ||
+    body?.reference ||
+    body?.data?.reference ||
+    body?.data?.externalref ||
+    body?.transaction_reference ||
+    body?.txnref;
+
+  const success =
+    body?.status === 1 ||
+    body?.status === '1' ||
+    body?.status === 'success' ||
+    body?.data?.status === 1 ||
+    body?.data?.status === '1' ||
+    body?.data?.status === 'success' ||
+    String(body?.message || '').toLowerCase().includes('success');
+
+  return { reference, success };
+}
 
 // POST /api/payments/initiate - Initiate Paystack payment for a transaction
 router.post('/initiate', authenticateToken, async (req: Request, res: Response): Promise<void> => {
@@ -37,28 +63,57 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
       return;
     }
 
-    const reference = `SBS_${txn.short_id}_${Date.now()}`;
-    const callbackUrl = `${env.APP_URL}/buyer/step-1?ref=${reference}&txn=${txn.id}`;
+    const preferMoolre = env.PAYMENT_PROVIDER === 'moolre' && moolre.isMoolreConfigured();
+    const reference = `${preferMoolre ? 'MOO' : 'SBS'}_${txn.short_id}_${Date.now()}`;
+    const redirectUrl = `${env.APP_URL}/buyer/step-1?ref=${reference}&txn=${txn.id}&provider=${preferMoolre ? 'moolre' : 'paystack'}`;
+    const callbackUrl = `${env.APP_URL}/api/payments/moolre/webhook`;
 
-    const result = await paystack.initializePayment({
-      amount: txn.grand_total,
-      email: `${req.user!.phone}@sellbuysafe.gsgbrands.com`,
-      reference,
-      callback_url: callbackUrl,
-      metadata: {
-        transaction_id: txn.id,
-        short_id: txn.short_id,
-        buyer_id: userId,
-        custom_fields: [
-          { display_name: 'Transaction ID', variable_name: 'transaction_id', value: txn.short_id },
-        ],
-      },
-    });
+    let authorizationUrl = '';
+    let accessCode: string | null = null;
+    let provider: 'moolre' | 'paystack' = 'paystack';
+
+    if (preferMoolre) {
+      const result = await moolre.generatePaymentLink({
+        amount: txn.grand_total,
+        externalref: reference,
+        callback: callbackUrl,
+        redirect: redirectUrl,
+        metadata: {
+          transaction_id: txn.id,
+          short_id: txn.short_id,
+          buyer_id: userId,
+        },
+      });
+      authorizationUrl = result?.data?.authorization_url;
+      provider = 'moolre';
+    } else {
+      const result = await paystack.initializePayment({
+        amount: txn.grand_total,
+        email: `${req.user!.phone}@sellbuysafe.gsgbrands.com`,
+        reference,
+        callback_url: redirectUrl,
+        metadata: {
+          transaction_id: txn.id,
+          short_id: txn.short_id,
+          buyer_id: userId,
+          custom_fields: [
+            { display_name: 'Transaction ID', variable_name: 'transaction_id', value: txn.short_id },
+          ],
+        },
+      });
+      authorizationUrl = result.data.authorization_url;
+      accessCode = result.data.access_code;
+      provider = 'paystack';
+    }
+
+    if (!authorizationUrl) {
+      throw new Error('Payment provider did not return authorization_url');
+    }
 
     await supabaseAdmin.from('transactions').update({
       paystack_reference: reference,
-      paystack_access_code: result.data.access_code,
-      paystack_authorization_url: result.data.authorization_url,
+      paystack_access_code: accessCode,
+      paystack_authorization_url: authorizationUrl,
     }).eq('id', txn.id);
 
     await auditLog({
@@ -72,9 +127,10 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
 
     res.json({
       data: {
-        authorization_url: result.data.authorization_url,
-        access_code: result.data.access_code,
+        authorization_url: authorizationUrl,
+        access_code: accessCode,
         reference,
+        provider,
       },
     });
   } catch (err: any) {
@@ -87,6 +143,26 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
 router.post('/verify', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const { reference } = req.body;
+    if (isMoolreReference(reference)) {
+      const { data: txn } = await supabaseAdmin
+        .from('transactions')
+        .select('id, status')
+        .eq('paystack_reference', reference)
+        .single();
+
+      if (!txn) {
+        res.status(404).json({ error: 'Transaction not found for reference' });
+        return;
+      }
+
+      if (txn.status === 'PAID') {
+        res.json({ data: { message: 'Payment verified', transaction_id: txn.id } });
+        return;
+      }
+
+      res.status(202).json({ data: { message: 'Payment pending confirmation', transaction_id: txn.id, pending: true } });
+      return;
+    }
 
     const result = await paystack.verifyPayment(reference);
 
@@ -112,6 +188,45 @@ router.post('/verify', authenticateToken, async (req: Request, res: Response): P
   } catch (err: any) {
     console.error('[PAYMENT_VERIFY]', err.message);
     res.status(500).json({ error: 'Failed to verify payment' });
+  }
+});
+
+router.post('/moolre/webhook', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { reference, success } = parseMoolreWebhook(req.body);
+    if (!reference) {
+      res.status(200).json({ message: 'Missing reference acknowledged' });
+      return;
+    }
+
+    const { data: txn } = await supabaseAdmin
+      .from('transactions')
+      .select('id, status')
+      .eq('paystack_reference', reference)
+      .single();
+
+    if (!txn) {
+      res.status(200).json({ message: 'Unknown reference acknowledged' });
+      return;
+    }
+
+    if (success && txn.status !== 'PAID') {
+      await processSuccessfulPayment(txn.id, reference);
+    }
+
+    await auditLog({
+      action: 'WEBHOOK_MOOLRE_PAYMENT',
+      entity: 'webhooks',
+      entity_id: txn.id,
+      reason: reference,
+      after_state: { success },
+      request_id: req.requestId,
+    });
+
+    res.status(200).json({ message: 'Webhook processed' });
+  } catch (err: any) {
+    console.error('[MOOLRE_WEBHOOK]', err.message);
+    res.status(200).json({ message: 'Webhook acknowledged with error' });
   }
 });
 

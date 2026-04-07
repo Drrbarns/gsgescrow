@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { payoutQueue } from '../services/queue';
 import { verifyCode } from '../utils/codes';
@@ -17,7 +17,7 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
     const { data: txn } = await supabaseAdmin
       .from('transactions').select('*').eq('id', transaction_id).single();
     if (!txn) { res.status(404).json({ error: 'Transaction not found' }); return; }
-    if (txn.buyer_id !== userId && req.user!.role !== 'admin') {
+    if (txn.buyer_id !== userId && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Not your transaction' }); return;
     }
 
@@ -118,7 +118,7 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       .from('transactions').select('*').eq('id', transaction_id).single();
     if (!txn) { res.status(404).json({ error: 'Transaction not found' }); return; }
 
-    if (txn.seller_id !== userId && req.user!.role !== 'admin') {
+    if (txn.seller_id !== userId && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Not your transaction' }); return;
     }
     if (txn.status !== 'DELIVERED_CONFIRMED') {
@@ -218,7 +218,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     const limit = (req.query.limit as string) || '20';
     let query = supabaseAdmin.from('payouts').select('*, transactions(short_id, buyer_name, seller_name)', { count: 'exact' });
 
-    if (req.user!.role !== 'admin') {
+    if (!isPrivilegedRole(req.user!.role)) {
       const { data: txns } = await supabaseAdmin.from('transactions')
         .select('id').or(`buyer_id.eq.${req.user!.id},seller_id.eq.${req.user!.id}`);
       const txnIds = txns?.map(t => t.id) || [];
@@ -244,7 +244,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 });
 
 // POST /api/payouts/:id/hold - Admin hold payout
-router.post('/:id/hold', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/hold', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { reason } = req.body;
     if (!reason) { res.status(400).json({ error: 'Reason is required' }); return; }
@@ -272,7 +272,7 @@ router.post('/:id/hold', authenticateToken, requireRole('admin'), async (req: Re
 });
 
 // POST /api/payouts/:id/release - Admin release held payout
-router.post('/:id/release', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/release', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { data: payout } = await supabaseAdmin
       .from('payouts').select('*').eq('id', req.params.id).single();
@@ -305,7 +305,7 @@ router.post('/:id/release', authenticateToken, requireRole('admin'), async (req:
 });
 
 // POST /api/payouts/:id/retry - Admin retry failed payout
-router.post('/:id/retry', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/retry', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { data: payout } = await supabaseAdmin
       .from('payouts').select('*').eq('id', req.params.id).single();

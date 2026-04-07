@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, isPrivilegedRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { CreateTransactionPayload, SellerDispatchPayload } from '../types';
 import { generateCode, hashCode } from '../utils/codes';
@@ -84,7 +84,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 
     let query = supabaseAdmin.from('transactions').select('*', { count: 'exact' });
 
-    if (role !== 'admin') {
+    if (!isPrivilegedRole(role)) {
       query = query.or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
     }
     if (status) query = query.eq('status', status as string);
@@ -151,7 +151,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
 
     const userId = req.user!.id;
     const role = req.user!.role;
-    if (role !== 'admin' && txn.buyer_id !== userId && txn.seller_id !== userId) {
+    if (!isPrivilegedRole(role) && txn.buyer_id !== userId && txn.seller_id !== userId) {
       res.status(403).json({ error: 'Access denied' });
       return;
     }
@@ -179,7 +179,7 @@ router.post('/:id/dispatch', authenticateToken, async (req: Request, res: Respon
     if (txn.status !== 'PAID') { res.status(400).json({ error: 'Transaction must be in PAID status' }); return; }
 
     const sellerPhone = req.user!.phone;
-    if (!env.SIMULATION_MODE && txn.seller_phone !== sellerPhone && req.user!.role !== 'admin') {
+    if (!env.SIMULATION_MODE && txn.seller_phone !== sellerPhone && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Phone does not match seller on transaction' }); return;
     }
 
@@ -238,7 +238,7 @@ router.post('/:id/verify-delivery', authenticateToken, async (req: Request, res:
     const { data: txn } = await supabaseAdmin
       .from('transactions').select('*').eq('id', txnId).single();
     if (!txn) { res.status(404).json({ error: 'Not found' }); return; }
-    if (txn.buyer_id !== req.user!.id && req.user!.role !== 'admin') {
+    if (txn.buyer_id !== req.user!.id && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Access denied' }); return;
     }
 

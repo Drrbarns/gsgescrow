@@ -86,7 +86,7 @@ export default function SellerVerifyPage() {
     );
   }
 
-  if (existing?.status === 'PENDING') {
+  if (existing?.status === 'PENDING' || existing?.status === 'UNDER_REVIEW') {
     return (
       <>
         <Header />
@@ -98,7 +98,32 @@ export default function SellerVerifyPage() {
               <CardDescription className="text-amber-700 text-sm sm:text-base">Your verification is being reviewed. This usually takes 24-48 hours.</CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
-              <Badge className="bg-amber-100 text-amber-800">Submitted: {new Date(existing.created_at).toLocaleDateString()}</Badge>
+              <Badge className="bg-amber-100 text-amber-800">Status: {existing.status}</Badge>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (existing?.status === 'REJECTED' || existing?.status === 'REQUIRES_RESUBMISSION') {
+    return (
+      <>
+        <Header />
+        <main className="mx-auto max-w-lg px-4 py-8 sm:py-16">
+          <Card className="border-red-200 bg-red-50 text-center rounded-xl sm:rounded-2xl">
+            <CardHeader className="px-4 sm:px-6">
+              <Clock className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-red-600 mb-3 sm:mb-4" />
+              <CardTitle className="text-red-800 text-xl sm:text-2xl">
+                {existing.status === 'REQUIRES_RESUBMISSION' ? 'Resubmission Required' : 'Verification Rejected'}
+              </CardTitle>
+              <CardDescription className="text-red-700 text-sm sm:text-base">
+                {existing.rejection_reason || existing.notes || 'Please update your details and submit again.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <Button onClick={() => setExisting(null)} className="rounded-full w-full sm:w-auto">Submit Updated KYC</Button>
             </CardContent>
           </Card>
         </main>

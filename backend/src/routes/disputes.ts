@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { notificationQueue } from '../services/queue';
 
@@ -15,7 +15,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
       .from('transactions').select('*').eq('id', transaction_id).single();
     if (!txn) { res.status(404).json({ error: 'Transaction not found' }); return; }
 
-    if (txn.buyer_id !== req.user!.id && txn.seller_id !== req.user!.id && req.user!.role !== 'admin') {
+    if (txn.buyer_id !== req.user!.id && txn.seller_id !== req.user!.id && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Access denied' }); return;
     }
 
@@ -58,7 +58,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     let query = supabaseAdmin.from('disputes')
       .select('*, transactions(short_id, buyer_name, seller_name, product_name)', { count: 'exact' });
 
-    if (req.user!.role !== 'admin') {
+    if (!isPrivilegedRole(req.user!.role)) {
       query = query.eq('opened_by', req.user!.id);
     }
     if (status) query = query.eq('status', status as string);
@@ -88,7 +88,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response): Promi
       .single();
 
     if (error || !dispute) { res.status(404).json({ error: 'Dispute not found' }); return; }
-    if (dispute.opened_by !== req.user!.id && req.user!.role !== 'admin') {
+    if (dispute.opened_by !== req.user!.id && !isPrivilegedRole(req.user!.role)) {
       res.status(403).json({ error: 'Access denied' }); return;
     }
 
@@ -125,7 +125,7 @@ router.post('/:id/evidence', authenticateToken, async (req: Request, res: Respon
 });
 
 // POST /api/disputes/:id/resolve - Admin resolve dispute
-router.post('/:id/resolve', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/resolve', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { resolution, resolution_action, notes } = req.body;
     if (!resolution) { res.status(400).json({ error: 'Resolution is required' }); return; }

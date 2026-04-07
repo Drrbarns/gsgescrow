@@ -10,7 +10,7 @@ interface Profile {
   user_id: string;
   phone: string;
   full_name: string;
-  role: 'buyer' | 'seller' | 'admin';
+  role: 'buyer' | 'seller' | 'admin' | 'superadmin';
   ghana_card_name?: string;
 }
 
@@ -18,6 +18,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  baseProfile: Profile | null;
+  impersonation: any | null;
   loading: boolean;
   profileLoaded: boolean;
   signInWithOtp: (phone: string) => Promise<{ error: any }>;
@@ -26,6 +28,8 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string, full_name: string, role: 'buyer' | 'seller') => Promise<{ error: any; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  startImpersonation: (targetUserId: string, reason: string, expiresMinutes?: number) => Promise<{ error: any }>;
+  stopImpersonation: (reason?: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -34,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [baseProfile, setBaseProfile] = useState<Profile | null>(null);
+  const [impersonation, setImpersonation] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
@@ -88,16 +94,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const res = await api.getMe();
           setProfile(res.data);
+          setBaseProfile(res.data);
         } catch {
           setProfile(null);
+          setBaseProfile(null);
         }
         setProfileLoaded(true);
         return;
       }
       setProfile(data);
+      setBaseProfile(data);
+
+      if (data.role === 'superadmin') {
+        try {
+          const current = await api.getCurrentImpersonation();
+          if (current.data?.target_profile) {
+            setImpersonation(current.data);
+            setProfile(current.data.target_profile);
+          } else {
+            setImpersonation(null);
+          }
+        } catch {
+          setImpersonation(null);
+        }
+      } else {
+        setImpersonation(null);
+      }
       setProfileLoaded(true);
     } catch {
       setProfile(null);
+      setBaseProfile(null);
       setProfileLoaded(true);
     }
   }
@@ -149,14 +175,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setProfile(null);
+    setBaseProfile(null);
+    setImpersonation(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('sbs_impersonation_token');
+    }
   }
 
   async function refreshProfile() {
     await loadProfile();
   }
 
+  async function startImpersonation(targetUserId: string, reason: string, expiresMinutes = 30) {
+    try {
+      const res = await api.startImpersonation(targetUserId, reason, expiresMinutes);
+      if (typeof window !== 'undefined' && res.data?.session_token) {
+        localStorage.setItem('sbs_impersonation_token', res.data.session_token);
+      }
+      setImpersonation(res.data);
+      if (res.data?.target_profile) {
+        setProfile(res.data.target_profile);
+      }
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async function stopImpersonation(reason?: string) {
+    try {
+      await api.stopImpersonation(undefined, reason);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sbs_impersonation_token');
+      }
+      setImpersonation(null);
+      setProfile(baseProfile);
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, profileLoaded, signInWithOtp, verifyOtp, signInWithEmail, signUpWithEmail, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      baseProfile,
+      impersonation,
+      loading,
+      profileLoaded,
+      signInWithOtp,
+      verifyOtp,
+      signInWithEmail,
+      signUpWithEmail,
+      signOut,
+      refreshProfile,
+      startImpersonation,
+      stopImpersonation,
+    }}>
       {children}
     </AuthContext.Provider>
   );

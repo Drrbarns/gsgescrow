@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
 
   // Redirect to admin when auth + profile confirms admin role
   useEffect(() => {
-    if (!authLoading && profileLoaded && user && profile?.role === 'admin') {
+    if (!authLoading && profileLoaded && user && (profile?.role === 'admin' || profile?.role === 'superadmin')) {
       router.push('/admin');
     }
   }, [user, authLoading, profileLoaded, profile, router]);

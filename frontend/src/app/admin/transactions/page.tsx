@@ -27,8 +27,14 @@ export default function AdminTransactions() {
   const [page, setPage] = useState(1);
   const [flagDialog, setFlagDialog] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [savedViews, setSavedViews] = useState<any[]>([]);
+  const [savingView, setSavingView] = useState(false);
 
-  useEffect(() => { fetchData(); }, [page, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchData();
+    void loadSavedViews();
+  }, [page, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchData() {
     setLoading(true);
@@ -42,6 +48,15 @@ export default function AdminTransactions() {
     } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   }
 
+  async function loadSavedViews() {
+    try {
+      const res = await api.listSavedViews('transactions');
+      setSavedViews(res.data || []);
+    } catch {
+      // non-blocking
+    }
+  }
+
   async function handleFlag() {
     if (!flagDialog || !flagReason) return;
     try {
@@ -51,6 +66,39 @@ export default function AdminTransactions() {
       setFlagReason('');
       fetchData();
     } catch { toast.error('Failed to flag'); }
+  }
+
+  async function applyBulkAction(action: 'hold' | 'release') {
+    if (!selectedIds.length) {
+      toast.info('Select at least one transaction');
+      return;
+    }
+    try {
+      await api.bulkTransactions(action, selectedIds);
+      toast.success(`Bulk ${action} applied`);
+      setSelectedIds([]);
+      await fetchData();
+    } catch {
+      toast.error('Bulk action failed');
+    }
+  }
+
+  async function saveCurrentView() {
+    setSavingView(true);
+    try {
+      await api.createSavedView({
+        view_type: 'transactions',
+        name: `View ${new Date().toLocaleString()}`,
+        filters: { search, status: statusFilter },
+        sort: { by: 'created_at', direction: 'desc' },
+      });
+      toast.success('Saved current view');
+      await loadSavedViews();
+    } catch {
+      toast.error('Failed to save view');
+    } finally {
+      setSavingView(false);
+    }
   }
 
   const totalPages = Math.ceil(total / 20);
@@ -70,8 +118,40 @@ export default function AdminTransactions() {
               {Object.entries(TRANSACTION_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Button variant="outline" onClick={saveCurrentView} disabled={savingView} className="w-full sm:w-auto">
+            {savingView ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save View'}
+          </Button>
+          <Button variant="outline" onClick={() => void applyBulkAction('hold')} className="w-full sm:w-auto">
+            Bulk Hold
+          </Button>
+          <Button variant="outline" onClick={() => void applyBulkAction('release')} className="w-full sm:w-auto">
+            Bulk Release
+          </Button>
         </CardContent>
       </Card>
+
+      {savedViews.length > 0 && (
+        <Card>
+          <CardContent className="px-3 py-3 sm:px-6 sm:py-4">
+            <div className="flex flex-wrap gap-2">
+              {savedViews.slice(0, 8).map((view) => (
+                <Button
+                  key={view.id}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSearch(view.filters?.search || '');
+                    setStatusFilter(view.filters?.status || '');
+                    setPage(1);
+                  }}
+                >
+                  {view.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
         <Card>
@@ -79,6 +159,7 @@ export default function AdminTransactions() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead></TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Buyer</TableHead>
@@ -92,6 +173,16 @@ export default function AdminTransactions() {
             <TableBody>
               {transactions.map(txn => (
                 <TableRow key={txn.id}>
+                  <TableCell className="w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(txn.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds((prev) => [...prev, txn.id]);
+                        else setSelectedIds((prev) => prev.filter((id) => id !== txn.id));
+                      }}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{txn.short_id}</TableCell>
                   <TableCell className="max-w-[180px] truncate">{txn.product_name}</TableCell>
                   <TableCell>{txn.buyer_name}</TableCell>

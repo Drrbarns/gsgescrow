@@ -37,17 +37,18 @@ export default function CalculatorPage() {
     <div className="flex min-h-screen flex-col bg-white selection:bg-primary/30">
       <Header />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight mb-4">
-            Transparent pricing.
-            <span className="block text-slate-400 mt-1">Zero surprises.</span>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <section className="mx-auto mb-8 max-w-5xl rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-5 sm:mb-10 sm:px-7 sm:py-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <Shield className="h-3.5 w-3.5" /> Fee Calculator
+          </div>
+          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+            Transparent pricing. Zero surprises.
           </h1>
-          <p className="text-base sm:text-lg text-slate-500 font-medium">
-            Calculate exactly what you pay and what you receive. <br className="hidden sm:block" />
-            Industry-leading rates to keep your money perfectly safe.
+          <p className="mt-1.5 max-w-2xl text-sm text-slate-600 sm:text-base">
+            Quickly see what buyers pay and what sellers receive before creating a protected transaction.
           </p>
-        </div>
+        </section>
 
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-start max-w-5xl mx-auto">
           

@@ -1,4 +1,4 @@
-export type UserRole = 'buyer' | 'seller' | 'admin';
+export type UserRole = 'buyer' | 'seller' | 'admin' | 'superadmin';
 export type ProductType = 'food' | 'non_food';
 export type SourcePlatform = 'facebook' | 'instagram' | 'website' | 'whatsapp' | 'tiktok' | 'x' | 'other';
 
@@ -17,6 +17,9 @@ export interface AuthUser {
   id: string;
   phone: string;
   role: UserRole;
+  impersonator_id?: string;
+  is_impersonation?: boolean;
+  impersonation_session_id?: string;
 }
 
 export interface CreateTransactionPayload {

@@ -33,18 +33,20 @@ export default function FraudMonitorPage() {
   const [transactions, setTransactions] = useState<FlaggedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && (!user || profile?.role !== 'admin')) router.push('/login');
-  }, [authLoading, user, profile, router]);
+  const isPrivileged = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   useEffect(() => {
-    if (user && profile?.role === 'admin') {
+    if (!authLoading && (!user || !isPrivileged)) router.push('/login');
+  }, [authLoading, user, profile, router, isPrivileged]);
+
+  useEffect(() => {
+    if (user && isPrivileged) {
       api.getAdminTransactions({ status: 'HOLD' })
-        .then(res => setTransactions(res.data?.transactions || []))
+        .then(res => setTransactions(res.data || []))
         .catch(() => toast.error('Failed to load flagged transactions'))
         .finally(() => setLoading(false));
     }
-  }, [user, profile]);
+  }, [user, profile, isPrivileged]);
 
   function getScoreColor(score: number) {
     if (score >= 75) return 'bg-red-100 text-red-800 border-red-200';

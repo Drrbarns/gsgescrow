@@ -58,6 +58,7 @@ function BuyerStep1() {
   const [submitting, setSubmitting] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [txnShortId, setTxnShortId] = useState('');
+  const [activeProvider, setActiveProvider] = useState('Paystack');
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
@@ -73,6 +74,10 @@ function BuyerStep1() {
   useEffect(() => {
     const ref = searchParams.get('ref');
     const txn = searchParams.get('txn');
+    const provider = searchParams.get('provider');
+    if (provider) {
+      setActiveProvider(provider.toLowerCase() === 'moolre' ? 'Moolre' : 'Paystack');
+    }
     if (ref && txn) {
       verifyPaymentCallback(ref, txn);
     }
@@ -80,11 +85,19 @@ function BuyerStep1() {
 
   async function verifyPaymentCallback(ref: string, txnId: string) {
     try {
-      await api.verifyPayment(ref);
+      const verification = await api.verifyPayment(ref);
       const { data: txn } = await api.getTransaction(txnId);
-      setTxnShortId(txn.short_id);
-      setPaymentSuccess(true);
-      toast.success('Payment confirmed!');
+      if (verification?.data?.pending && txn.status !== 'PAID') {
+        toast.info('Payment submitted. Awaiting provider confirmation...');
+        return;
+      }
+      if (txn.status === 'PAID') {
+        setTxnShortId(txn.short_id);
+        setPaymentSuccess(true);
+        toast.success('Payment confirmed!');
+        return;
+      }
+      toast.info('Payment is being processed. Please refresh in a moment.');
     } catch {
       toast.error('Payment verification failed. Please contact support.');
     }
@@ -329,6 +342,9 @@ function BuyerStep1() {
         toast.success('Simulated payment confirmed!');
       } else {
         const { data: payment } = await api.initiatePayment(txn.id);
+        if (payment?.provider) {
+          setActiveProvider(payment.provider.toLowerCase() === 'moolre' ? 'Moolre' : 'Paystack');
+        }
         window.location.href = payment.authorization_url;
       }
     } catch (err: unknown) {
@@ -626,7 +642,7 @@ function BuyerStep1() {
                   {submitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Securing Funds...</> : `Pay GHS ${total.grand.toFixed(2)}`}
                 </Button>
                 <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
-                  <Lock className="h-3 w-3" /> Secured by Paystack
+                  <Lock className="h-3 w-3" /> Secured by {activeProvider}
                 </div>
               </div>
             </div>

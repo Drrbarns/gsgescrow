@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   Shield, Menu, LogOut, User, LayoutDashboard, Calculator, BarChart3,
-  Package, MapPin, Star, ShoppingBag, Store, ChevronRight, X,
+  Package, MapPin, Star, ShoppingBag, Store, ChevronRight, X, AlertTriangle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
@@ -21,12 +21,36 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, baseProfile, impersonation, stopImpersonation, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const isLoginPage = pathname === '/login';
+  const isPrivileged = profile?.role === 'admin' || profile?.role === 'superadmin';
+  const isSuperadmin = profile?.role === 'superadmin';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
+    <>
+      {impersonation && (
+        <div className="sticky top-0 z-[60] border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex items-center gap-2 font-semibold">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Impersonation active: {impersonation.target_profile?.full_name || impersonation.target_profile?.phone || 'target user'}
+              <span className="font-normal text-amber-800">
+                (started by {baseProfile?.full_name || 'superadmin'})
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 rounded-full border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200"
+              onClick={() => { void stopImpersonation('manual-stop'); }}
+            >
+              Return to Superadmin
+            </Button>
+          </div>
+        </div>
+      )}
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -52,15 +76,15 @@ export function Header() {
           <NotificationCenter />
           {user ? (
             <>
-              {profile?.role === 'admin' && (
+              {isPrivileged && (
                 <Link href="/admin">
                   <div className="hidden sm:flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm hover:bg-primary/20 transition-colors cursor-pointer">
                     <Shield className="h-3.5 w-3.5 text-primary" />
-                    <span className="font-bold text-primary">Super Admin</span>
+                    <span className="font-bold text-primary">{isSuperadmin ? 'Super Admin' : 'Admin'}</span>
                   </div>
                 </Link>
               )}
-              {profile?.role !== 'admin' && (profile?.role === 'seller') && (
+              {!isPrivileged && (profile?.role === 'seller') && (
                 <Link href="/seller/dashboard">
                   <Button variant="ghost" size="sm" className="gap-1.5 rounded-full">
                     <BarChart3 className="h-4 w-4" />
@@ -68,7 +92,7 @@ export function Header() {
                   </Button>
                 </Link>
               )}
-              {profile?.role !== 'admin' && (
+              {!isPrivileged && (
                 <div className="hidden sm:flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm">
                   <User className="h-3.5 w-3.5" />
                   <span className="font-medium">{profile?.full_name || profile?.phone || 'User'}</span>
@@ -119,9 +143,17 @@ export function Header() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-slate-900 truncate">{profile?.full_name || profile?.phone || 'User'}</p>
-                      <p className="text-xs text-slate-500 truncate">{profile?.role === 'admin' ? 'Super Admin' : profile?.role === 'seller' ? 'Verified Seller' : 'Buyer'}</p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {profile?.role === 'superadmin'
+                          ? 'Super Admin'
+                          : profile?.role === 'admin'
+                            ? 'Admin'
+                            : profile?.role === 'seller'
+                              ? 'Verified Seller'
+                              : 'Buyer'}
+                      </p>
                     </div>
-                    {profile?.role === 'admin' && (
+                    {isPrivileged && (
                       <span className="shrink-0 bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20">ADMIN</span>
                     )}
                   </div>
@@ -158,7 +190,7 @@ export function Header() {
                   <div className="px-3 pb-3">
                     <p className="px-2 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Actions</p>
                     <div className="flex flex-col gap-0.5">
-                      {profile?.role === 'admin' && (
+                      {isPrivileged && (
                         <Link href="/admin" onClick={() => setOpen(false)} className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 hover:bg-primary/5 hover:text-primary transition-all">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <LayoutDashboard className="h-4 w-4" />
@@ -230,6 +262,7 @@ export function Header() {
           </Sheet>
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }

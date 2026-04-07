@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
-import { Star, PackageSearch, ShieldCheck, Quote, Sparkles, TrendingUp, MessageSquareHeart } from 'lucide-react';
+import { Star, PackageSearch, ShieldCheck, Quote, Sparkles, MessageSquareHeart } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Review {
@@ -49,10 +49,6 @@ export default function ReviewsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const averageRating = reviews.length
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-    : 0;
-
   return (
     <div className="flex min-h-screen flex-col bg-slate-100">
       <Header />
@@ -61,8 +57,7 @@ export default function ReviewsPage() {
         <section className="relative overflow-hidden bg-white border-b border-slate-200">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(109,40,217,0.08),transparent_35%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.08),transparent_40%)]" />
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14 relative z-10">
-            <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 lg:gap-8 items-start">
-              <div>
+            <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary mb-4">
                   <Sparkles className="h-4 w-4" />
                   Verified Community Feedback
@@ -81,29 +76,6 @@ export default function ReviewsPage() {
                     <MessageSquareHeart className="h-3.5 w-3.5" /> Community Driven
                   </div>
                 </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-white/90 backdrop-blur p-5 sm:p-6 shadow-sm">
-                <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">Snapshot</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs text-slate-500">Total reviews</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">{reviews.length}</p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs text-slate-500">Avg rating</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">{averageRating.toFixed(1)}</p>
-                  </div>
-                </div>
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                  <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
-                    <TrendingUp className="h-4 w-4" /> Reputation Matters
-                  </div>
-                  <p className="mt-1 text-xs text-amber-800/90">
-                    Sellers with consistent high ratings build stronger conversion and buyer confidence over time.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </section>

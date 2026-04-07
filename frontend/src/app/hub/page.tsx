@@ -140,128 +140,125 @@ export default function HubPage() {
       <Header />
       
       <main className="flex-1">
-        {/* Premium Header Section */}
-        <section className="bg-white pt-10 pb-20 sm:pt-16 sm:pb-32 relative overflow-hidden border-b border-slate-200">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 right-[20%] w-[30%] h-[30%] rounded-full bg-primary/5 blur-[100px]" />
-            <div className="absolute bottom-0 left-[10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[100px]" />
-          </div>
-          
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div>
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600 border border-slate-200 mb-4 shadow-sm"
-                >
-                  <LayoutDashboard className="h-4 w-4 text-primary" />
-                  <span>Control Center</span>
-                </motion.div>
-                <motion.h1 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl text-slate-900"
-                >
-                  {roleHeading}
-                </motion.h1>
-                <motion.p 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-2 text-slate-600 max-w-xl font-medium"
-                >
-                  {roleDescription}
-                </motion.p>
-              </div>
-              
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center gap-4 bg-white shadow-xl shadow-slate-200/50 border border-slate-100 rounded-xl p-4 sm:rounded-2xl sm:p-5"
-              >
+        <section className="border-b border-slate-200 bg-white">
+          <div className="mx-auto max-w-7xl px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-10">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-3xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm sm:p-7"
+            >
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Transactions</p>
-                  <p className="text-2xl sm:text-3xl font-black text-slate-900">{total}</p>
-                </div>
-                <div className="w-px h-12 bg-slate-100 mx-2"></div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active</p>
-                  <p className="text-2xl sm:text-3xl font-black text-primary">
-                    {activeCount}
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    <LayoutDashboard className="h-3.5 w-3.5" />
+                    Command Workspace
+                  </div>
+                  <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                    {roleHeading}
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
+                    {roleDescription}
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {role === 'seller' && (
+                      <Button variant="outline" className="rounded-full" onClick={() => router.push('/seller/verify')}>
+                        Complete Seller KYC
+                      </Button>
+                    )}
+                    {role === 'buyer' && (
+                      <Button variant="outline" className="rounded-full" onClick={() => router.push('/buyer/verify')}>
+                        Complete Buyer KYC
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </motion.div>
-            </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:min-w-[320px]">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">{total}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Active</p>
+                    <p className="mt-1 text-2xl font-black text-primary">{activeCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      placeholder="Search by transaction ID, phone, or product name"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                      className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-9 focus-visible:bg-white focus-visible:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex">
+                    <Select value={statusFilter || 'all'} onValueChange={v => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
+                      <SelectTrigger className="h-11 w-full rounded-xl border-slate-200 sm:w-[190px]">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4 text-slate-400" />
+                          <SelectValue placeholder="All Statuses" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        {Object.entries(TRANSACTION_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={platformFilter || 'all'} onValueChange={v => { setPlatformFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
+                      <SelectTrigger className="h-11 w-full rounded-xl border-slate-200 sm:w-[170px]">
+                        <SelectValue placeholder="All Platforms" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Platforms</SelectItem>
+                        {SOURCE_PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button onClick={handleSearch} className="h-11 rounded-xl px-5 font-semibold">
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Main Content Area */}
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 relative z-20 -mt-12 sm:-mt-20 pb-12 sm:pb-24">
-          
-          {/* Filters Bar */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-slate-100 p-3 sm:p-4 mb-6 sm:mb-8 flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between"
-          >
-            <div className="flex-1 w-full relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-              <Input 
-                placeholder="Search by ID, phone, or product..." 
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                className="w-full pl-10 h-12 rounded-xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-              />
-            </div>
-            
-            <div className="flex w-full md:w-auto gap-3">
-              <Select value={statusFilter || 'all'} onValueChange={v => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 w-full md:w-[180px]">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-slate-400" />
-                    <SelectValue placeholder="All Statuses" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {Object.entries(TRANSACTION_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              
-              <Select value={platformFilter || 'all'} onValueChange={v => { setPlatformFilter(!v || v === 'all' ? '' : v); setPage(1); }}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-200 w-full md:w-[160px]">
-                  <SelectValue placeholder="All Platforms" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Platforms</SelectItem>
-                  {SOURCE_PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </motion.div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 mb-6 sm:mb-8">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <section className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pb-24 sm:pt-8">
+          <div className="mb-6 grid gap-3 sm:mb-8 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Need your action</p>
-              <p className="mt-2 text-2xl font-black text-amber-600">{actionRequired.length}</p>
+              <div className="mt-2 flex items-end justify-between">
+                <p className="text-2xl font-black text-amber-600">{actionRequired.length}</p>
+                <Clock className="h-5 w-5 text-amber-500/80" />
+              </div>
               <p className="text-xs text-slate-500 mt-1">Transactions waiting on next step</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Page volume</p>
-              <p className="mt-2 text-2xl font-black text-slate-900">GHS {pageVolume.toFixed(2)}</p>
-              <p className="text-xs text-slate-500 mt-1">Total amount in this view</p>
+              <div className="mt-2 flex items-end justify-between">
+                <p className="text-2xl font-black text-slate-900">GHS {pageVolume.toFixed(2)}</p>
+                <Banknote className="h-5 w-5 text-slate-400" />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Total amount in this filtered view</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Completed</p>
-              <p className="mt-2 text-2xl font-black text-emerald-600">{completedCount}</p>
+              <div className="mt-2 flex items-end justify-between">
+                <p className="text-2xl font-black text-emerald-600">{completedCount}</p>
+                <CheckCircle className="h-5 w-5 text-emerald-500/80" />
+              </div>
               <p className="text-xs text-slate-500 mt-1">Successfully finished transactions</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Quick links</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {role !== 'seller' && (

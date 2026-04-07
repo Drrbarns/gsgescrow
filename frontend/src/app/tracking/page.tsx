@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -61,8 +61,8 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = useCallback(async () => {
-    const trimmed = query.trim();
+  const runSearch = useCallback(async (rawQuery: string) => {
+    const trimmed = rawQuery.trim();
     if (!trimmed) {
       toast.error('Enter a Transaction ID (SBS-XXXXXXXX) or phone number');
       return;
@@ -82,80 +82,86 @@ export default function TrackingPage() {
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, []);
+
+  const handleSearch = useCallback(async () => {
+    await runSearch(query);
+  }, [query, runSearch]);
+
+  useEffect(() => {
+    const prefillQuery = new URLSearchParams(window.location.search).get('q')?.trim() || '';
+    if (!prefillQuery) return;
+    setQuery(prefillQuery);
+    runSearch(prefillQuery);
+  }, [runSearch]);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <Header />
 
       <main className="flex-1">
-        {/* Premium Hero Section */}
-        <section className="relative overflow-hidden bg-slate-950 pt-16 pb-32 sm:pt-24 sm:pb-48 text-white">
-          {/* Abstract Background Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 left-[20%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]" />
-            <div className="absolute bottom-0 right-[10%] w-[30%] h-[30%] rounded-full bg-blue-500/20 blur-[120px]" />
-          </div>
-
-          <div className="relative mx-auto max-w-4xl px-4 text-center z-10">
-            <motion.div 
+        <section className="relative overflow-hidden border-b border-slate-200 bg-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(109,40,217,0.08),transparent_36%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.08),transparent_38%)]" />
+          <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-blue-200 backdrop-blur-md border border-white/10 mb-6"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary"
             >
               <MapPin className="h-4 w-4" />
               <span>Real-Time Order Tracking</span>
             </motion.div>
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-2xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl mb-4 sm:mb-6"
+              transition={{ delay: 0.08 }}
+              className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
             >
-              Track Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Transaction</span>
+              Track Your Transaction Status
             </motion.h1>
-            <motion.p 
+
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto max-w-2xl text-base sm:text-lg text-slate-300 mb-8 sm:mb-10"
+              transition={{ delay: 0.14 }}
+              className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base"
             >
-              Enter your secure Transaction ID or phone number to see the live status of your order.
+              Enter your secure Transaction ID or phone number to instantly check the latest delivery and payout progress.
             </motion.p>
 
             <motion.form
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSearch();
               }}
-              className="mx-auto max-w-2xl flex flex-col sm:flex-row gap-3 p-2 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/20 shadow-2xl"
+              className="mt-6 flex max-w-3xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row"
             >
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" />
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <Input
                   placeholder="e.g. SBS-12345678 or 024XXXXXXX"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="h-14 pl-12 rounded-xl bg-transparent border-none text-white placeholder:text-white/50 text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-12 rounded-xl border-none bg-slate-50 pl-12 text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20"
                   autoFocus
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="h-14 w-full sm:w-auto px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 transition-all" 
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl px-6 text-sm font-bold shadow-lg shadow-primary/20 sm:w-auto"
                 disabled={loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Track Order'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Track Order'}
               </Button>
             </motion.form>
           </div>
         </section>
 
-        {/* Floating Results Section */}
-        <section className="relative z-20 mx-auto max-w-4xl px-4 -mt-16 sm:-mt-20 pb-12 sm:pb-24">
+        <section className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 sm:pb-24 sm:pt-8">
           <AnimatePresence mode="wait">
             {!loading && searched && results.length === 0 && (
               <motion.div 

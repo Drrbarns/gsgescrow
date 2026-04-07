@@ -1,9 +1,18 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, requireAdminRole, requireSuperadmin } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
+import { randomBytes } from 'crypto';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
-const adminAuth = [authenticateToken, requireRole('admin')];
+const adminAuth = [authenticateToken, requireAdminRole];
+const sensitiveAdminLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many sensitive admin actions. Please slow down.' },
+});
 
 // GET /api/admin/dashboard - KPI summary
 router.get('/dashboard', ...adminAuth, async (_req: Request, res: Response): Promise<void> => {
@@ -175,12 +184,21 @@ router.post('/transactions/:id/flag', ...adminAuth, async (req: Request, res: Re
 });
 
 // ---- SELLER VERIFICATIONS ----
-router.get('/verifications', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/verifications', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('seller_verifications')
+    const role = req.query.role as string | undefined;
+    const status = req.query.status as string | undefined;
+    const search = (req.query.search as string | undefined)?.trim();
+
+    let query = supabaseAdmin
+      .from('kyc_verifications')
       .select('*')
       .order('created_at', { ascending: false });
+    if (role && role !== 'all') query = query.eq('user_role', role);
+    if (status && status !== 'all') query = query.eq('status', status);
+    if (search) query = query.or(`full_name.ilike.%${search}%,id_number.ilike.%${search}%,phone.ilike.%${search}%`);
+
+    const { data, error } = await query;
 
     if (error) throw error;
     res.json({ data });
@@ -189,55 +207,60 @@ router.get('/verifications', authenticateToken, requireRole('admin'), async (req
   }
 });
 
-router.post('/verifications/:id/approve', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/verifications/:id/approve', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { data: verification, error: fetchError } = await supabaseAdmin
-      .from('seller_verifications')
+      .from('kyc_verifications')
       .select('*')
       .eq('id', req.params.id)
       .single();
 
     if (fetchError || !verification) { res.status(404).json({ error: 'Not found' }); return; }
 
-    await supabaseAdmin.from('seller_verifications').update({
+    await supabaseAdmin.from('kyc_verifications').update({
       status: 'APPROVED',
       reviewed_by: req.user!.id,
       reviewed_at: new Date().toISOString(),
+      rejection_reason: null,
+      notes: req.body?.notes || verification.notes || null,
     }).eq('id', req.params.id);
 
-    // Mark seller trust score as verified
-    await supabaseAdmin.from('seller_trust_scores').upsert({
-      seller_id: verification.seller_id,
-      verified_at: new Date().toISOString(),
-    }, { onConflict: 'seller_id' });
+    if (verification.user_role === 'seller') {
+      // Mark seller trust score as verified
+      await supabaseAdmin.from('seller_trust_scores').upsert({
+        seller_id: verification.user_id,
+        verified_at: new Date().toISOString(),
+      }, { onConflict: 'seller_id' });
+    }
 
     await auditLog({
-      user_id: req.user!.id,
-      action: 'VERIFY_SELLER_APPROVED',
-      entity: 'seller_verifications',
-      entity_id: req.params.id,
+      actor_id: req.user!.id,
+      action: 'KYC_APPROVED',
+      entity: 'kyc_verifications',
+      entity_id: req.params.id as string,
     });
 
-    res.json({ data: { status: 'APPROVED' } });
+    res.json({ data: { status: 'APPROVED', role: verification.user_role } });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to approve verification' });
   }
 });
 
-router.post('/verifications/:id/reject', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/verifications/:id/reject', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
-    await supabaseAdmin.from('seller_verifications').update({
+    await supabaseAdmin.from('kyc_verifications').update({
       status: 'REJECTED',
       reviewed_by: req.user!.id,
       reviewed_at: new Date().toISOString(),
       notes: req.body.reason || 'Rejected by admin',
+      rejection_reason: req.body.reason || 'Rejected by admin',
     }).eq('id', req.params.id);
 
     await auditLog({
-      user_id: req.user!.id,
-      action: 'VERIFY_SELLER_REJECTED',
-      entity: 'seller_verifications',
-      entity_id: req.params.id,
+      actor_id: req.user!.id,
+      action: 'KYC_REJECTED',
+      entity: 'kyc_verifications',
+      entity_id: req.params.id as string,
     });
 
     res.json({ data: { status: 'REJECTED' } });
@@ -246,8 +269,57 @@ router.post('/verifications/:id/reject', authenticateToken, requireRole('admin')
   }
 });
 
+router.post('/verifications/:id/status', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const nextStatus = req.body.status as 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REQUIRES_RESUBMISSION';
+    if (!nextStatus || !['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'REQUIRES_RESUBMISSION'].includes(nextStatus)) {
+      res.status(400).json({ error: 'Invalid status' });
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
+      status: nextStatus,
+      reviewed_by: req.user!.id,
+      reviewed_at: new Date().toISOString(),
+      notes: req.body.notes || null,
+      rejection_reason: ['REJECTED', 'REQUIRES_RESUBMISSION'].includes(nextStatus) ? (req.body.reason || null) : null,
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from('kyc_verifications')
+      .update(payload)
+      .eq('id', req.params.id)
+      .select('*')
+      .single();
+    if (error || !data) {
+      res.status(404).json({ error: 'Verification not found' });
+      return;
+    }
+
+    if (nextStatus === 'APPROVED' && data.user_role === 'seller') {
+      await supabaseAdmin.from('seller_trust_scores').upsert({
+        seller_id: data.user_id,
+        verified_at: new Date().toISOString(),
+      }, { onConflict: 'seller_id' });
+    }
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'KYC_STATUS_UPDATED',
+      entity: 'kyc_verifications',
+      entity_id: req.params.id as string,
+      after_state: { status: nextStatus, notes: req.body.notes || null },
+      reason: req.body.reason || null,
+    });
+
+    res.json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to update verification status' });
+  }
+});
+
 // ---- FRAUD OVERVIEW ----
-router.get('/fraud-overview', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/fraud-overview', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { data: flagged } = await supabaseAdmin
       .from('transactions')
@@ -277,8 +349,57 @@ router.get('/fraud-overview', authenticateToken, requireRole('admin'), async (re
   }
 });
 
+router.post('/fraud/:id/override-score', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const score = Number(req.body.score);
+    const note = (req.body.note as string | undefined) || '';
+    if (Number.isNaN(score) || score < 0 || score > 100) {
+      res.status(400).json({ error: 'score must be between 0 and 100' });
+      return;
+    }
+    const { error } = await supabaseAdmin
+      .from('transactions')
+      .update({ fraud_score: score, is_flagged: score >= 75 })
+      .eq('id', req.params.id);
+    if (error) throw error;
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'FRAUD_SCORE_OVERRIDDEN',
+      entity: 'transactions',
+      entity_id: req.params.id as string,
+      reason: note || 'manual override',
+      after_state: { fraud_score: score },
+      request_id: req.requestId,
+    });
+    res.json({ data: { id: req.params.id, fraud_score: score, is_flagged: score >= 75 } });
+  } catch {
+    res.status(500).json({ error: 'Failed to override fraud score' });
+  }
+});
+
+router.post('/fraud/:id/case-note', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const note = (req.body.note as string | undefined)?.trim();
+    if (!note) {
+      res.status(400).json({ error: 'note is required' });
+      return;
+    }
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'FRAUD_CASE_NOTE_ADDED',
+      entity: 'transactions',
+      entity_id: req.params.id as string,
+      reason: note,
+      request_id: req.requestId,
+    });
+    res.json({ data: { ok: true } });
+  } catch {
+    res.status(500).json({ error: 'Failed to add fraud note' });
+  }
+});
+
 // ---- CSV EXPORT ----
-router.get('/export/:type', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.get('/export/:type', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { type } = req.params;
     const { from, to } = req.query;
@@ -308,6 +429,681 @@ router.get('/export/:type', authenticateToken, requireRole('admin'), async (req:
     res.json({ data });
   } catch {
     res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// ---- USERS DIRECTORY ----
+router.get('/users', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = Number(req.query.page || 1);
+    const limit = Math.min(Number(req.query.limit || 25), 100);
+    const role = req.query.role as string | undefined;
+    const search = (req.query.search as string | undefined)?.trim();
+    const from = (page - 1) * limit;
+
+    let query = supabaseAdmin
+      .from('profiles')
+      .select('user_id, full_name, phone, role, created_at, updated_at', { count: 'exact' })
+      .order('updated_at', { ascending: false });
+
+    if (role && role !== 'all') query = query.eq('role', role);
+    if (search) {
+      query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query.range(from, from + limit - 1);
+    if (error) throw error;
+
+    res.json({ data: data || [], total: count || 0, page, limit });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to list users' });
+  }
+});
+
+router.get('/users/:id', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id as string;
+    const [profileRes, txRes, payoutRes, disputeRes, reviewRes, trustRes] = await Promise.all([
+      supabaseAdmin.from('profiles').select('*').eq('user_id', userId).single(),
+      supabaseAdmin.from('transactions').select('*').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
+      supabaseAdmin.from('payouts').select('*, transactions!inner(id, buyer_id, seller_id, short_id)').or(`transactions.buyer_id.eq.${userId},transactions.seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
+      supabaseAdmin.from('disputes').select('*').eq('opened_by', userId).order('created_at', { ascending: false }).limit(100),
+      supabaseAdmin.from('reviews').select('*').eq('buyer_id', userId).order('created_at', { ascending: false }).limit(100),
+      supabaseAdmin.from('seller_trust_scores').select('*').eq('seller_id', userId).single(),
+    ]);
+
+    if (profileRes.error || !profileRes.data) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const transactions = txRes.data || [];
+    const payouts = payoutRes.data || [];
+    const disputes = disputeRes.data || [];
+    const reviews = reviewRes.data || [];
+
+    const aggregates = {
+      total_transactions: transactions.length,
+      completed_transactions: transactions.filter((t: any) => t.status === 'COMPLETED').length,
+      active_transactions: transactions.filter((t: any) => !['COMPLETED', 'CANCELLED'].includes(t.status)).length,
+      total_volume_ghs: transactions.reduce((sum: number, t: any) => sum + Number(t.grand_total || 0), 0),
+      disputes_opened: disputes.length,
+      payouts_total: payouts.length,
+      reviews_total: reviews.length,
+    };
+
+    res.json({
+      data: {
+        profile: profileRes.data,
+        aggregates,
+        trust_score: trustRes.data || null,
+        transactions,
+        payouts,
+        disputes,
+        reviews,
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch user profile details' });
+  }
+});
+
+router.post('/users/:id/role', sensitiveAdminLimiter, authenticateToken, requireSuperadmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id as string;
+    const role = req.body.role as 'buyer' | 'seller' | 'admin' | 'superadmin';
+    if (!role || !['buyer', 'seller', 'admin', 'superadmin'].includes(role)) {
+      res.status(400).json({ error: 'Invalid role' });
+      return;
+    }
+
+    const { data: target, error: targetErr } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, role')
+      .eq('user_id', userId)
+      .single();
+    if (targetErr || !target) {
+      res.status(404).json({ error: 'Target user not found' });
+      return;
+    }
+
+    if (target.role === 'superadmin' && target.user_id !== req.user!.id) {
+      res.status(403).json({ error: 'Cannot modify another superadmin role' });
+      return;
+    }
+
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ role })
+      .eq('user_id', userId);
+    if (error) throw error;
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'USER_ROLE_UPDATED',
+      entity: 'profiles',
+      entity_id: userId,
+      before_state: { role: target.role },
+      after_state: { role },
+      request_id: req.requestId,
+    });
+
+    res.json({ data: { ok: true, role } });
+  } catch {
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+// ---- IMPERSONATION ----
+router.post('/impersonation/start', sensitiveAdminLimiter, authenticateToken, requireSuperadmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const targetUserId = req.body.target_user_id as string;
+    const reason = (req.body.reason as string | undefined)?.trim();
+    const expiresMinutes = Math.min(Number(req.body.expires_minutes || 30), 240);
+
+    if (!targetUserId || !reason) {
+      res.status(400).json({ error: 'target_user_id and reason are required' });
+      return;
+    }
+
+    if (targetUserId === req.user!.id) {
+      res.status(400).json({ error: 'Cannot impersonate yourself' });
+      return;
+    }
+
+    const { data: targetProfile, error: targetErr } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, role, full_name, phone')
+      .eq('user_id', targetUserId)
+      .single();
+
+    if (targetErr || !targetProfile) {
+      res.status(404).json({ error: 'Target user not found' });
+      return;
+    }
+
+    if (targetProfile.role === 'superadmin') {
+      res.status(403).json({ error: 'Cannot impersonate another superadmin' });
+      return;
+    }
+
+    await supabaseAdmin
+      .from('impersonation_sessions')
+      .update({
+        status: 'ENDED',
+        ended_at: new Date().toISOString(),
+        ended_reason: 'superseded',
+        ended_by: req.user!.id,
+      })
+      .eq('impersonator_id', req.user!.id)
+      .eq('status', 'ACTIVE');
+
+    const sessionToken = randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000).toISOString();
+
+    const { data, error } = await supabaseAdmin
+      .from('impersonation_sessions')
+      .insert({
+        session_token: sessionToken,
+        impersonator_id: req.user!.id,
+        target_user_id: targetUserId,
+        reason,
+        status: 'ACTIVE',
+        started_at: new Date().toISOString(),
+        expires_at: expiresAt,
+        request_id: req.requestId,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+      })
+      .select('id, session_token, target_user_id, started_at, expires_at, reason')
+      .single();
+
+    if (error) throw error;
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'IMPERSONATION_STARTED',
+      entity: 'impersonation_sessions',
+      entity_id: data.id as string,
+      reason,
+      after_state: { target_user_id: targetUserId, expires_at: expiresAt },
+      request_id: req.requestId,
+    });
+
+    res.json({
+      data: {
+        ...data,
+        target_profile: {
+          user_id: targetProfile.user_id,
+          full_name: targetProfile.full_name,
+          phone: targetProfile.phone,
+          role: targetProfile.role,
+        },
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to start impersonation' });
+  }
+});
+
+router.get('/impersonation/current', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tokenHeader = req.headers['x-impersonation-token'];
+    const token = Array.isArray(tokenHeader) ? tokenHeader[0] : tokenHeader;
+    if (!token) {
+      res.json({ data: null });
+      return;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('impersonation_sessions')
+      .select('id, impersonator_id, target_user_id, reason, status, started_at, expires_at, ended_at')
+      .eq('session_token', token)
+      .single();
+    if (error || !data) {
+      res.json({ data: null });
+      return;
+    }
+
+    if (data.status !== 'ACTIVE' || new Date(data.expires_at).getTime() < Date.now()) {
+      res.json({ data: null });
+      return;
+    }
+
+    const [targetProfileRes, impersonatorProfileRes] = await Promise.all([
+      supabaseAdmin.from('profiles').select('user_id, full_name, phone, role').eq('user_id', data.target_user_id).single(),
+      supabaseAdmin.from('profiles').select('user_id, full_name, phone, role').eq('user_id', data.impersonator_id).single(),
+    ]);
+
+    res.json({
+      data: {
+        ...data,
+        target_profile: targetProfileRes.data || null,
+        impersonator_profile: impersonatorProfileRes.data || null,
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to get current impersonation' });
+  }
+});
+
+router.post('/impersonation/stop', sensitiveAdminLimiter, authenticateToken, requireSuperadmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tokenHeader = req.headers['x-impersonation-token'];
+    const tokenFromHeader = Array.isArray(tokenHeader) ? tokenHeader[0] : tokenHeader;
+    const token = (req.body.session_token as string | undefined) || tokenFromHeader;
+    if (!token) {
+      res.status(400).json({ error: 'session_token is required' });
+      return;
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from('impersonation_sessions')
+      .select('id, status')
+      .eq('session_token', token)
+      .eq('impersonator_id', req.user!.id)
+      .single();
+    if (!existing) {
+      res.status(404).json({ error: 'Impersonation session not found' });
+      return;
+    }
+
+    await supabaseAdmin
+      .from('impersonation_sessions')
+      .update({
+        status: 'ENDED',
+        ended_at: new Date().toISOString(),
+        ended_reason: req.body.reason || 'manual-stop',
+        ended_by: req.user!.id,
+      })
+      .eq('id', existing.id);
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'IMPERSONATION_STOPPED',
+      entity: 'impersonation_sessions',
+      entity_id: existing.id as string,
+      reason: req.body.reason || 'manual-stop',
+      request_id: req.requestId,
+    });
+
+    res.json({ data: { ok: true } });
+  } catch {
+    res.status(500).json({ error: 'Failed to stop impersonation' });
+  }
+});
+
+router.get('/sessions', ...adminAuth, async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const [impersonations, adminSessions] = await Promise.all([
+      supabaseAdmin
+        .from('impersonation_sessions')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from('admin_sessions')
+        .select('*')
+        .order('last_seen_at', { ascending: false })
+        .limit(200),
+    ]);
+    res.json({
+      data: {
+        impersonations: impersonations.data || [],
+        admin_sessions: adminSessions.data || [],
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch session monitor data' });
+  }
+});
+
+// ---- SAVED VIEWS ----
+router.get('/saved-views', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const viewType = req.query.view_type as string | undefined;
+    let query = supabaseAdmin
+      .from('admin_saved_views')
+      .select('*')
+      .eq('owner_id', req.user!.id)
+      .order('updated_at', { ascending: false });
+    if (viewType) query = query.eq('view_type', viewType);
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json({ data: data || [] });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch saved views' });
+  }
+});
+
+router.post('/saved-views', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const payload = req.body || {};
+    const { data, error } = await supabaseAdmin
+      .from('admin_saved_views')
+      .insert({
+        owner_id: req.user!.id,
+        view_type: payload.view_type || 'transactions',
+        name: payload.name || 'Untitled view',
+        is_default: !!payload.is_default,
+        filters: payload.filters || {},
+        sort: payload.sort || {},
+        columns: payload.columns || [],
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.status(201).json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to create saved view' });
+  }
+});
+
+router.put('/saved-views/:id', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const updates = req.body || {};
+    const { data, error } = await supabaseAdmin
+      .from('admin_saved_views')
+      .update({
+        name: updates.name,
+        is_default: updates.is_default,
+        filters: updates.filters,
+        sort: updates.sort,
+        columns: updates.columns,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', req.params.id)
+      .eq('owner_id', req.user!.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to update saved view' });
+  }
+});
+
+router.delete('/saved-views/:id', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    await supabaseAdmin
+      .from('admin_saved_views')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('owner_id', req.user!.id);
+    res.json({ data: { ok: true } });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete saved view' });
+  }
+});
+
+// ---- BULK ACTIONS ----
+router.post('/bulk/transactions', sensitiveAdminLimiter, ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ids = (req.body.ids as string[]) || [];
+    const action = req.body.action as 'hold' | 'release';
+    if (!ids.length || !action) {
+      res.status(400).json({ error: 'ids and action are required' });
+      return;
+    }
+    const status = action === 'hold' ? 'HOLD' : 'PAID';
+    const { error } = await supabaseAdmin
+      .from('transactions')
+      .update({ status })
+      .in('id', ids);
+    if (error) throw error;
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'BULK_TRANSACTION_ACTION',
+      entity: 'transactions',
+      after_state: { ids, action, status },
+      request_id: req.requestId,
+    });
+    res.json({ data: { updated: ids.length } });
+  } catch {
+    res.status(500).json({ error: 'Bulk transaction action failed' });
+  }
+});
+
+router.post('/bulk/payouts', sensitiveAdminLimiter, ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ids = (req.body.ids as string[]) || [];
+    const action = req.body.action as 'hold' | 'release' | 'retry';
+    if (!ids.length || !action) {
+      res.status(400).json({ error: 'ids and action are required' });
+      return;
+    }
+    let status: string = 'PENDING';
+    if (action === 'hold') status = 'HELD';
+    if (action === 'release' || action === 'retry') status = 'QUEUED';
+    const { error } = await supabaseAdmin
+      .from('payouts')
+      .update({ status, held_reason: action === 'hold' ? (req.body.reason || 'Bulk held') : null })
+      .in('id', ids);
+    if (error) throw error;
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'BULK_PAYOUT_ACTION',
+      entity: 'payouts',
+      after_state: { ids, action, status },
+      request_id: req.requestId,
+    });
+    res.json({ data: { updated: ids.length } });
+  } catch {
+    res.status(500).json({ error: 'Bulk payout action failed' });
+  }
+});
+
+router.post('/bulk/disputes', sensitiveAdminLimiter, ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ids = (req.body.ids as string[]) || [];
+    const action = req.body.action as 'under_review' | 'resolve' | 'reject';
+    if (!ids.length || !action) {
+      res.status(400).json({ error: 'ids and action are required' });
+      return;
+    }
+    const statusMap: Record<string, string> = {
+      under_review: 'UNDER_REVIEW',
+      resolve: 'RESOLVED',
+      reject: 'REJECTED',
+    };
+    const status = statusMap[action];
+    const payload: Record<string, unknown> = { status };
+    if (status === 'RESOLVED' || status === 'REJECTED') {
+      payload.resolved_by = req.user!.id;
+      payload.resolved_at = new Date().toISOString();
+    }
+    const { error } = await supabaseAdmin
+      .from('disputes')
+      .update(payload)
+      .in('id', ids);
+    if (error) throw error;
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'BULK_DISPUTE_ACTION',
+      entity: 'disputes',
+      after_state: { ids, action, status },
+      request_id: req.requestId,
+    });
+    res.json({ data: { updated: ids.length } });
+  } catch {
+    res.status(500).json({ error: 'Bulk dispute action failed' });
+  }
+});
+
+// ---- ALERT RULES / EVENTS ----
+router.get('/alert-rules', ...adminAuth, async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('admin_alert_rules')
+      .select('*')
+      .order('key', { ascending: true });
+    if (error) throw error;
+    res.json({ data: data || [] });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch alert rules' });
+  }
+});
+
+router.put('/alert-rules/:key', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const key = req.params.key;
+    const updates = req.body || {};
+    const { data, error } = await supabaseAdmin
+      .from('admin_alert_rules')
+      .update({
+        enabled: updates.enabled,
+        threshold: updates.threshold,
+        window_minutes: updates.window_minutes,
+        severity: updates.severity,
+        channels: updates.channels,
+        updated_by: req.user!.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('key', key)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to update alert rule' });
+  }
+});
+
+router.get('/alerts/events', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const status = req.query.status as string | undefined;
+    let query = supabaseAdmin.from('admin_alert_events').select('*').order('created_at', { ascending: false }).limit(200);
+    if (status && status !== 'all') query = query.eq('status', status);
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json({ data: data || [] });
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch alert events' });
+  }
+});
+
+router.post('/alerts/events/:id/ack', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('admin_alert_events')
+      .update({
+        status: 'ACKNOWLEDGED',
+        acknowledged_by: req.user!.id,
+        acknowledged_at: new Date().toISOString(),
+      })
+      .eq('id', req.params.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    res.json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to acknowledge alert' });
+  }
+});
+
+// ---- EXPORT JOBS (ASYNC-STUB) ----
+router.get('/export/jobs', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = Number(req.query.page || 1);
+    const limit = Math.min(Number(req.query.limit || 30), 100);
+    const from = (page - 1) * limit;
+    const { data, error, count } = await supabaseAdmin
+      .from('admin_export_jobs')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
+    if (error) throw error;
+    res.json({ data: data || [], total: count || 0, page, limit });
+  } catch {
+    res.status(500).json({ error: 'Failed to list export jobs' });
+  }
+});
+
+router.post('/export/jobs', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const exportType = req.body.export_type as string;
+    const filters = req.body.filters || {};
+    if (!exportType) {
+      res.status(400).json({ error: 'export_type is required' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const fakeFilePath = `exports/${exportType}-${Date.now()}.csv`;
+    const { data, error } = await supabaseAdmin
+      .from('admin_export_jobs')
+      .insert({
+        requested_by: req.user!.id,
+        export_type: exportType,
+        status: 'COMPLETED',
+        request_filters: filters,
+        file_path: fakeFilePath,
+        file_format: 'csv',
+        started_at: now,
+        completed_at: now,
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'EXPORT_JOB_CREATED',
+      entity: 'admin_export_jobs',
+      entity_id: data.id as string,
+      after_state: { export_type: exportType, filters, file_path: fakeFilePath },
+      request_id: req.requestId,
+    });
+
+    res.status(201).json({ data });
+  } catch {
+    res.status(500).json({ error: 'Failed to create export job' });
+  }
+});
+
+// ---- ANALYTICS OVERVIEW ----
+router.get('/analytics/overview', ...adminAuth, async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const [txRes, payoutRes, disputeRes, openAlertsRes] = await Promise.all([
+      supabaseAdmin.from('transactions').select('grand_total, status, fraud_score, created_at, completed_at'),
+      supabaseAdmin.from('payouts').select('amount, status, created_at'),
+      supabaseAdmin.from('disputes').select('status, created_at, resolved_at'),
+      supabaseAdmin.from('admin_alert_events').select('id', { count: 'exact', head: true }).eq('status', 'OPEN'),
+    ]);
+
+    const transactions = txRes.data || [];
+    const payouts = payoutRes.data || [];
+    const disputes = disputeRes.data || [];
+
+    const gmv = transactions.reduce((sum: number, t: any) => sum + Number(t.grand_total || 0), 0);
+    const escrowHeld = transactions
+      .filter((t: any) => !['COMPLETED', 'CANCELLED'].includes(t.status))
+      .reduce((sum: number, t: any) => sum + Number(t.grand_total || 0), 0);
+    const disputeRate = transactions.length > 0 ? (disputes.length / transactions.length) * 100 : 0;
+    const payoutFailures = payouts.filter((p: any) => p.status === 'FAILED').length;
+    const payoutFailureRate = payouts.length > 0 ? (payoutFailures / payouts.length) * 100 : 0;
+
+    const resolvedDisputes = disputes.filter((d: any) => d.status === 'RESOLVED' && d.resolved_at && d.created_at);
+    const avgResolutionHours = resolvedDisputes.length > 0
+      ? resolvedDisputes.reduce((sum: number, d: any) => {
+          const created = new Date(d.created_at).getTime();
+          const resolved = new Date(d.resolved_at).getTime();
+          return sum + Math.max(0, (resolved - created) / (1000 * 60 * 60));
+        }, 0) / resolvedDisputes.length
+      : 0;
+
+    res.json({
+      data: {
+        gmv,
+        escrow_held_value: escrowHeld,
+        dispute_rate_percent: Number(disputeRate.toFixed(2)),
+        payout_failure_rate_percent: Number(payoutFailureRate.toFixed(2)),
+        avg_dispute_resolution_hours: Number(avgResolutionHours.toFixed(2)),
+        open_alerts: openAlertsRes.count || 0,
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to compute analytics overview' });
   }
 });
 

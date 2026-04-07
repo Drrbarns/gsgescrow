@@ -19,6 +19,11 @@ class ApiClient {
     return data.session?.access_token || null;
   }
 
+  private getImpersonationToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('sbs_impersonation_token');
+  }
+
   private async getUserId(): Promise<string | null> {
     if (typeof window === 'undefined') return null;
     const supabase = await this.getSupabase();
@@ -26,22 +31,88 @@ class ApiClient {
     return data.user?.id || null;
   }
 
+  private getDefaultPlatformSettings() {
+    return [
+      { key: 'buyer_fee_percent', value: '0.5', description: 'Buyer platform fee as percentage of product total' },
+      { key: 'seller_fee_percent', value: '0.75', description: 'Seller platform fee as percentage of product total' },
+      { key: 'rider_release_fee', value: '1.00', description: 'Fixed rider release fee in GHS' },
+      { key: 'delivery_code_length', value: '7', description: 'Length of delivery code' },
+      { key: 'partial_code_length', value: '4', description: 'Length of partial code' },
+      { key: 'code_expiry_hours', value: '72', description: 'Hours before codes expire' },
+      { key: 'max_code_attempts', value: '5', description: 'Maximum code verification attempts before lockout' },
+      { key: 'lockout_minutes', value: '30', description: 'Lockout duration in minutes after max attempts' },
+      { key: 'payout_max_retries', value: '5', description: 'Maximum payout retry attempts' },
+      { key: 'auto_release_hours', value: '72', description: 'Hours after delivery to auto-release funds' },
+      { key: 'whatsapp_support_number', value: '+233000000000', description: 'WhatsApp support number' },
+      { key: 'auto_release_enabled', value: 'true', description: 'Enable automatic fund release after delivery' },
+      { key: 'seller_verification_required', value: 'false', description: 'Require seller verification for payouts above threshold' },
+      { key: 'seller_verification_threshold', value: '5000', description: 'GHS threshold requiring seller verification' },
+      { key: 'kyc_required_buyer', value: 'true', description: 'Require buyer KYC for risk-gated features' },
+      { key: 'kyc_required_seller', value: 'true', description: 'Require seller KYC for payout and trust badge' },
+      { key: 'kyc_auto_approve', value: 'false', description: 'Allow automatic approval for low-risk KYC requests' },
+      { key: 'kyc_block_on_reject', value: 'true', description: 'Prevent high-trust actions until KYC is resubmitted' },
+      { key: 'kyc_expiry_days', value: '365', description: 'Number of days before approved KYC expires' },
+      { key: 'fraud_detection_enabled', value: 'true', description: 'Enable automated fraud scoring' },
+      { key: 'fraud_auto_hold_score', value: '75', description: 'Auto-hold transactions with fraud score above this' },
+    ];
+  }
+
+  private mergeWithDefaultSettings(settings: any[]) {
+    const defaults = this.getDefaultPlatformSettings();
+    const map = new Map((settings || []).map((s: any) => [s.key, s]));
+    for (const def of defaults) {
+      if (!map.has(def.key)) {
+        map.set(def.key, def);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => String(a.key).localeCompare(String(b.key)));
+  }
+
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const token = await this.getToken();
+    const impersonationToken = this.getImpersonationToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (impersonationToken) headers['x-impersonation-token'] = impersonationToken;
 
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const requestUrl = `${this.baseUrl}${path}`;
+    const res = await fetch(requestUrl, {
       ...options,
       headers,
     });
+    const contentType = res.headers.get('content-type') || '';
+    let payload: any = null;
 
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Request failed');
-    return json;
+    if (contentType.includes('application/json')) {
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
+    } else {
+      const text = await res.text();
+      const trimmed = text.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          payload = JSON.parse(trimmed);
+        } catch {
+          payload = null;
+        }
+      } else {
+        payload = { error: `Invalid API response from ${requestUrl}. Check NEXT_PUBLIC_API_URL and backend routing.` };
+      }
+    }
+
+    if (!res.ok) {
+      throw new Error(payload?.error || `Request failed (${res.status})`);
+    }
+    if (!payload) {
+      throw new Error(`Empty or invalid response from ${requestUrl}`);
+    }
+    return payload as T;
   }
 
   // Auth
@@ -102,7 +173,7 @@ class ApiClient {
           .select('role')
           .eq('user_id', uid)
           .single();
-        const isAdmin = profileData?.role === 'admin';
+        const isAdmin = profileData?.role === 'admin' || profileData?.role === 'superadmin';
         const { data: userData } = await supabase.auth.getUser();
         const userPhone = userData.user?.phone || '';
         const userEmail = userData.user?.email || '';
@@ -214,7 +285,7 @@ class ApiClient {
 
   // Payments
   initiatePayment(transactionId: string) {
-    return this.request<{ data: { authorization_url: string; reference: string } }>('/api/payments/initiate', { method: 'POST', body: JSON.stringify({ transaction_id: transactionId }) });
+    return this.request<{ data: { authorization_url: string; reference: string; access_code?: string | null; provider?: string } }>('/api/payments/initiate', { method: 'POST', body: JSON.stringify({ transaction_id: transactionId }) });
   }
   verifyPayment(reference: string) {
     return this.request<{ data: any }>('/api/payments/verify', { method: 'POST', body: JSON.stringify({ reference }) });
@@ -277,17 +348,68 @@ class ApiClient {
     );
   }
   listPayouts(params?: Record<string, string>) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request<{ data: any[]; total: number }>(`/api/payouts${qs}`);
+    return this.requestWithFallback<{ data: any[]; total: number }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any[]; total: number }>(`/api/payouts${qs}`);
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+
+          let query = supabase.from('payouts').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+          if (params?.status) query = query.eq('status', params.status);
+          if (params?.type) query = query.eq('type', params.type);
+
+          const { data: payouts, count } = await query.range(from, from + limit - 1);
+          const txIds = [...new Set((payouts || []).map((p: any) => p.transaction_id).filter(Boolean))];
+          const { data: txs } = txIds.length
+            ? await supabase.from('transactions').select('id, short_id, product_name, seller_name, buyer_name').in('id', txIds)
+            : { data: [] as any[] };
+          const txMap = new Map((txs || []).map((t: any) => [t.id, t]));
+          const rows = (payouts || []).map((p: any) => ({ ...p, transactions: txMap.get(p.transaction_id) || null }));
+          return { data: rows, total: count || 0 };
+        } catch {
+          return { data: [], total: 0 };
+        }
+      }
+    );
   }
   holdPayout(id: string, reason: string) {
-    return this.request('/api/payouts/' + id + '/hold', { method: 'POST', body: JSON.stringify({ reason }) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/payouts/' + id + '/hold', { method: 'POST', body: JSON.stringify({ reason }) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { error } = await supabase.from('payouts').update({ status: 'HELD', hold_reason: reason }).eq('id', id);
+        if (error) throw new Error(error.message);
+        return { data: { ok: true } };
+      }
+    );
   }
   releasePayout(id: string) {
-    return this.request('/api/payouts/' + id + '/release', { method: 'POST' });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/payouts/' + id + '/release', { method: 'POST' }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { error } = await supabase.from('payouts').update({ status: 'QUEUED' }).eq('id', id);
+        if (error) throw new Error(error.message);
+        return { data: { ok: true } };
+      }
+    );
   }
   retryPayout(id: string) {
-    return this.request('/api/payouts/' + id + '/retry', { method: 'POST' });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/payouts/' + id + '/retry', { method: 'POST' }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { error } = await supabase.from('payouts').update({ status: 'QUEUED', attempts: 0 }).eq('id', id);
+        if (error) throw new Error(error.message);
+        return { data: { ok: true } };
+      }
+    );
   }
 
   // Disputes
@@ -295,17 +417,69 @@ class ApiClient {
     return this.request<{ data: any }>('/api/disputes', { method: 'POST', body: JSON.stringify(data) });
   }
   listDisputes(params?: Record<string, string>) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request<{ data: any[]; total: number }>(`/api/disputes${qs}`);
+    return this.requestWithFallback<{ data: any[]; total: number }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any[]; total: number }>(`/api/disputes${qs}`);
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+
+          let query = supabase.from('disputes').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+          if (params?.status) query = query.eq('status', params.status);
+          const { data, count } = await query.range(from, from + limit - 1);
+          const txIds = [...new Set((data || []).map((d: any) => d.transaction_id).filter(Boolean))];
+          const { data: txs } = txIds.length
+            ? await supabase.from('transactions').select('id, short_id, product_name, seller_name, buyer_name').in('id', txIds)
+            : { data: [] as any[] };
+          const txMap = new Map((txs || []).map((t: any) => [t.id, t]));
+          const rows = (data || []).map((d: any) => ({ ...d, transactions: txMap.get(d.transaction_id) || null }));
+          return { data: rows, total: count || 0 };
+        } catch {
+          return { data: [], total: 0 };
+        }
+      }
+    );
   }
   getDispute(id: string) {
-    return this.request<{ data: any }>(`/api/disputes/${id}`);
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/disputes/${id}`),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data: dispute, error } = await supabase.from('disputes').select('*').eq('id', id).single();
+        if (error) throw new Error(error.message);
+        const [{ data: txn }, { data: evidence }] = await Promise.all([
+          supabase.from('transactions').select('id, short_id, product_name, seller_name, buyer_name').eq('id', dispute.transaction_id).single(),
+          supabase.from('dispute_evidence').select('*').eq('dispute_id', id).order('created_at', { ascending: false }),
+        ]);
+        return { data: { ...dispute, transactions: txn || null, dispute_evidence: evidence || [] } };
+      }
+    );
   }
   uploadEvidence(disputeId: string, data: Record<string, unknown>) {
     return this.request('/api/disputes/' + disputeId + '/evidence', { method: 'POST', body: JSON.stringify(data) });
   }
   resolveDispute(id: string, data: Record<string, unknown>) {
-    return this.request('/api/disputes/' + id + '/resolve', { method: 'POST', body: JSON.stringify(data) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/disputes/' + id + '/resolve', { method: 'POST', body: JSON.stringify(data) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const payload: Record<string, unknown> = {
+          status: 'RESOLVED',
+          resolved_at: new Date().toISOString(),
+        };
+        if (typeof data.resolution === 'string') payload.resolution = data.resolution;
+        if (typeof data.notes === 'string') payload.notes = data.notes;
+        if (typeof data.resolution_action === 'string') payload.resolution_action = data.resolution_action;
+        const { error } = await supabase.from('disputes').update(payload).eq('id', id);
+        if (error) throw new Error(error.message);
+        return { data: { ok: true } };
+      }
+    );
   }
 
   // Reviews
@@ -313,37 +487,429 @@ class ApiClient {
     return this.request<{ data: any }>('/api/reviews', { method: 'POST', body: JSON.stringify(data) });
   }
   listReviews(params?: Record<string, string>) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request<{ data: any[]; total: number }>(`/api/reviews${qs}`);
+    return this.requestWithFallback<{ data: any[]; total: number }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any[]; total: number }>(`/api/reviews${qs}`);
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+
+          let query = supabase.from('reviews').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+          if (params?.status) query = query.eq('status', params.status);
+          const { data, count } = await query.range(from, from + limit - 1);
+          const txIds = [...new Set((data || []).map((r: any) => r.transaction_id).filter(Boolean))];
+          const { data: txs } = txIds.length
+            ? await supabase.from('transactions').select('id, product_name, seller_name').in('id', txIds)
+            : { data: [] as any[] };
+          const txMap = new Map((txs || []).map((t: any) => [t.id, t]));
+          const rows = (data || []).map((r: any) => ({ ...r, transactions: txMap.get(r.transaction_id) || null }));
+          return { data: rows, total: count || 0 };
+        } catch {
+          return { data: [], total: 0 };
+        }
+      }
+    );
   }
   moderateReview(id: string, status: string) {
-    return this.request('/api/reviews/' + id + '/moderate', { method: 'POST', body: JSON.stringify({ status }) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/reviews/' + id + '/moderate', { method: 'POST', body: JSON.stringify({ status }) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { error } = await supabase.from('reviews').update({ status, moderated_at: new Date().toISOString() }).eq('id', id);
+        if (error) throw new Error(error.message);
+        return { data: { ok: true } };
+      }
+    );
   }
 
   // Admin
   getDashboard() {
-    return this.request<{ data: any }>('/api/admin/dashboard');
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/admin/dashboard'),
+      async () => ({ data: { transactions: { total: 0, by_status: {} }, payouts: { total: 0, total_amount: 0, by_status: {} }, disputes: { total: 0, by_status: {} }, revenue: { total_platform_fees: 0 } } })
+    );
+  }
+  getAdminUsers(params?: Record<string, string>) {
+    return this.requestWithFallback<{ data: any[]; total: number; page: number; limit: number }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any[]; total: number; page: number; limit: number }>(`/api/admin/users${qs}`);
+      },
+      async () => {
+        const supabase = await this.getSupabase();
+        const role = params?.role;
+        const search = (params?.search || '').trim();
+        const page = parseInt(params?.page || '1', 10);
+        const limit = parseInt(params?.limit || '25', 10);
+        const from = (page - 1) * limit;
+
+        let query = supabase
+          .from('profiles')
+          .select('user_id, full_name, phone, role, created_at, updated_at', { count: 'exact' })
+          .order('updated_at', { ascending: false });
+
+        if (role && role !== 'all') query = query.eq('role', role);
+        if (search) query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+
+        const { data, count } = await query.range(from, from + limit - 1);
+        return { data: data || [], total: count || 0, page, limit };
+      }
+    );
+  }
+  getAdminUserDetails(userId: string) {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/admin/users/${userId}`),
+      async () => {
+        const supabase = await this.getSupabase();
+        const [profileRes, txRes, payoutRes, disputeRes, reviewRes, trustRes] = await Promise.all([
+          supabase.from('profiles').select('*').eq('user_id', userId).single(),
+          supabase.from('transactions').select('*').or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
+          supabase.from('payouts').select('*').order('created_at', { ascending: false }).limit(100),
+          supabase.from('disputes').select('*').eq('opened_by', userId).order('created_at', { ascending: false }).limit(100),
+          supabase.from('reviews').select('*').eq('buyer_id', userId).order('created_at', { ascending: false }).limit(100),
+          supabase.from('seller_trust_scores').select('*').eq('seller_id', userId).single(),
+        ]);
+
+        const transactions = txRes.data || [];
+        const payouts = (payoutRes.data || []).filter((p: any) => transactions.some((t: any) => t.id === p.transaction_id));
+        const disputes = disputeRes.data || [];
+        const reviews = reviewRes.data || [];
+
+        return {
+          data: {
+            profile: profileRes.data,
+            aggregates: {
+              total_transactions: transactions.length,
+              completed_transactions: transactions.filter((t: any) => t.status === 'COMPLETED').length,
+              active_transactions: transactions.filter((t: any) => !['COMPLETED', 'CANCELLED'].includes(t.status)).length,
+              total_volume_ghs: transactions.reduce((sum: number, t: any) => sum + Number(t.grand_total || 0), 0),
+              disputes_opened: disputes.length,
+              payouts_total: payouts.length,
+              reviews_total: reviews.length,
+            },
+            trust_score: trustRes.data || null,
+            transactions,
+            payouts,
+            disputes,
+            reviews,
+          },
+        };
+      }
+    );
+  }
+  updateAdminUserRole(userId: string, role: 'buyer' | 'seller' | 'admin' | 'superadmin') {
+    return this.request<{ data: { ok: boolean; role: string } }>(`/api/admin/users/${userId}/role`, {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  }
+  startImpersonation(targetUserId: string, reason: string, expiresMinutes = 30) {
+    return this.request<{ data: any }>('/api/admin/impersonation/start', {
+      method: 'POST',
+      body: JSON.stringify({ target_user_id: targetUserId, reason, expires_minutes: expiresMinutes }),
+    });
+  }
+  stopImpersonation(sessionToken?: string, reason?: string) {
+    return this.request<{ data: { ok: boolean } }>('/api/admin/impersonation/stop', {
+      method: 'POST',
+      body: JSON.stringify({ session_token: sessionToken, reason }),
+    });
+  }
+  getCurrentImpersonation() {
+    return this.request<{ data: any | null }>('/api/admin/impersonation/current');
+  }
+  getAdminSessions() {
+    return this.requestWithFallback<{ data: { impersonations: any[]; admin_sessions: any[] } }>(
+      () => this.request<{ data: { impersonations: any[]; admin_sessions: any[] } }>('/api/admin/sessions'),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const [impRes, sessRes] = await Promise.all([
+            supabase.from('impersonation_sessions').select('*').order('started_at', { ascending: false }).limit(20),
+            supabase.from('admin_sessions').select('*').order('started_at', { ascending: false }).limit(20),
+          ]);
+          return { data: { impersonations: impRes.data || [], admin_sessions: sessRes.data || [] } };
+        } catch {
+          return { data: { impersonations: [], admin_sessions: [] } };
+        }
+      }
+    );
+  }
+  listSavedViews(viewType?: string) {
+    const qs = viewType ? `?view_type=${encodeURIComponent(viewType)}` : '';
+    return this.request<{ data: any[] }>(`/api/admin/saved-views${qs}`);
+  }
+  createSavedView(payload: Record<string, unknown>) {
+    return this.request<{ data: any }>('/api/admin/saved-views', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+  updateSavedView(id: string, payload: Record<string, unknown>) {
+    return this.request<{ data: any }>(`/api/admin/saved-views/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+  deleteSavedView(id: string) {
+    return this.request<{ data: { ok: boolean } }>(`/api/admin/saved-views/${id}`, { method: 'DELETE' });
+  }
+  bulkTransactions(action: 'hold' | 'release', ids: string[]) {
+    return this.request<{ data: { updated: number } }>('/api/admin/bulk/transactions', {
+      method: 'POST',
+      body: JSON.stringify({ action, ids }),
+    });
+  }
+  bulkPayouts(action: 'hold' | 'release' | 'retry', ids: string[], reason?: string) {
+    return this.request<{ data: { updated: number } }>('/api/admin/bulk/payouts', {
+      method: 'POST',
+      body: JSON.stringify({ action, ids, reason }),
+    });
+  }
+  bulkDisputes(action: 'under_review' | 'resolve' | 'reject', ids: string[]) {
+    return this.request<{ data: { updated: number } }>('/api/admin/bulk/disputes', {
+      method: 'POST',
+      body: JSON.stringify({ action, ids }),
+    });
+  }
+  getAlertRules() {
+    return this.requestWithFallback<{ data: any[] }>(
+      () => this.request<{ data: any[] }>('/api/admin/alert-rules'),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const { data } = await supabase.from('admin_alert_rules').select('*').order('key', { ascending: true });
+          return { data: data || [] };
+        } catch {
+          return { data: [] };
+        }
+      }
+    );
+  }
+  updateAlertRule(key: string, payload: Record<string, unknown>) {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/admin/alert-rules/${key}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data, error } = await supabase.from('admin_alert_rules').update(payload).eq('key', key).select().single();
+        if (error) throw new Error(error.message);
+        return { data };
+      }
+    );
+  }
+  getAlertEvents(status = 'all') {
+    return this.requestWithFallback<{ data: any[] }>(
+      () => this.request<{ data: any[] }>(`/api/admin/alerts/events?status=${encodeURIComponent(status)}`),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          let query = supabase.from('admin_alert_events').select('*').order('created_at', { ascending: false });
+          if (status && status !== 'all') query = query.eq('status', status);
+          const { data } = await query.limit(100);
+          return { data: data || [] };
+        } catch {
+          return { data: [] };
+        }
+      }
+    );
+  }
+  acknowledgeAlertEvent(id: string) {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/admin/alerts/events/${id}/ack`, { method: 'POST' }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data, error } = await supabase
+          .from('admin_alert_events')
+          .update({ status: 'ACKNOWLEDGED', acknowledged_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        return { data };
+      }
+    );
+  }
+  getExportJobs(params?: Record<string, string>) {
+    return this.requestWithFallback<{ data: any[]; total: number; page: number; limit: number }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any[]; total: number; page: number; limit: number }>(`/api/admin/export/jobs${qs}`);
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+          const { data, count } = await supabase
+            .from('admin_export_jobs')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(from, from + limit - 1);
+          return { data: data || [], total: count || 0, page, limit };
+        } catch {
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          return { data: [], total: 0, page, limit };
+        }
+      }
+    );
+  }
+  createExportJob(exportType: string, filters?: Record<string, unknown>) {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/admin/export/jobs', {
+        method: 'POST',
+        body: JSON.stringify({ export_type: exportType, filters: filters || {} }),
+      }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data, error } = await supabase
+          .from('admin_export_jobs')
+          .insert({
+            export_type: exportType,
+            filters: filters || {},
+            status: 'QUEUED',
+            requested_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        return { data };
+      }
+    );
+  }
+  getAdminAnalyticsOverview() {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/admin/analytics/overview'),
+      async () => ({ data: { gmv: 0, escrow_held_value: 0, dispute_rate_percent: 0, payout_failure_rate_percent: 0, avg_dispute_resolution_hours: 0, open_alerts: 0 } })
+    );
   }
   getAuditLogs(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.request<{ data: any[]; total: number }>(`/api/admin/audit-logs${qs}`);
   }
   getSettings() {
-    return this.request<{ data: any[] }>('/api/admin/settings');
+    return this.requestWithFallback<{ data: any[] }>(
+      async () => {
+        const res = await this.request<{ data: any[] }>('/api/admin/settings');
+        return { data: this.mergeWithDefaultSettings(res.data || []) };
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const { data } = await supabase.from('platform_settings').select('*').order('key', { ascending: true });
+          return { data: this.mergeWithDefaultSettings(data || []) };
+        } catch {
+          return { data: this.getDefaultPlatformSettings() };
+        }
+      }
+    );
   }
   updateSetting(key: string, value: string) {
-    return this.request('/api/admin/settings/' + key, { method: 'PUT', body: JSON.stringify({ value }) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/admin/settings/' + key, { method: 'PUT', body: JSON.stringify({ value }) }),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        return { data };
+      }
+    );
   }
   getFinanceReport(params?: Record<string, string>) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request<{ data: any }>(`/api/admin/reports/finance${qs}`);
+    return this.requestWithFallback<{ data: any }>(
+      () => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<{ data: any }>(`/api/admin/reports/finance${qs}`);
+      },
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          let txQuery = supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(500);
+          let payoutQuery = supabase.from('payouts').select('*').order('created_at', { ascending: false }).limit(500);
+          if (params?.from) {
+            txQuery = txQuery.gte('created_at', params.from);
+            payoutQuery = payoutQuery.gte('created_at', params.from);
+          }
+          if (params?.to) {
+            txQuery = txQuery.lte('created_at', params.to);
+            payoutQuery = payoutQuery.lte('created_at', params.to);
+          }
+          const [txRes, payoutRes] = await Promise.all([txQuery, payoutQuery]);
+          return { data: { transactions: txRes.data || [], payouts: payoutRes.data || [] } };
+        } catch {
+          return { data: { transactions: [], payouts: [] } };
+        }
+      }
+    );
   }
   getAdminTransactions(filters?: Record<string, string>) {
-    const params = new URLSearchParams(filters).toString();
-    return this.request<{ data: { transactions: any[] } }>(`/api/transactions?${params}`);
+    const params = new URLSearchParams(filters || {}).toString();
+    return this.request<{ data: any[]; total: number }>(`/api/transactions?${params}`);
   }
   flagTransaction(id: string, reason: string) {
     return this.request('/api/admin/transactions/' + id + '/flag', { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+  overrideFraudScore(id: string, score: number, note?: string) {
+    return this.request<{ data: any }>(`/api/admin/fraud/${id}/override-score`, {
+      method: 'POST',
+      body: JSON.stringify({ score, note }),
+    });
+  }
+  addFraudCaseNote(id: string, note: string) {
+    return this.request<{ data: any }>(`/api/admin/fraud/${id}/case-note`, {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    });
+  }
+  listAdminVerifications(params?: Record<string, string>) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.requestWithFallback<{ data: any[] }>(
+      () => this.request<{ data: any[] }>(`/api/admin/verifications${qs}`),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          let query = supabase.from('kyc_verifications').select('*').order('created_at', { ascending: false });
+          if (params?.role && params.role !== 'all') query = query.eq('user_role', params.role);
+          if (params?.status && params.status !== 'all') query = query.eq('status', params.status);
+          if (params?.search) query = query.or(`full_name.ilike.%${params.search}%,id_number.ilike.%${params.search}%,phone.ilike.%${params.search}%`);
+          const { data } = await query.limit(300);
+          return { data: data || [] };
+        } catch {
+          return { data: [] };
+        }
+      }
+    );
+  }
+  approveAdminVerification(id: string, notes?: string) {
+    return this.request<{ data: any }>(`/api/admin/verifications/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+  rejectAdminVerification(id: string, reason: string) {
+    return this.request<{ data: any }>(`/api/admin/verifications/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+  updateAdminVerificationStatus(id: string, status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REQUIRES_RESUBMISSION', reason?: string, notes?: string) {
+    return this.request<{ data: any }>(`/api/admin/verifications/${id}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status, reason, notes }),
+    });
   }
 
   // Seller Dashboard
@@ -358,10 +924,22 @@ class ApiClient {
     return this.request<{ data: any[] }>(`/api/seller/receipts/${txnId}`);
   }
   submitSellerVerification(data: Record<string, unknown>) {
-    return this.request<{ data: any }>('/api/seller/verify', { method: 'POST', body: JSON.stringify(data) });
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/seller/kyc', { method: 'POST', body: JSON.stringify({ ...data, user_role: 'seller' }) }),
+      () => this.request<{ data: any }>('/api/seller/verify', { method: 'POST', body: JSON.stringify(data) })
+    );
   }
   getVerificationStatus() {
-    return this.request<{ data: any }>('/api/seller/verification-status');
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/seller/kyc-status'),
+      () => this.request<{ data: any }>('/api/seller/verification-status')
+    );
+  }
+  submitBuyerVerification(data: Record<string, unknown>) {
+    return this.request<{ data: any }>('/api/seller/kyc', { method: 'POST', body: JSON.stringify({ ...data, user_role: 'buyer' }) });
+  }
+  getBuyerVerificationStatus() {
+    return this.request<{ data: any }>('/api/seller/kyc-status');
   }
 
   // Public

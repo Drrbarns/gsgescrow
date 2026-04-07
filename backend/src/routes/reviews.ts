@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole, optionalAuth } from '../middleware/auth';
+import { authenticateToken, requireAdminRole, optionalAuth, isPrivilegedRole } from '../middleware/auth';
 import { supabaseAdmin } from '../services/supabase';
 
 const router = Router();
@@ -48,7 +48,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void>
   try {
     const page = (req.query.page as string) || '1';
     const limit = (req.query.limit as string) || '20';
-    const isAdmin = req.user?.role === 'admin';
+    const isAdmin = isPrivilegedRole(req.user?.role);
 
     let query = supabaseAdmin.from('reviews')
       .select('*, transactions(short_id, product_name, seller_name)', { count: 'exact' });
@@ -71,7 +71,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void>
 });
 
 // POST /api/reviews/:id/moderate - Admin moderate
-router.post('/:id/moderate', authenticateToken, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/moderate', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
     const { status } = req.body;
     if (!['APPROVED', 'REJECTED'].includes(status)) {
