@@ -137,18 +137,40 @@ export function startNotificationWorker() {
     const { type, transaction_id, ...extra } = job.data;
     console.log(`[NOTIFICATION] ${type} for transaction ${transaction_id}`);
 
-    const { data: txn } = await supabaseAdmin
-      .from('transactions')
-      .select('buyer_id, seller_id, buyer_phone, seller_phone, buyer_name, seller_name, short_id')
-      .eq('id', transaction_id)
-      .single();
-
-    if (!txn) return;
-
     const messages: { user_id: string | null; phone: string; title: string; body: string }[] = [];
+    const pushMessage = (msg: { user_id: string | null; phone?: string | null; title: string; body: string }) => {
+      if (!msg.phone) return;
+      messages.push({ user_id: msg.user_id, phone: msg.phone, title: msg.title, body: msg.body });
+    };
+
+    let txn: any = null;
+    if (transaction_id) {
+      const { data } = await supabaseAdmin
+        .from('transactions')
+        .select('buyer_id, seller_id, buyer_phone, seller_phone, rider_phone, buyer_name, seller_name, short_id')
+        .eq('id', transaction_id)
+        .single();
+      txn = data || null;
+    }
 
     switch (type) {
+      case 'TRANSACTION_CREATED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Order Created',
+          body: `Your transaction ${txn.short_id} was created successfully. Complete payment to secure funds.`,
+        });
+        pushMessage({
+          user_id: txn.seller_id || null,
+          phone: txn.seller_phone,
+          title: 'New Buyer Request',
+          body: `A buyer created transaction ${txn.short_id}. You will be notified once payment is confirmed.`,
+        });
+        break;
       case 'PAYMENT_SUCCESS':
+        if (!txn) break;
         messages.push({
           user_id: txn.buyer_id,
           phone: txn.buyer_phone,
@@ -163,23 +185,71 @@ export function startNotificationWorker() {
         });
         break;
       case 'DISPATCHED':
-        messages.push({
+        if (!txn) break;
+        pushMessage({
           user_id: txn.buyer_id,
           phone: txn.buyer_phone,
           title: 'Order Dispatched',
           body: `Your order ${txn.short_id} has been dispatched by ${txn.seller_name}.`,
         });
+        pushMessage({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'Dispatch Confirmed',
+          body: `Dispatch for ${txn.short_id} was recorded successfully.`,
+        });
         break;
       case 'DELIVERY_CONFIRMED':
-        messages.push({
+        if (!txn) break;
+        pushMessage({
           user_id: txn.seller_id,
           phone: txn.seller_phone,
           title: 'Delivery Confirmed',
           body: `The buyer has confirmed delivery for ${txn.short_id}. You can now collect your payout.`,
         });
+        pushMessage({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Delivery Accepted',
+          body: `Delivery for ${txn.short_id} has been confirmed. Thank you for using Sell-Safe Buy-Safe.`,
+        });
+        break;
+      case 'REPLACEMENT_REQUESTED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'Replacement Requested',
+          body: `Buyer requested a replacement for ${txn.short_id}. Please review and take action.`,
+        });
+        break;
+      case 'RIDER_PAYOUT_QUEUED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Rider Payout Queued',
+          body: `Rider payout for ${txn.short_id} has been queued.`,
+        });
+        pushMessage({
+          user_id: null,
+          phone: txn.rider_phone || extra.rider_phone,
+          title: 'Delivery Payout Incoming',
+          body: `Your payout for delivery on ${txn.short_id} is being processed.`,
+        });
+        break;
+      case 'SELLER_PAYOUT_QUEUED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'Seller Payout Queued',
+          body: `Your payout for ${txn.short_id} has been queued for processing.`,
+        });
         break;
       case 'PAYOUT_SUCCESS':
-        messages.push({
+        if (!txn) break;
+        pushMessage({
           user_id: null,
           phone: extra.payout_type === 'RIDER' ? txn.buyer_phone : txn.seller_phone,
           title: 'Payout Sent',
@@ -187,9 +257,79 @@ export function startNotificationWorker() {
         });
         break;
       case 'DISPUTE_OPENED':
-        messages.push({
+        if (!txn) break;
+        pushMessage({
           user_id: txn.buyer_id, phone: txn.buyer_phone,
           title: 'Dispute Opened', body: `A dispute has been opened for ${txn.short_id}.`,
+        });
+        pushMessage({
+          user_id: txn.seller_id, phone: txn.seller_phone,
+          title: 'Dispute Opened', body: `A dispute has been opened for ${txn.short_id}. Our team will review it.`,
+        });
+        break;
+      case 'DISPUTE_RESOLVED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Dispute Resolved',
+          body: `Dispute on ${txn.short_id} resolved with action: ${extra.resolution_action || 'N/A'}.`,
+        });
+        pushMessage({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'Dispute Resolved',
+          body: `Dispute on ${txn.short_id} resolved with action: ${extra.resolution_action || 'N/A'}.`,
+        });
+        break;
+      case 'REVIEW_SUBMITTED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.seller_id,
+          phone: txn.seller_phone,
+          title: 'New Review Received',
+          body: `A buyer submitted a review for ${txn.short_id}.`,
+        });
+        break;
+      case 'REVIEW_MODERATED':
+        if (!txn) break;
+        pushMessage({
+          user_id: txn.buyer_id,
+          phone: txn.buyer_phone,
+          title: 'Review Moderated',
+          body: `Your review for ${txn.short_id} was ${String(extra.status || 'updated').toLowerCase()}.`,
+        });
+        break;
+      case 'KYC_SUBMITTED': {
+        const { data: admins } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, phone')
+          .in('role', ['admin', 'superadmin']);
+        for (const admin of admins || []) {
+          pushMessage({
+            user_id: admin.user_id,
+            phone: admin.phone,
+            title: 'New KYC Submission',
+            body: `${extra.applicant_role || 'User'} submitted KYC. Open admin verifications to review.`,
+          });
+        }
+        break;
+      }
+      case 'KYC_STATUS_CHANGED':
+        pushMessage({
+          user_id: extra.target_user_id || null,
+          phone: extra.target_phone || null,
+          title: 'KYC Status Updated',
+          body: `Your KYC status is now ${extra.status}. ${extra.reason ? `Reason: ${extra.reason}` : ''}`,
+        });
+        break;
+      case 'ADMIN_IMPERSONATION_STARTED':
+      case 'ADMIN_IMPERSONATION_STOPPED':
+        pushMessage({
+          user_id: extra.actor_id || null,
+          phone: extra.actor_phone || null,
+          title: type === 'ADMIN_IMPERSONATION_STARTED' ? 'Impersonation Started' : 'Impersonation Ended',
+          body: String(extra.message || 'Admin impersonation session updated'),
         });
         break;
     }

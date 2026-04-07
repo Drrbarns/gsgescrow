@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { payoutQueue } from '../services/queue';
+import { payoutQueue, notificationQueue } from '../services/queue';
 import { verifyCode } from '../utils/codes';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/env';
@@ -99,6 +99,12 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
       entity: 'payouts', entity_id: payout.id,
       after_state: { amount: payoutAmount, rider_momo: rider_momo_number },
       request_id: req.requestId,
+    });
+    await notificationQueue.add('send', {
+      type: 'RIDER_PAYOUT_QUEUED',
+      transaction_id,
+      amount: payoutAmount,
+      rider_phone: txn.rider_phone || rider_momo_number,
     });
 
     res.json({ data: { message: 'Rider payout queued', payout_id: payout.id } });
@@ -200,6 +206,11 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       entity: 'payouts', entity_id: payout.id,
       after_state: { amount: sellerAmount },
       request_id: req.requestId,
+    });
+    await notificationQueue.add('send', {
+      type: 'SELLER_PAYOUT_QUEUED',
+      transaction_id,
+      amount: sellerAmount,
     });
 
     res.json({ data: { message: 'Seller payout queued', payout_id: payout.id, amount: sellerAmount } });

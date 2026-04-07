@@ -163,6 +163,11 @@ router.post('/:id/resolve', authenticateToken, requireAdminRole, async (req: Req
       after_state: { resolution, resolution_action },
       request_id: req.requestId,
     });
+    await notificationQueue.add('send', {
+      type: 'DISPUTE_RESOLVED',
+      transaction_id: dispute.transaction_id,
+      resolution_action,
+    });
 
     res.json({ data: { message: 'Dispute resolved' } });
   } catch (err: any) {

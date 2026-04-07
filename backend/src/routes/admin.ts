@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, requireAdminRole, requireSuperadmin } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
+import { notificationQueue } from '../services/queue';
 import { randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
 
@@ -239,6 +240,12 @@ router.post('/verifications/:id/approve', authenticateToken, requireAdminRole, a
       entity: 'kyc_verifications',
       entity_id: req.params.id as string,
     });
+    await notificationQueue.add('send', {
+      type: 'KYC_STATUS_CHANGED',
+      status: 'APPROVED',
+      target_user_id: verification.user_id,
+      target_phone: verification.phone,
+    });
 
     res.json({ data: { status: 'APPROVED', role: verification.user_role } });
   } catch (err: any) {
@@ -248,12 +255,23 @@ router.post('/verifications/:id/approve', authenticateToken, requireAdminRole, a
 
 router.post('/verifications/:id/reject', authenticateToken, requireAdminRole, async (req: Request, res: Response): Promise<void> => {
   try {
+    const { data: verification, error: fetchError } = await supabaseAdmin
+      .from('kyc_verifications')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (fetchError || !verification) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+
+    const reason = req.body.reason || 'Rejected by admin';
     await supabaseAdmin.from('kyc_verifications').update({
       status: 'REJECTED',
       reviewed_by: req.user!.id,
       reviewed_at: new Date().toISOString(),
-      notes: req.body.reason || 'Rejected by admin',
-      rejection_reason: req.body.reason || 'Rejected by admin',
+      notes: reason,
+      rejection_reason: reason,
     }).eq('id', req.params.id);
 
     await auditLog({
@@ -261,6 +279,13 @@ router.post('/verifications/:id/reject', authenticateToken, requireAdminRole, as
       action: 'KYC_REJECTED',
       entity: 'kyc_verifications',
       entity_id: req.params.id as string,
+    });
+    await notificationQueue.add('send', {
+      type: 'KYC_STATUS_CHANGED',
+      status: 'REJECTED',
+      reason,
+      target_user_id: verification.user_id,
+      target_phone: verification.phone,
     });
 
     res.json({ data: { status: 'REJECTED' } });
@@ -310,6 +335,13 @@ router.post('/verifications/:id/status', authenticateToken, requireAdminRole, as
       entity_id: req.params.id as string,
       after_state: { status: nextStatus, notes: req.body.notes || null },
       reason: req.body.reason || null,
+    });
+    await notificationQueue.add('send', {
+      type: 'KYC_STATUS_CHANGED',
+      status: nextStatus,
+      reason: req.body.reason || null,
+      target_user_id: data.user_id,
+      target_phone: data.phone,
     });
 
     res.json({ data });
@@ -629,6 +661,12 @@ router.post('/impersonation/start', sensitiveAdminLimiter, authenticateToken, re
       after_state: { target_user_id: targetUserId, expires_at: expiresAt },
       request_id: req.requestId,
     });
+    await notificationQueue.add('send', {
+      type: 'ADMIN_IMPERSONATION_STARTED',
+      actor_id: req.user!.id,
+      actor_phone: req.user!.phone,
+      message: `You started impersonating ${targetProfile.full_name || targetProfile.phone || targetUserId}.`,
+    });
 
     res.json({
       data: {
@@ -725,6 +763,12 @@ router.post('/impersonation/stop', sensitiveAdminLimiter, authenticateToken, req
       entity_id: existing.id as string,
       reason: req.body.reason || 'manual-stop',
       request_id: req.requestId,
+    });
+    await notificationQueue.add('send', {
+      type: 'ADMIN_IMPERSONATION_STOPPED',
+      actor_id: req.user!.id,
+      actor_phone: req.user!.phone,
+      message: 'Your impersonation session has been stopped.',
     });
 
     res.json({ data: { ok: true } });

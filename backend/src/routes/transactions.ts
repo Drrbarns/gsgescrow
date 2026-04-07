@@ -4,6 +4,7 @@ import { supabaseAdmin, auditLog } from '../services/supabase';
 import { CreateTransactionPayload, SellerDispatchPayload } from '../types';
 import { generateCode, hashCode } from '../utils/codes';
 import { env } from '../config/env';
+import { notificationQueue } from '../services/queue';
 
 const router = Router();
 
@@ -62,6 +63,10 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
       entity_id: txn.id,
       after_state: { short_id: txn.short_id, grand_total: grandTotal },
       request_id: req.requestId,
+    });
+    await notificationQueue.add('send', {
+      type: 'TRANSACTION_CREATED',
+      transaction_id: txn.id,
     });
 
     res.status(201).json({ data: txn });
@@ -221,6 +226,10 @@ router.post('/:id/dispatch', authenticateToken, async (req: Request, res: Respon
       after_state: { status: 'DISPATCHED' },
       request_id: req.requestId,
     });
+    await notificationQueue.add('send', {
+      type: 'DISPATCHED',
+      transaction_id: txn.id,
+    });
 
     res.json({ data: { partial_code: partialCode, message: 'Dispatch confirmed. Do NOT share partial code.' } });
   } catch (err: any) {
@@ -282,6 +291,10 @@ router.post('/:id/verify-delivery', authenticateToken, async (req: Request, res:
       actor_id: req.user!.id, action: 'DELIVERY_CONFIRMED',
       entity: 'transactions', entity_id: txnId, request_id: req.requestId,
     });
+    await notificationQueue.add('send', {
+      type: 'DELIVERY_CONFIRMED',
+      transaction_id: txnId,
+    });
 
     res.json({ data: { message: 'Delivery confirmed successfully' } });
   } catch (err: any) {
@@ -304,6 +317,10 @@ router.post('/:id/request-replacement', authenticateToken, async (req: Request, 
     await auditLog({
       actor_id: req.user!.id, action: 'REPLACEMENT_REQUESTED',
       entity: 'transactions', entity_id: txn.id, request_id: req.requestId,
+    });
+    await notificationQueue.add('send', {
+      type: 'REPLACEMENT_REQUESTED',
+      transaction_id: txn.id,
     });
 
     res.json({ data: { message: 'Replacement requested' } });

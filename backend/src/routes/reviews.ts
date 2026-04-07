@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, requireAdminRole, optionalAuth, isPrivilegedRole } from '../middleware/auth';
 import { supabaseAdmin } from '../services/supabase';
+import { notificationQueue } from '../services/queue';
 
 const router = Router();
 
@@ -37,6 +38,10 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
       .single();
 
     if (error) throw error;
+    await notificationQueue.add('send', {
+      type: 'REVIEW_SUBMITTED',
+      transaction_id,
+    });
     res.status(201).json({ data: review });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to create review' });
@@ -78,11 +83,19 @@ router.post('/:id/moderate', authenticateToken, requireAdminRole, async (req: Re
       res.status(400).json({ error: 'Status must be APPROVED or REJECTED' }); return;
     }
 
+    const { data: review } = await supabaseAdmin.from('reviews').select('transaction_id').eq('id', req.params.id).single();
     await supabaseAdmin.from('reviews').update({
       status,
       moderated_by: req.user!.id,
       moderated_at: new Date().toISOString(),
     }).eq('id', req.params.id);
+    if (review?.transaction_id) {
+      await notificationQueue.add('send', {
+        type: 'REVIEW_MODERATED',
+        transaction_id: review.transaction_id,
+        status,
+      });
+    }
 
     res.json({ data: { message: `Review ${status.toLowerCase()}` } });
   } catch (err: any) {
