@@ -4,7 +4,7 @@ class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = API_URL;
+    this.baseUrl = (API_URL || '').replace(/\/+$/, '');
   }
 
   private async getSupabase() {
@@ -68,21 +68,17 @@ class ApiClient {
     return Array.from(map.values()).sort((a, b) => String(a.key).localeCompare(String(b.key)));
   }
 
-  async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const token = await this.getToken();
-    const impersonationToken = this.getImpersonationToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (impersonationToken) headers['x-impersonation-token'] = impersonationToken;
+  private normalizePath(path: string) {
+    return path.startsWith('/') ? path : `/${path}`;
+  }
 
-    const requestUrl = `${this.baseUrl}${path}`;
-    const res = await fetch(requestUrl, {
-      ...options,
-      headers,
-    });
+  private isLikelyHtmlPayload(text: string) {
+    const trimmed = text.trim().toLowerCase();
+    return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<head');
+  }
+
+  private async doFetchJson<T>(requestUrl: string, options: RequestInit): Promise<T> {
+    const res = await fetch(requestUrl, options);
     const contentType = res.headers.get('content-type') || '';
     let payload: any = null;
 
@@ -101,6 +97,8 @@ class ApiClient {
         } catch {
           payload = null;
         }
+      } else if (this.isLikelyHtmlPayload(trimmed)) {
+        payload = { error: `Invalid API response from ${requestUrl}. API route returned HTML.` };
       } else {
         payload = { error: `Invalid API response from ${requestUrl}. Check NEXT_PUBLIC_API_URL and backend routing.` };
       }
@@ -113,6 +111,34 @@ class ApiClient {
       throw new Error(`Empty or invalid response from ${requestUrl}`);
     }
     return payload as T;
+  }
+
+  async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const token = await this.getToken();
+    const impersonationToken = this.getImpersonationToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (impersonationToken) headers['x-impersonation-token'] = impersonationToken;
+
+    const normalizedPath = this.normalizePath(path);
+    const requestOptions: RequestInit = {
+      ...options,
+      headers,
+    };
+
+    const primaryUrl = this.baseUrl ? `${this.baseUrl}${normalizedPath}` : normalizedPath;
+    try {
+      return await this.doFetchJson<T>(primaryUrl, requestOptions);
+    } catch (primaryErr) {
+      // If explicit API host fails and we're on browser, retry same-origin API once.
+      if (typeof window !== 'undefined' && this.baseUrl) {
+        return await this.doFetchJson<T>(normalizedPath, requestOptions);
+      }
+      throw primaryErr;
+    }
   }
 
   // Auth
