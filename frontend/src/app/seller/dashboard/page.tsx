@@ -264,7 +264,7 @@ export default function SellerDashboardPage() {
                   </span>
                 </button>
               ))}
-            </div>
+          </div>
             <div className="mt-4 space-y-2">
               <Link href="/seller/step-1">
                 <Button className="w-full rounded-xl">Open Seller Orders</Button>
@@ -272,9 +272,9 @@ export default function SellerDashboardPage() {
               <Link href="/products-services">
                 <Button variant="outline" className="w-full rounded-xl">
                   View Marketplace
-                </Button>
-              </Link>
-            </div>
+              </Button>
+            </Link>
+          </div>
           </aside>
 
           <section className="space-y-5">
@@ -287,12 +287,12 @@ export default function SellerDashboardPage() {
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Overview</p>
                         <h1 className="mt-1 text-3xl font-black text-slate-900">Seller Performance Dashboard</h1>
                         <p className="mt-1 text-sm text-slate-600">A command center for your escrow-powered storefront.</p>
-                      </div>
+                  </div>
                       <Button className="rounded-full" onClick={() => setActiveView('listings')}>
                         <Plus className="mr-1 h-4 w-4" />
                         New Listing
                       </Button>
-                    </div>
+                  </div>
                   </CardContent>
                 </Card>
 
@@ -320,8 +320,8 @@ export default function SellerDashboardPage() {
                       </div>
                     ))}
                     {listings.length === 0 && <p className="text-sm text-slate-500">No listings yet. Create your first listing.</p>}
-                  </CardContent>
-                </Card>
+              </CardContent>
+            </Card>
               </>
             )}
 
@@ -410,14 +410,14 @@ export default function SellerDashboardPage() {
                           Cancel
                         </Button>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
 
                 <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
                   <CardHeader>
                     <CardTitle>My Listings ({listings.length})</CardTitle>
-                  </CardHeader>
+            </CardHeader>
                   <CardContent className="space-y-3">
                     {listings.map((listing) => (
                       <div key={listing.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -437,7 +437,7 @@ export default function SellerDashboardPage() {
                             </div>
                           </div>
                           <Badge variant="outline">{listing.status}</Badge>
-                        </div>
+                </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEditListing(listing)}>
                             Edit
@@ -458,8 +458,8 @@ export default function SellerDashboardPage() {
                       </div>
                     ))}
                     {listings.length === 0 && <p className="text-sm text-slate-500">You have not created any listings yet.</p>}
-                  </CardContent>
-                </Card>
+            </CardContent>
+          </Card>
               </div>
             )}
 
@@ -471,7 +471,7 @@ export default function SellerDashboardPage() {
                 <CardContent className="space-y-2">
                   {orders.map((order) => (
                     <div key={order.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                      <div>
+              <div>
                         <p className="text-sm font-semibold text-slate-900">{order.product_name || order.short_id}</p>
                         <p className="text-xs text-slate-500">{order.short_id} · {order.seller_name}</p>
                       </div>
@@ -482,15 +482,15 @@ export default function SellerDashboardPage() {
                     </div>
                   ))}
                   {orders.length === 0 && <p className="text-sm text-slate-500">No orders yet.</p>}
-                </CardContent>
-              </Card>
+            </CardContent>
+          </Card>
             )}
 
             {activeView === 'payouts' && (
               <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Payout Monitor</CardTitle>
-                </CardHeader>
+            </CardHeader>
                 <CardContent className="space-y-2">
                   {payouts.map((payout) => (
                     <div key={payout.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -526,7 +526,7 @@ export default function SellerDashboardPage() {
                     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                       <p className="text-xs text-slate-500">Total Reviews</p>
                       <p className="text-xl font-black text-slate-900">{Number(analytics?.total_reviews || 0)}</p>
-                    </div>
+                  </div>
                   </CardContent>
                 </Card>
 
@@ -566,9 +566,9 @@ export default function SellerDashboardPage() {
                     </div>
                   ))}
                   {notifications.length === 0 && <p className="text-sm text-slate-500">No notifications yet.</p>}
-                </CardContent>
-              </Card>
-            )}
+            </CardContent>
+          </Card>
+        )}
           </section>
         </div>
       </main>
