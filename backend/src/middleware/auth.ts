@@ -1,6 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
 import { supabaseAdmin } from '../services/supabase';
 import { AuthUser, UserRole } from '../types';
 
@@ -23,8 +21,9 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
   }
 
   try {
-    const decoded = jwt.verify(token, env.SUPABASE_JWT_SECRET) as { sub: string; phone?: string; role?: string };
-    const userId = decoded.sub;
+    const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authUser) throw new Error('Invalid token');
+    const userId = authUser.id;
 
     const { data: profile } = await supabaseAdmin
       .from('profiles')
@@ -34,7 +33,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
 
     const baseUser: AuthUser = {
       id: userId,
-      phone: profile?.phone || decoded.phone || '',
+      phone: profile?.phone || authUser.phone || '',
       role: (profile?.role as UserRole) || 'buyer',
     };
 
@@ -168,19 +167,20 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, env.SUPABASE_JWT_SECRET) as { sub: string; phone?: string };
-      const userId = decoded.sub;
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('role, phone')
-        .eq('user_id', userId)
-        .single();
+      const { data: { user: authUser } } = await supabaseAdmin.auth.getUser(token);
+      if (authUser) {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('role, phone')
+          .eq('user_id', authUser.id)
+          .single();
 
-      req.user = {
-        id: userId,
-        phone: profile?.phone || decoded.phone || '',
-        role: (profile?.role as UserRole) || 'buyer',
-      };
+        req.user = {
+          id: authUser.id,
+          phone: profile?.phone || authUser.phone || '',
+          role: (profile?.role as UserRole) || 'buyer',
+        };
+      }
     } catch { /* ignore */ }
   }
 
