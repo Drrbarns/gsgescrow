@@ -25,6 +25,12 @@ export const env = {
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   APP_URL: process.env.APP_URL || 'https://sellbuysafe.gsgbrands.com',
   CORS_ORIGINS: (process.env.CORS_ORIGINS || 'https://sellbuysafe.gsgbrands.com').split(','),
+  SENTRY_DSN: process.env.SENTRY_DSN || '',
+  SENTRY_ENV: process.env.SENTRY_ENV || process.env.NODE_ENV || 'development',
+  OPS_ALERT_MIN_INTERVAL_SEC: parseInt(process.env.OPS_ALERT_MIN_INTERVAL_SEC || '300', 10),
+  OPS_PAYOUT_FAILURE_THRESHOLD_1H: parseInt(process.env.OPS_PAYOUT_FAILURE_THRESHOLD_1H || '3', 10),
+  OPS_SMS_FAILURE_RATIO_THRESHOLD_PCT: parseInt(process.env.OPS_SMS_FAILURE_RATIO_THRESHOLD_PCT || '25', 10),
+  OPS_SCHEDULER_DRIFT_THRESHOLD_SEC: parseInt(process.env.OPS_SCHEDULER_DRIFT_THRESHOLD_SEC || '1200', 10),
   /** When true, payment/payout endpoints allow simulation (no real Paystack). */
   SIMULATION_MODE: process.env.SIMULATION_MODE === 'true',
 } as const;

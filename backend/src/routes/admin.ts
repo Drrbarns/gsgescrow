@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, requireAdminRole, requireSuperadmin } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { notificationQueue } from '../services/queue';
+import { notificationQueue, getQueueHealth, pingRedis } from '../services/queue';
 import { randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
 
@@ -1148,6 +1148,70 @@ router.get('/analytics/overview', ...adminAuth, async (_req: Request, res: Respo
     });
   } catch {
     res.status(500).json({ error: 'Failed to compute analytics overview' });
+  }
+});
+
+// ---- OPS RELIABILITY ----
+router.get('/ops/reliability', ...adminAuth, async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const now = Date.now();
+    const oneHourAgo = new Date(now - 60 * 60 * 1000).toISOString();
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+    const [redis, queueHealth, dl1h, dl24h, latestDeadLetters, sms1h, sms24h] = await Promise.all([
+      pingRedis(),
+      getQueueHealth(),
+      supabaseAdmin.from('ops_dead_letters').select('id', { count: 'exact', head: true }).gte('created_at', oneHourAgo),
+      supabaseAdmin.from('ops_dead_letters').select('id', { count: 'exact', head: true }).gte('created_at', dayAgo),
+      supabaseAdmin.from('ops_dead_letters').select('*').order('created_at', { ascending: false }).limit(25),
+      supabaseAdmin.from('notifications').select('status, channel').eq('channel', 'SMS').gte('created_at', oneHourAgo),
+      supabaseAdmin.from('notifications').select('status, channel').eq('channel', 'SMS').gte('created_at', dayAgo),
+    ]);
+
+    const smsRows1h = sms1h.data || [];
+    const smsRows24h = sms24h.data || [];
+    const smsFailed1h = smsRows1h.filter((row: any) => row.status === 'FAILED').length;
+    const smsFailed24h = smsRows24h.filter((row: any) => row.status === 'FAILED').length;
+    const smsFailureRate1h = smsRows1h.length > 0 ? (smsFailed1h / smsRows1h.length) * 100 : 0;
+    const smsFailureRate24h = smsRows24h.length > 0 ? (smsFailed24h / smsRows24h.length) * 100 : 0;
+
+    res.json({
+      data: {
+        redis,
+        queue_health: queueHealth,
+        dead_letters: {
+          count_1h: dl1h.count || 0,
+          count_24h: dl24h.count || 0,
+          latest: latestDeadLetters.data || [],
+        },
+        sms: {
+          sent_1h: smsRows1h.length - smsFailed1h,
+          failed_1h: smsFailed1h,
+          failure_rate_1h_pct: Number(smsFailureRate1h.toFixed(2)),
+          sent_24h: smsRows24h.length - smsFailed24h,
+          failed_24h: smsFailed24h,
+          failure_rate_24h_pct: Number(smsFailureRate24h.toFixed(2)),
+        },
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Failed to load reliability overview' });
+  }
+});
+
+router.get('/ops/logs', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const level = req.query.level as string | undefined;
+    const tag = req.query.tag as string | undefined;
+    const limit = Math.min(Number(req.query.limit || 100), 300);
+    let query = supabaseAdmin.from('ops_runtime_logs').select('*').order('created_at', { ascending: false }).limit(limit);
+    if (level && ['info', 'warn', 'error'].includes(level)) query = query.eq('level', level);
+    if (tag) query = query.ilike('tag', `%${tag}%`);
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json({ data: data || [] });
+  } catch {
+    res.status(500).json({ error: 'Failed to load ops logs' });
   }
 });
 

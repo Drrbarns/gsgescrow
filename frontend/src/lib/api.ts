@@ -818,6 +818,21 @@ class ApiClient {
       async () => ({ data: { gmv: 0, escrow_held_value: 0, dispute_rate_percent: 0, payout_failure_rate_percent: 0, avg_dispute_resolution_hours: 0, open_alerts: 0 } })
     );
   }
+  getOpsReliabilityOverview() {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>('/api/admin/ops/reliability'),
+      async () => ({ data: { redis: { ok: false, message: 'Unavailable' }, queue_health: [], dead_letters: { count_1h: 0, count_24h: 0, latest: [] }, sms: { sent_1h: 0, failed_1h: 0, failure_rate_1h_pct: 0, sent_24h: 0, failed_24h: 0, failure_rate_24h_pct: 0 } } })
+    );
+  }
+  getOpsRuntimeLogs(params?: Record<string, string>) {
+    return this.requestWithFallback<{ data: any[] }>(
+      () => {
+        const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+        return this.request<{ data: any[] }>(`/api/admin/ops/logs${qs}`);
+      },
+      async () => ({ data: [] })
+    );
+  }
   getAuditLogs(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.request<{ data: any[]; total: number }>(`/api/admin/audit-logs${qs}`);

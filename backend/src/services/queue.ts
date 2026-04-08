@@ -4,8 +4,120 @@ import { env } from '../config/env';
 import { supabaseAdmin, auditLog } from './supabase';
 import * as paystack from './paystack';
 import * as moolre from './moolre';
+import { createHash } from 'crypto';
+import { captureMessage } from './telemetry';
 
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) as any;
+
+const MAX_LOG_BODY = 800;
+
+function classifyFailure(err: unknown): { failureClass: string; retryable: boolean; message: string } {
+  const message = err instanceof Error ? err.message : String(err || 'Unknown error');
+  const lower = message.toLowerCase();
+  if (lower.includes('not found') || lower.includes('invalid') || lower.includes('already exists')) {
+    return { failureClass: 'VALIDATION', retryable: false, message };
+  }
+  if (lower.includes('timeout') || lower.includes('socket') || lower.includes('network')) {
+    return { failureClass: 'NETWORK', retryable: true, message };
+  }
+  if (lower.includes('429') || lower.includes('rate')) {
+    return { failureClass: 'RATE_LIMIT', retryable: true, message };
+  }
+  if (lower.includes('auth') || lower.includes('permission') || lower.includes('unauthorized')) {
+    return { failureClass: 'AUTH', retryable: false, message };
+  }
+  return { failureClass: 'UNKNOWN', retryable: true, message };
+}
+
+async function emitOpsAlert(ruleKey: string, title: string, body: string, severity = 'HIGH', payload: Record<string, unknown> = {}) {
+  const minIntervalSec = Math.max(30, env.OPS_ALERT_MIN_INTERVAL_SEC || 300);
+  const sinceIso = new Date(Date.now() - minIntervalSec * 1000).toISOString();
+  const { data: recent } = await supabaseAdmin
+    .from('admin_alert_events')
+    .select('id')
+    .eq('rule_key', ruleKey)
+    .gte('created_at', sinceIso)
+    .limit(1);
+  if (recent && recent.length > 0) return;
+
+  await supabaseAdmin.from('admin_alert_events').insert({
+    rule_key: ruleKey,
+    severity,
+    title,
+    body,
+    payload,
+    status: 'OPEN',
+  });
+}
+
+async function recordDeadLetter(queueName: string, job: Job, err: unknown, metadata: Record<string, unknown> = {}) {
+  const maxAttempts = Number(job.opts.attempts || 1);
+  const details = classifyFailure(err);
+  const payload = job.data || {};
+  const payloadHash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+  await supabaseAdmin.from('ops_dead_letters').insert({
+    queue_name: queueName,
+    job_id: String(job.id || ''),
+    job_name: job.name,
+    failure_class: details.failureClass,
+    error_message: details.message.slice(0, MAX_LOG_BODY),
+    attempts_made: job.attemptsMade,
+    max_attempts: maxAttempts,
+    is_retryable: details.retryable,
+    payload_hash: payloadHash,
+    payload,
+    metadata,
+  });
+}
+
+async function recordQueueSnapshot() {
+  const queues = [
+    { name: 'payouts', ref: payoutQueue },
+    { name: 'notifications', ref: notificationQueue },
+    { name: 'scheduler', ref: schedulerQueue },
+  ];
+  for (const queue of queues) {
+    const counts = await queue.ref.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed');
+    const entries = Object.entries(counts);
+    if (!entries.length) continue;
+    await supabaseAdmin.from('ops_metric_snapshots').insert(
+      entries.map(([key, value]) => ({
+        metric_key: 'queue_count',
+        metric_group: queue.name,
+        metric_value: Number(value || 0),
+        dimensions: { state: key },
+      }))
+    );
+  }
+}
+
+export async function pingRedis() {
+  try {
+    const pong = await connection.ping();
+    return { ok: pong === 'PONG', message: pong };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || 'Redis ping failed' };
+  }
+}
+
+export async function getQueueHealth() {
+  const entries = [
+    { key: 'payouts', queue: payoutQueue },
+    { key: 'notifications', queue: notificationQueue },
+    { key: 'scheduler', queue: schedulerQueue },
+  ];
+  const out: Array<{ name: string; ok: boolean; counts?: Record<string, number>; error?: string }> = [];
+  for (const entry of entries) {
+    try {
+      const counts = await entry.queue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed');
+      out.push({ name: entry.key, ok: true, counts });
+    } catch (err: any) {
+      out.push({ name: entry.key, ok: false, error: err?.message || 'Queue unavailable' });
+    }
+  }
+  return out;
+}
 
 // ---- PAYOUT QUEUE ----
 export const payoutQueue = new Queue('payouts', {
@@ -101,21 +213,56 @@ export function startPayoutWorker() {
 
   worker.on('completed', (job) => {
     console.log(`[PAYOUT_WORKER] Job ${job.id} completed`);
+    void captureMessage('info', 'worker.payout', `Job ${job.id} completed`, { job_id: job.id, attempts: job.attemptsMade });
   });
 
   worker.on('failed', async (job, err) => {
     console.error(`[PAYOUT_WORKER] Job ${job?.id} failed: ${err.message}`);
     if (job) {
+      const maxAttempts = Number(job.opts.attempts || 5);
+      const willExhaust = job.attemptsMade >= maxAttempts;
+      const details = classifyFailure(err);
+      const finalStatus = !details.retryable || willExhaust ? 'FAILED' : 'QUEUED';
       await supabaseAdmin
         .from('payouts')
         .update({
-          status: job.attemptsMade >= (job.opts.attempts || 5) ? 'FAILED' : 'QUEUED',
+          status: finalStatus,
           last_error: err.message,
           attempts: job.attemptsMade,
           next_retry_at: new Date(Date.now() + 60000 * Math.pow(2, job.attemptsMade)).toISOString(),
         })
         .eq('id', job.data.payout_id);
+
+      await captureMessage('error', 'worker.payout', err.message, {
+        job_id: job.id,
+        payout_id: job.data?.payout_id,
+        attempts: job.attemptsMade,
+        final_status: finalStatus,
+        failure_class: details.failureClass,
+      });
+
+      if (finalStatus === 'FAILED') {
+        await recordDeadLetter('payouts', job, err, { payout_id: job.data?.payout_id });
+        const { count } = await supabaseAdmin
+          .from('ops_dead_letters')
+          .select('id', { count: 'exact', head: true })
+          .eq('queue_name', 'payouts')
+          .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+        if ((count || 0) >= env.OPS_PAYOUT_FAILURE_THRESHOLD_1H) {
+          await emitOpsAlert(
+            'payout_fail_spike',
+            'Payout failures increasing',
+            `Payout dead-letters in the last 1 hour reached ${count}.`,
+            'CRITICAL',
+            { count_1h: count, threshold: env.OPS_PAYOUT_FAILURE_THRESHOLD_1H }
+          );
+        }
+      }
     }
+  });
+
+  worker.on('stalled', (jobId) => {
+    void captureMessage('warn', 'worker.payout', `Job ${jobId} stalled`, { job_id: jobId });
   });
 
   return worker;
@@ -354,6 +501,8 @@ export function startNotificationWorker() {
         break;
     }
 
+    let smsSent = 0;
+    let smsFailed = 0;
     for (const msg of messages) {
       const ref = `sms_${transaction_id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       let channel: 'LOG' | 'SMS' = 'LOG';
@@ -375,6 +524,8 @@ export function startNotificationWorker() {
           const smsSuccess = smsRes?.status === 1 || smsRes?.status === '1' || smsRes?.code === 'SMS01';
           channel = 'SMS';
           status = smsSuccess ? 'SENT' : 'FAILED';
+          if (smsSuccess) smsSent += 1;
+          else smsFailed += 1;
           metadata = { ...metadata, sms_ref: ref, sms_code: smsRes?.code, sms_message: smsRes?.message, sms_raw: smsRes };
         } else {
           metadata = { ...metadata, sms_skipped: true, reason: 'Moolre SMS not configured or phone missing' };
@@ -382,6 +533,7 @@ export function startNotificationWorker() {
       } catch (smsErr: any) {
         channel = 'SMS';
         status = 'FAILED';
+        smsFailed += 1;
         metadata = { ...metadata, sms_ref: ref, sms_error: smsErr?.message || 'Moolre SMS send failed' };
       }
 
@@ -396,7 +548,41 @@ export function startNotificationWorker() {
         metadata,
       });
     }
+
+    if (smsSent + smsFailed > 0) {
+      const ratio = (smsFailed / (smsSent + smsFailed)) * 100;
+      if (ratio >= env.OPS_SMS_FAILURE_RATIO_THRESHOLD_PCT) {
+        await emitOpsAlert(
+          'sms_fail_ratio',
+          'SMS delivery failure ratio elevated',
+          `Notification SMS failure ratio is ${ratio.toFixed(1)}% in current run.`,
+          'HIGH',
+          { sms_sent: smsSent, sms_failed: smsFailed, ratio_pct: ratio }
+        );
+      }
+    }
   }, { connection, concurrency: 5 });
+
+  worker.on('completed', (job) => {
+    void captureMessage('info', 'worker.notification', `Job ${job.id} completed`, { job_id: job.id, attempts: job.attemptsMade });
+  });
+
+  worker.on('failed', async (job, err) => {
+    if (!job) return;
+    const details = classifyFailure(err);
+    await captureMessage('error', 'worker.notification', err.message, {
+      job_id: job.id,
+      attempts: job.attemptsMade,
+      failure_class: details.failureClass,
+    });
+    if (!details.retryable || job.attemptsMade >= Number(job.opts.attempts || 3)) {
+      await recordDeadLetter('notifications', job, err);
+    }
+  });
+
+  worker.on('stalled', (jobId) => {
+    void captureMessage('warn', 'worker.notification', `Job ${jobId} stalled`, { job_id: jobId });
+  });
 
   return worker;
 }
@@ -445,6 +631,7 @@ export function startSchedulerWorker() {
 
       case 'REFRESH_STATS': {
         await supabaseAdmin.rpc('refresh_platform_stats');
+        await recordQueueSnapshot();
         break;
       }
 
@@ -466,6 +653,42 @@ export function startSchedulerWorker() {
       }
     }
   }, { connection, concurrency: 1 });
+
+  worker.on('completed', (job) => {
+    void captureMessage('info', 'worker.scheduler', `Job ${job.id} completed`, { job_id: job.id, job_name: job.name });
+  });
+
+  worker.on('failed', async (job, err) => {
+    if (!job) return;
+    const details = classifyFailure(err);
+    await captureMessage('error', 'worker.scheduler', err.message, {
+      job_id: job.id,
+      job_name: job.name,
+      attempts: job.attemptsMade,
+      failure_class: details.failureClass,
+    });
+    if (!details.retryable || job.attemptsMade >= Number(job.opts.attempts || 3)) {
+      await recordDeadLetter('scheduler', job, err);
+      await emitOpsAlert(
+        'scheduler_drift',
+        'Scheduler reliability issue detected',
+        `Scheduler job ${job.name} failed after retries.`,
+        'HIGH',
+        { job_name: job.name, job_id: job.id, attempts: job.attemptsMade }
+      );
+    }
+  });
+
+  worker.on('stalled', async (jobId) => {
+    await captureMessage('warn', 'worker.scheduler', `Job ${jobId} stalled`, { job_id: jobId });
+    await emitOpsAlert(
+      'scheduler_drift',
+      'Scheduler job stalled',
+      `Scheduler detected stalled job ${jobId}.`,
+      'HIGH',
+      { job_id: jobId }
+    );
+  });
 
   // Schedule recurring jobs
   schedulerQueue.add('auto_release', { type: 'AUTO_RELEASE' }, {

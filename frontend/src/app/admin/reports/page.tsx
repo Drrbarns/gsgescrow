@@ -20,6 +20,10 @@ export default function AdminReports() {
   const [alertRules, setAlertRules] = useState<any[]>([]);
   const [alertEvents, setAlertEvents] = useState<any[]>([]);
   const [exportJobs, setExportJobs] = useState<any[]>([]);
+  const [reliability, setReliability] = useState<any>(null);
+  const [opsLogs, setOpsLogs] = useState<any[]>([]);
+  const [logLevelFilter, setLogLevelFilter] = useState('error');
+  const [logTagFilter, setLogTagFilter] = useState('');
   const [alertStatusFilter, setAlertStatusFilter] = useState('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -34,9 +38,15 @@ export default function AdminReports() {
         api.getAlertEvents(alertStatusFilter),
         api.getExportJobs({ page: '1', limit: '20' }),
       ]);
+      const [reliabilityRes, logsRes] = await Promise.all([
+        api.getOpsReliabilityOverview(),
+        api.getOpsRuntimeLogs({ level: logLevelFilter, tag: logTagFilter, limit: '50' }),
+      ]);
       setAlertRules(rulesRes.data || []);
       setAlertEvents(eventsRes.data || []);
       setExportJobs(jobsRes.data || []);
+      setReliability(reliabilityRes.data || null);
+      setOpsLogs(logsRes.data || []);
     } catch {
       toast.error('Failed to load ops data');
     }
@@ -44,7 +54,7 @@ export default function AdminReports() {
 
   useEffect(() => {
     void loadOpsData();
-  }, [alertStatusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [alertStatusFilter, logLevelFilter, logTagFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -52,7 +62,7 @@ export default function AdminReports() {
       void loadOpsData();
     }, 25000);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, alertStatusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoRefresh, alertStatusFilter, logLevelFilter, logTagFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchReport() {
     setLoading(true);
@@ -180,8 +190,7 @@ export default function AdminReports() {
         </CardContent>
       </Card>
 
-      {report && (
-        <>
+      <>
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total Collected</CardTitle></CardHeader>
@@ -215,7 +224,7 @@ export default function AdminReports() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(report.transactions || []).slice(0, 50).map((t: any) => (
+                  {(report?.transactions || []).slice(0, 50).map((t: any) => (
                     <TableRow key={t.id}>
                       <TableCell className="font-mono text-xs">{t.short_id}</TableCell>
                       <TableCell>{t.buyer_name}</TableCell>
@@ -292,6 +301,111 @@ export default function AdminReports() {
             </Card>
           </div>
 
+          <Separator />
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Redis / Queue Health</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm">
+                  Redis: <span className={reliability?.redis?.ok ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>{reliability?.redis?.ok ? 'Healthy' : 'Degraded'}</span>
+                </p>
+                {(reliability?.queue_health || []).map((q: any) => (
+                  <div key={q.name} className="rounded-lg border p-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{q.name}</span>
+                      <span className={q.ok ? 'text-green-600' : 'text-red-600'}>{q.ok ? 'OK' : 'Error'}</span>
+                    </div>
+                    {q.counts && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        W:{q.counts.waiting || 0} A:{q.counts.active || 0} F:{q.counts.failed || 0} D:{q.counts.delayed || 0}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Failure Rates</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Dead Letters (1h / 24h)</p>
+                  <p className="font-semibold">{reliability?.dead_letters?.count_1h || 0} / {reliability?.dead_letters?.count_24h || 0}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">SMS Failure Rate (1h)</p>
+                  <p className="font-semibold">{Number(reliability?.sms?.failure_rate_1h_pct || 0).toFixed(2)}%</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">SMS Failure Rate (24h)</p>
+                  <p className="font-semibold">{Number(reliability?.sms?.failure_rate_24h_pct || 0).toFixed(2)}%</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Latest Dead Letters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(reliability?.dead_letters?.latest || []).slice(0, 6).map((item: any) => (
+                  <div key={item.id} className="rounded-lg border p-2">
+                    <p className="text-xs font-semibold">{item.queue_name} · {item.failure_class}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{item.error_message}</p>
+                  </div>
+                ))}
+                {(!reliability?.dead_letters?.latest || reliability.dead_letters.latest.length === 0) && (
+                  <p className="text-sm text-muted-foreground">No dead letters.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center justify-between gap-3">
+                <span>Runtime Logs</span>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant={logLevelFilter === 'error' ? 'default' : 'outline'} onClick={() => setLogLevelFilter('error')}>Errors</Button>
+                  <Button size="sm" variant={logLevelFilter === 'warn' ? 'default' : 'outline'} onClick={() => setLogLevelFilter('warn')}>Warn</Button>
+                  <Button size="sm" variant={logLevelFilter === 'info' ? 'default' : 'outline'} onClick={() => setLogLevelFilter('info')}>Info</Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filter by tag (worker, runtime, startup...)"
+                  value={logTagFilter}
+                  onChange={(e) => setLogTagFilter(e.target.value)}
+                />
+                <Button variant="outline" onClick={() => void loadOpsData()}>Refresh</Button>
+              </div>
+              <div className="space-y-2">
+                {opsLogs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No logs for current filter.</p>
+                ) : (
+                  opsLogs.slice(0, 20).map((log) => (
+                    <div key={log.id} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase">{log.level} · {log.tag}</p>
+                          <p className="text-sm mt-1">{log.message}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Async Export Jobs</CardTitle>
@@ -320,8 +434,7 @@ export default function AdminReports() {
               </div>
             </CardContent>
           </Card>
-        </>
-      )}
+      </>
     </div>
   );
 }
