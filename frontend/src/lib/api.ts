@@ -3,6 +3,7 @@ import { API_URL } from './constants';
 class ApiClient {
   private baseUrl: string;
   private readonly productionApiBase = 'https://api.sellbuysafe.gsgbrands.com';
+  private readonly apiFallbackEnv = process.env.NEXT_PUBLIC_API_FALLBACK_URLS || '';
 
   constructor() {
     this.baseUrl = (API_URL || '').replace(/\/+$/, '');
@@ -81,6 +82,15 @@ class ApiClient {
     // If frontend is on the public brand host, backend is expected on api subdomain.
     if (host === 'sellbuysafe.gsgbrands.com' || host.endsWith('.sellbuysafe.gsgbrands.com')) {
       urls.push(this.productionApiBase);
+      urls.push('https://api.sellbuysafe.gsgbrands.com.gh');
+      urls.push('https://api.sellbuysafe.com');
+    }
+
+    if (this.apiFallbackEnv) {
+      for (const raw of this.apiFallbackEnv.split(',')) {
+        const v = raw.trim();
+        if (v) urls.push(v);
+      }
     }
 
     return Array.from(new Set(urls.map((u) => u.replace(/\/+$/, ''))));
@@ -157,16 +167,18 @@ class ApiClient {
       }
 
       const fallbacks = this.getFallbackBaseUrls();
+      let lastErr: unknown = primaryErr;
       for (const fallbackBase of fallbacks) {
         if (fallbackBase === this.baseUrl) continue;
         try {
           return await this.doFetchJson<T>(`${fallbackBase}${normalizedPath}`, requestOptions);
-        } catch {
+        } catch (fallbackErr) {
+          lastErr = fallbackErr;
           // try next fallback
         }
       }
 
-      throw primaryErr;
+      throw lastErr;
     }
   }
 

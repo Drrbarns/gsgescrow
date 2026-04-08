@@ -24,7 +24,11 @@ export const env = {
   MOOLRE_SMS_SCENARIO_KEY: process.env.MOOLRE_SMS_SCENARIO_KEY || '',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   APP_URL: process.env.APP_URL || 'https://sellbuysafe.gsgbrands.com',
-  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'https://sellbuysafe.gsgbrands.com').split(','),
+  API_PUBLIC_URL: process.env.API_PUBLIC_URL || '',
+  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'https://sellbuysafe.gsgbrands.com')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean),
   SENTRY_DSN: process.env.SENTRY_DSN || '',
   SENTRY_ENV: process.env.SENTRY_ENV || process.env.NODE_ENV || 'development',
   OPS_ALERT_MIN_INTERVAL_SEC: parseInt(process.env.OPS_ALERT_MIN_INTERVAL_SEC || '300', 10),

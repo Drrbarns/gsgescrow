@@ -66,7 +66,13 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
     const preferMoolre = env.PAYMENT_PROVIDER === 'moolre' && moolre.isMoolreConfigured();
     const reference = `${preferMoolre ? 'MOO' : 'SBS'}_${txn.short_id}_${Date.now()}`;
     const redirectUrl = `${env.APP_URL}/buyer/step-1?ref=${reference}&txn=${txn.id}&provider=${preferMoolre ? 'moolre' : 'paystack'}`;
-    const callbackUrl = `${env.APP_URL}/api/payments/moolre/webhook`;
+    const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0]?.trim();
+    const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0]?.trim();
+    const requestProto = forwardedProto || req.protocol;
+    const requestHost = forwardedHost || req.get('host') || '';
+    const detectedApiBase = requestHost ? `${requestProto}://${requestHost}` : '';
+    const apiBase = (env.API_PUBLIC_URL || detectedApiBase || env.APP_URL).replace(/\/+$/, '');
+    const callbackUrl = `${apiBase}/api/payments/moolre/webhook`;
 
     let authorizationUrl = '';
     let accessCode: string | null = null;

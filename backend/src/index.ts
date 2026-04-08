@@ -21,9 +21,25 @@ import { captureException, captureMessage, initTelemetry } from './services/tele
 
 const app = express();
 initTelemetry();
+app.set('trust proxy', true);
 
 app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGINS, credentials: true }));
+const allowedExactOrigins = new Set(env.CORS_ORIGINS);
+const allowedDomainPattern = /^https?:\/\/([a-z0-9-]+\.)*sellbuysafe\.gsgbrands\.com(\.gh)?(:\d+)?$/i;
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (allowedExactOrigins.has(origin) || allowedDomainPattern.test(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('CORS blocked: origin not allowed'));
+  },
+  credentials: true,
+}));
 app.use(requestIdMiddleware);
 app.use(morgan(':method :url :status :response-time ms - :req[x-request-id]'));
 
