@@ -2,6 +2,7 @@ import { API_URL } from './constants';
 
 class ApiClient {
   private baseUrl: string;
+  private readonly productionApiBase = 'https://api.sellbuysafe.gsgbrands.com';
 
   constructor() {
     this.baseUrl = (API_URL || '').replace(/\/+$/, '');
@@ -72,6 +73,19 @@ class ApiClient {
     return path.startsWith('/') ? path : `/${path}`;
   }
 
+  private getFallbackBaseUrls() {
+    if (typeof window === 'undefined') return [] as string[];
+    const host = window.location.hostname;
+    const urls: string[] = [];
+
+    // If frontend is on the public brand host, backend is expected on api subdomain.
+    if (host === 'sellbuysafe.gsgbrands.com' || host.endsWith('.sellbuysafe.gsgbrands.com')) {
+      urls.push(this.productionApiBase);
+    }
+
+    return Array.from(new Set(urls.map((u) => u.replace(/\/+$/, ''))));
+  }
+
   private isLikelyHtmlPayload(text: string) {
     const trimmed = text.trim().toLowerCase();
     return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<head');
@@ -133,10 +147,25 @@ class ApiClient {
     try {
       return await this.doFetchJson<T>(primaryUrl, requestOptions);
     } catch (primaryErr) {
-      // If explicit API host fails and we're on browser, retry same-origin API once.
+      // If explicit API host fails and we're on browser, retry same-origin API once first.
       if (typeof window !== 'undefined' && this.baseUrl) {
-        return await this.doFetchJson<T>(normalizedPath, requestOptions);
+        try {
+          return await this.doFetchJson<T>(normalizedPath, requestOptions);
+        } catch {
+          // continue to additional fallbacks below
+        }
       }
+
+      const fallbacks = this.getFallbackBaseUrls();
+      for (const fallbackBase of fallbacks) {
+        if (fallbackBase === this.baseUrl) continue;
+        try {
+          return await this.doFetchJson<T>(`${fallbackBase}${normalizedPath}`, requestOptions);
+        } catch {
+          // try next fallback
+        }
+      }
+
       throw primaryErr;
     }
   }
