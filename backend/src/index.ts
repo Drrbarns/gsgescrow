@@ -54,8 +54,23 @@ app.get('/health', (_req, res) => {
   void (async () => {
     const [redis, queues] = await Promise.all([pingRedis(), getQueueHealth()]);
     const healthy = redis.ok && queues.every((q) => q.ok);
-    res.status(healthy ? 200 : 503).json({
+    // Keep health endpoint as liveness (always 200) so infra does not
+    // hard-fail the API when optional dependencies are degraded.
+    res.status(200).json({
       status: healthy ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      redis,
+      queues,
+    });
+  })();
+});
+
+app.get('/ready', (_req, res) => {
+  void (async () => {
+    const [redis, queues] = await Promise.all([pingRedis(), getQueueHealth()]);
+    const healthy = redis.ok && queues.every((q) => q.ok);
+    res.status(healthy ? 200 : 503).json({
+      status: healthy ? 'ready' : 'degraded',
       timestamp: new Date().toISOString(),
       redis,
       queues,
