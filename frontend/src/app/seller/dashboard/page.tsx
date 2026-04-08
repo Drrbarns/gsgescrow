@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
+import { createClient as createSupabaseClient } from '@/lib/supabase/browser';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ const defaultListingForm = {
   price: '',
   location_text: '',
   status: 'PUBLISHED',
+  cover_image_url: '',
 };
 
 export default function SellerDashboardPage() {
@@ -56,6 +58,7 @@ export default function SellerDashboardPage() {
   const [activeView, setActiveView] = useState<SellerView>('overview');
   const [loading, setLoading] = useState(true);
   const [savingListing, setSavingListing] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [analytics, setAnalytics] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
@@ -132,6 +135,7 @@ export default function SellerDashboardPage() {
         price: Number(listingForm.price),
         location_text: listingForm.location_text.trim() || null,
         status: listingForm.status,
+        cover_image_url: listingForm.cover_image_url?.trim() || null,
       };
       if (editingListingId) {
         await api.updateMarketplaceListing(editingListingId, payload);
@@ -160,6 +164,7 @@ export default function SellerDashboardPage() {
       price: String(listing.price || ''),
       location_text: listing.location_text || '',
       status: listing.status || 'PUBLISHED',
+      cover_image_url: listing.cover_image_url || '',
     });
     setActiveView('listings');
   };
@@ -181,6 +186,39 @@ export default function SellerDashboardPage() {
       await loadDashboard();
     } catch {
       toast.error('Failed to mark notifications as read');
+    }
+  };
+
+  const handleUploadListingImage = async (file?: File | null) => {
+    if (!file || !user) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Please upload JPG, PNG, WEBP, or GIF');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be 5MB or less');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const supabase = createSupabaseClient();
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('marketplace-assets').upload(filePath, file, {
+        upsert: false,
+        cacheControl: '3600',
+      });
+      if (uploadErr) throw uploadErr;
+      const { data } = supabase.storage.from('marketplace-assets').getPublicUrl(filePath);
+      if (!data?.publicUrl) throw new Error('Failed to get uploaded image URL');
+      setListingForm((s) => ({ ...s, cover_image_url: data.publicUrl }));
+      toast.success('Image uploaded');
+    } catch (err: any) {
+      toast.error(err?.message || 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -327,6 +365,30 @@ export default function SellerDashboardPage() {
                       <Input value={listingForm.location_text} onChange={(e) => setListingForm((s) => ({ ...s, location_text: e.target.value }))} />
                     </div>
                     <div className="space-y-1.5">
+                      <Label>Image</Label>
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          void handleUploadListingImage(file);
+                        }}
+                        disabled={uploadingImage}
+                      />
+                      <Input
+                        placeholder="...or paste image URL"
+                        value={listingForm.cover_image_url || ''}
+                        onChange={(e) => setListingForm((s) => ({ ...s, cover_image_url: e.target.value }))}
+                      />
+                      {uploadingImage ? <p className="text-xs text-slate-500">Uploading image...</p> : null}
+                      {listingForm.cover_image_url ? (
+                        <div
+                          className="h-28 w-full rounded-xl border border-slate-200 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${listingForm.cover_image_url})` }}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="space-y-1.5">
                       <Label>Status</Label>
                       <Select value={listingForm.status} onValueChange={(v) => setListingForm((s) => ({ ...s, status: v || 'PUBLISHED' }))}>
                         <SelectTrigger>
@@ -360,11 +422,19 @@ export default function SellerDashboardPage() {
                     {listings.map((listing) => (
                       <div key={listing.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-slate-900">{listing.title}</p>
-                            <p className="text-xs text-slate-500">
-                              {listing.listing_type} · {listing.category || 'General'} · GHS {Number(listing.price || 0).toFixed(2)}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            {listing.cover_image_url ? (
+                              <div
+                                className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 bg-cover bg-center"
+                                style={{ backgroundImage: `url(${listing.cover_image_url})` }}
+                              />
+                            ) : null}
+                            <div>
+                              <p className="font-semibold text-slate-900">{listing.title}</p>
+                              <p className="text-xs text-slate-500">
+                                {listing.listing_type} · {listing.category || 'General'} · GHS {Number(listing.price || 0).toFixed(2)}
+                              </p>
+                            </div>
                           </div>
                           <Badge variant="outline">{listing.status}</Badge>
                         </div>

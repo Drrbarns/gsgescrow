@@ -187,6 +187,12 @@ export default function ProductsServicesPage() {
               items.map((listing) => (
                 <Card key={listing.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                   <CardContent className="p-4">
+                    {listing.cover_image_url ? (
+                      <div
+                        className="mb-3 h-40 w-full rounded-xl border border-slate-200 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${listing.cover_image_url})` }}
+                      />
+                    ) : null}
                     <div className="flex items-start justify-between gap-2">
                       <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 text-primary">
                         {listing.listing_type === 'service' ? 'Service' : 'Product'}
