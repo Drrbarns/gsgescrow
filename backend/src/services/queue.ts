@@ -8,6 +8,9 @@ import { createHash } from 'crypto';
 import { captureMessage } from './telemetry';
 
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) as any;
+connection.on('error', (err: Error) => {
+  void captureMessage('error', 'redis.connection', err.message, { redis_url: env.REDIS_URL });
+});
 
 const MAX_LOG_BODY = 800;
 
@@ -263,6 +266,10 @@ export function startPayoutWorker() {
 
   worker.on('stalled', (jobId) => {
     void captureMessage('warn', 'worker.payout', `Job ${jobId} stalled`, { job_id: jobId });
+  });
+
+  worker.on('error', (err) => {
+    void captureMessage('error', 'worker.payout', err.message, { event: 'worker_error' });
   });
 
   return worker;
@@ -584,6 +591,10 @@ export function startNotificationWorker() {
     void captureMessage('warn', 'worker.notification', `Job ${jobId} stalled`, { job_id: jobId });
   });
 
+  worker.on('error', (err) => {
+    void captureMessage('error', 'worker.notification', err.message, { event: 'worker_error' });
+  });
+
   return worker;
 }
 
@@ -688,6 +699,10 @@ export function startSchedulerWorker() {
       'HIGH',
       { job_id: jobId }
     );
+  });
+
+  worker.on('error', (err) => {
+    void captureMessage('error', 'worker.scheduler', err.message, { event: 'worker_error' });
   });
 
   // Schedule recurring jobs

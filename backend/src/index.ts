@@ -97,16 +97,28 @@ app.get('/ready', (_req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-const payoutWorker = startPayoutWorker();
-const notificationWorker = startNotificationWorker();
-const schedulerWorker = startSchedulerWorker();
+let payoutWorker: ReturnType<typeof startPayoutWorker> | null = null;
+let notificationWorker: ReturnType<typeof startNotificationWorker> | null = null;
+let schedulerWorker: ReturnType<typeof startSchedulerWorker> | null = null;
 
-console.log('[WORKERS] Payout, notification, and scheduler workers started');
-void captureMessage('info', 'startup', 'Workers started', { queues: ['payouts', 'notifications', 'scheduler'] });
+try {
+  payoutWorker = startPayoutWorker();
+  notificationWorker = startNotificationWorker();
+  schedulerWorker = startSchedulerWorker();
+  console.log('[WORKERS] Payout, notification, and scheduler workers started');
+  void captureMessage('info', 'startup', 'Workers started', { queues: ['payouts', 'notifications', 'scheduler'] });
+} catch (err: any) {
+  console.error('[WORKERS] Failed to start one or more workers:', err?.message || err);
+  void captureException(err, { tag: 'startup.workers' });
+}
 
 process.on('SIGTERM', async () => {
   console.log('[SHUTDOWN] Graceful shutdown...');
-  await Promise.all([payoutWorker.close(), notificationWorker.close(), schedulerWorker.close()]);
+  await Promise.all([
+    payoutWorker?.close(),
+    notificationWorker?.close(),
+    schedulerWorker?.close(),
+  ]);
   process.exit(0);
 });
 
