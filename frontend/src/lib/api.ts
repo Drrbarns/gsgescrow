@@ -978,6 +978,133 @@ class ApiClient {
   getSellerReputation(phone: string) {
     return this.request<{ data: any }>(`/api/public/seller/${encodeURIComponent(phone)}/reputation`);
   }
+
+  // Marketplace
+  listMarketplaceListings(params?: Record<string, string>) {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.requestWithFallback<{ data: any[]; total: number; page: number; limit: number }>(
+      () => this.request<{ data: any[]; total: number; page: number; limit: number }>(`/api/marketplace/listings${qs}`),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+          let query = supabase
+            .from('marketplace_listings')
+            .select('*', { count: 'exact' })
+            .eq('status', 'PUBLISHED')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+          if (params?.type && ['product', 'service'].includes(params.type)) query = query.eq('listing_type', params.type);
+          if (params?.category && params.category !== 'all') query = query.eq('category', params.category);
+          if (params?.seller_id) query = query.eq('seller_id', params.seller_id);
+          if (params?.search) query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+          if (params?.min_price) query = query.gte('price', Number(params.min_price));
+          if (params?.max_price) query = query.lte('price', Number(params.max_price));
+          if (params?.sort === 'price_asc') query = query.order('price', { ascending: true });
+          if (params?.sort === 'price_desc') query = query.order('price', { ascending: false });
+          const { data, count } = await query.range(from, from + limit - 1);
+          const sellerIds = [...new Set((data || []).map((row: any) => row.seller_id).filter(Boolean))];
+          const { data: profiles } = sellerIds.length
+            ? await supabase.from('profiles').select('user_id, full_name, phone').in('user_id', sellerIds)
+            : { data: [] as any[] };
+          const profileMap = new Map((profiles || []).map((profile: any) => [profile.user_id, profile]));
+          const rows = (data || []).map((row: any) => ({
+            ...row,
+            seller: profileMap.get(row.seller_id) || null,
+          }));
+          return { data: rows, total: count || 0, page, limit };
+        } catch {
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          return { data: [], total: 0, page, limit };
+        }
+      }
+    );
+  }
+
+  getMarketplaceListing(id: string) {
+    return this.requestWithFallback<{ data: any }>(
+      () => this.request<{ data: any }>(`/api/marketplace/listings/${id}`),
+      async () => {
+        const supabase = await this.getSupabase();
+        const { data, error } = await supabase.from('marketplace_listings').select('*').eq('id', id).single();
+        if (error || !data) throw new Error('Listing not found');
+        const { data: profile } = await supabase.from('profiles').select('user_id, full_name, phone').eq('user_id', data.seller_id).single();
+        return { data: { ...data, seller: profile || null } };
+      }
+    );
+  }
+
+  listMyMarketplaceListings(params?: Record<string, string>) {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.requestWithFallback<{ data: any[]; total: number; page: number; limit: number }>(
+      () => this.request<{ data: any[]; total: number; page: number; limit: number }>(`/api/marketplace/seller/my-listings${qs}`),
+      async () => {
+        try {
+          const supabase = await this.getSupabase();
+          const uid = await this.getUserId();
+          if (!uid) throw new Error('Not authenticated');
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          const from = (page - 1) * limit;
+          let query = supabase
+            .from('marketplace_listings')
+            .select('*', { count: 'exact' })
+            .eq('seller_id', uid)
+            .order('created_at', { ascending: false });
+          if (params?.status && params.status !== 'all') query = query.eq('status', params.status);
+          if (params?.type && params.type !== 'all') query = query.eq('listing_type', params.type);
+          const { data, count } = await query.range(from, from + limit - 1);
+          return { data: data || [], total: count || 0, page, limit };
+        } catch {
+          const page = parseInt(params?.page || '1', 10);
+          const limit = parseInt(params?.limit || '20', 10);
+          return { data: [], total: 0, page, limit };
+        }
+      }
+    );
+  }
+
+  createMarketplaceListing(payload: Record<string, unknown>) {
+    return this.request<{ data: any }>('/api/marketplace/listings', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  updateMarketplaceListing(id: string, payload: Record<string, unknown>) {
+    return this.request<{ data: any }>(`/api/marketplace/listings/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  }
+
+  updateMarketplaceListingStatus(id: string, status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'ARCHIVED') {
+    return this.request<{ data: any }>(`/api/marketplace/listings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  }
+
+  archiveMarketplaceListing(id: string) {
+    return this.request<{ data: { ok: boolean } }>(`/api/marketplace/listings/${id}`, { method: 'DELETE' });
+  }
+
+  // Notifications
+  getNotifications() {
+    return this.requestWithFallback<{ data: any[] }>(
+      () => this.request<{ data: any[] }>('/api/auth/notifications'),
+      async () => {
+        const supabase = await this.getSupabase();
+        const uid = await this.getUserId();
+        if (!uid) return { data: [] };
+        const { data } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        return { data: data || [] };
+      }
+    );
+  }
+
+  markNotificationsReadAll() {
+    return this.request<{ data: { ok: boolean } }>('/api/auth/notifications/read-all', { method: 'POST' });
+  }
 }
 
 export const api = new ApiClient();

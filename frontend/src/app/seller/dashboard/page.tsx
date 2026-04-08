@@ -1,55 +1,198 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { api } from '@/lib/api';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
-import { TrustBadge, TrustScoreRing } from '@/components/shared/TrustBadge';
-import { WhatsAppShare } from '@/components/shared/WhatsAppShare';
-import {
-  Banknote, TrendingUp, Package, Users, Star, Clock, ArrowUpRight, ArrowDownRight,
-  ShieldCheck, Award, BarChart3,
-} from 'lucide-react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { TRANSACTION_STATUSES } from '@/lib/constants';
-import { format } from 'date-fns';
+import { useAuth } from '@/lib/auth-context';
+import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  BarChart3,
+  Bell,
+  Boxes,
+  CreditCard,
+  LayoutDashboard,
+  Package,
+  Plus,
+  ShieldCheck,
+  Store,
+  Wallet,
+} from 'lucide-react';
 
-export default function SellerDashboard() {
+type SellerView = 'overview' | 'listings' | 'orders' | 'payouts' | 'reputation' | 'notifications';
+
+const sellerViews: Array<{ id: SellerView; label: string; icon: any }> = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'listings', label: 'Listings', icon: Boxes },
+  { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'payouts', label: 'Payouts', icon: Wallet },
+  { id: 'reputation', label: 'Reputation & KYC', icon: ShieldCheck },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+];
+
+const defaultListingForm = {
+  listing_type: 'product',
+  title: '',
+  description: '',
+  category: '',
+  price: '',
+  location_text: '',
+  status: 'PUBLISHED',
+};
+
+export default function SellerDashboardPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [activeView, setActiveView] = useState<SellerView>('overview');
   const [loading, setLoading] = useState(true);
+  const [savingListing, setSavingListing] = useState(false);
+
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [listings, setListings] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [verification, setVerification] = useState<any>(null);
+
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
+  const [listingForm, setListingForm] = useState(defaultListingForm);
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    try {
+      const [analyticsRes, listingsRes, ordersRes, payoutsRes, notificationsRes, verificationRes] = await Promise.all([
+        api.getSellerAnalytics(),
+        api.listMyMarketplaceListings({ page: '1', limit: '50' }),
+        api.listTransactions({ page: '1', limit: '50' }),
+        api.listPayouts({ page: '1', limit: '50' }),
+        api.getNotifications(),
+        api.getVerificationStatus(),
+      ]);
+      setAnalytics(analyticsRes.data || null);
+      setListings(listingsRes.data || []);
+      setOrders(ordersRes.data || []);
+      setPayouts(payoutsRes.data || []);
+      setNotifications(notificationsRes.data || []);
+      setVerification(verificationRes.data || null);
+    } catch {
+      toast.error('Failed to load seller dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    if (user) {
-      api.getSellerAnalytics()
-        .then(res => setData(res.data))
-        .catch(() => toast.error('Failed to load analytics'))
-        .finally(() => setLoading(false));
-    }
+    if (!user) return;
+    loadDashboard();
   }, [user]);
+
+  const metrics = useMemo(() => {
+    const totalRevenue = Number(analytics?.total_revenue || 0);
+    const totalTransactions = Number(analytics?.total_transactions || 0);
+    const avgRating = Number(analytics?.avg_rating || 0);
+    const listingCount = listings.length;
+    return { totalRevenue, totalTransactions, avgRating, listingCount };
+  }, [analytics, listings]);
+
+  const resetListingForm = () => {
+    setListingForm(defaultListingForm);
+    setEditingListingId(null);
+  };
+
+  const handleSaveListing = async () => {
+    if (!listingForm.title.trim()) {
+      toast.error('Listing title is required');
+      return;
+    }
+    if (!listingForm.price || Number(listingForm.price) < 0) {
+      toast.error('Please enter a valid listing price');
+      return;
+    }
+    setSavingListing(true);
+    try {
+      const payload = {
+        listing_type: listingForm.listing_type,
+        title: listingForm.title.trim(),
+        description: listingForm.description.trim() || null,
+        category: listingForm.category.trim() || null,
+        price: Number(listingForm.price),
+        location_text: listingForm.location_text.trim() || null,
+        status: listingForm.status,
+      };
+      if (editingListingId) {
+        await api.updateMarketplaceListing(editingListingId, payload);
+        toast.success('Listing updated');
+      } else {
+        await api.createMarketplaceListing(payload);
+        toast.success('Listing created');
+      }
+      resetListingForm();
+      await loadDashboard();
+      setActiveView('listings');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save listing');
+    } finally {
+      setSavingListing(false);
+    }
+  };
+
+  const handleEditListing = (listing: any) => {
+    setEditingListingId(listing.id);
+    setListingForm({
+      listing_type: listing.listing_type || 'product',
+      title: listing.title || '',
+      description: listing.description || '',
+      category: listing.category || '',
+      price: String(listing.price || ''),
+      location_text: listing.location_text || '',
+      status: listing.status || 'PUBLISHED',
+    });
+    setActiveView('listings');
+  };
+
+  const handleChangeListingStatus = async (id: string, status: 'DRAFT' | 'PUBLISHED' | 'PAUSED' | 'ARCHIVED') => {
+    try {
+      await api.updateMarketplaceListingStatus(id, status);
+      toast.success(`Listing moved to ${status}`);
+      await loadDashboard();
+    } catch {
+      toast.error('Failed to update listing status');
+    }
+  };
+
+  const markNotificationsRead = async () => {
+    try {
+      await api.markNotificationsReadAll();
+      toast.success('All notifications marked as read');
+      await loadDashboard();
+    } catch {
+      toast.error('Failed to mark notifications as read');
+    }
+  };
 
   if (authLoading || loading) {
     return (
       <>
         <Header />
-        <main className="mx-auto max-w-6xl px-4 py-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}
+        <main className="mx-auto max-w-7xl px-4 py-8">
+          <div className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-2xl" />
+            ))}
           </div>
         </main>
         <Footer />
@@ -57,201 +200,325 @@ export default function SellerDashboard() {
     );
   }
 
-  const trust = data?.trust_score;
-  const monthlyData = data?.monthly_revenue ? Object.entries(data.monthly_revenue).slice(-6) : [];
-  const maxMonthly = monthlyData.length > 0 ? Math.max(...monthlyData.map(([, v]) => v as number)) : 1;
-  const completionRate = data?.total_transactions > 0
-    ? ((data.completed_transactions / data.total_transactions) * 100).toFixed(1)
-    : '0';
-
-  const kpis = [
-    { label: 'Total Revenue', value: `GHS ${(data?.total_revenue || 0).toFixed(2)}`, icon: Banknote, color: 'text-green-600 bg-green-100', trend: '+12%' },
-    { label: 'Transactions', value: data?.total_transactions || 0, icon: Package, color: 'text-blue-600 bg-blue-100', sub: `${data?.completed_transactions || 0} completed` },
-    { label: 'Unique Buyers', value: data?.unique_buyers || 0, icon: Users, color: 'text-purple-600 bg-purple-100', sub: `${(data?.repeat_buyer_rate || 0).toFixed(0)}% return rate` },
-    { label: 'Avg Rating', value: data?.avg_rating ? `${data.avg_rating.toFixed(1)} / 5` : 'N/A', icon: Star, color: 'text-yellow-600 bg-yellow-100', sub: `${data?.total_reviews || 0} reviews` },
-  ];
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header />
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600 mb-3 shadow-sm">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
-              Seller Hub
+      <main className="flex-1">
+        <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[280px_1fr] lg:py-8">
+          <aside className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl bg-slate-900 px-4 py-5 text-white">
+              <p className="text-xs uppercase tracking-wider text-slate-300">Seller Control Plane</p>
+              <h2 className="mt-1 text-xl font-black">{profile?.full_name || 'Seller'}</h2>
+              <p className="mt-1 text-xs text-slate-300">Manage listings, orders, payouts, and reputation.</p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Performance Overview</h1>
-            <p className="text-slate-500 mt-1 text-sm sm:text-base">Welcome back, {profile?.full_name || 'Seller'}. Here's how your business is doing.</p>
-          </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <WhatsAppShare role="seller" />
-            <Link href="/seller/step-1" className="flex-1 sm:flex-initial">
-              <Button className="rounded-full gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all font-bold h-11 px-4 sm:px-6 w-full sm:w-auto">
-                <Package className="h-4 w-4" /> View Orders
-              </Button>
-            </Link>
-          </div>
-        </div>
+            <div className="mt-3 space-y-1">
+              {sellerViews.map((view) => (
+                <button
+                  key={view.id}
+                  onClick={() => setActiveView(view.id)}
+                  className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                    activeView === view.id ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <view.icon className="h-4 w-4" />
+                    {view.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 space-y-2">
+              <Link href="/seller/step-1">
+                <Button className="w-full rounded-xl">Open Seller Orders</Button>
+              </Link>
+              <Link href="/products-services">
+                <Button variant="outline" className="w-full rounded-xl">
+                  View Marketplace
+                </Button>
+              </Link>
+            </div>
+          </aside>
 
-        {/* Trust Score Card */}
-        {trust && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <Card className="rounded-xl sm:rounded-3xl border-slate-200 bg-white shadow-xl shadow-slate-200/40 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/5 to-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-              <CardContent className="flex flex-col gap-6 sm:gap-8 py-6 sm:py-8 px-4 sm:px-6 sm:flex-row sm:items-center relative z-10">
-                <TrustScoreRing score={trust.trust_score} size={120} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <TrustBadge tier={trust.tier} score={trust.trust_score} totalTransactions={trust.total_transactions} isVerified={!!trust.verified_at} size="lg" />
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
-                    Your trust score is calculated from completion rate, delivery speed, ratings, and transaction volume.
-                    {trust.tier === 'NEW' && ' Complete more transactions to unlock higher tiers!'}
-                    {trust.tier === 'BRONZE' && ' Keep up the great work to reach Silver!'}
-                    {trust.tier === 'GOLD' && ' You\'re one of our top sellers!'}
-                    {trust.tier === 'PLATINUM' && ' Elite status — you\'re in the top tier!'}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm font-medium text-slate-700">
-                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-100"><Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" /> {trust.completed_ok} completed</span>
-                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-100"><Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500" /> {trust.avg_seller_rating?.toFixed(1) || 'N/A'} avg rating</span>
-                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-100"><Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-500" /> {trust.avg_delivery_hours ? `${trust.avg_delivery_hours.toFixed(0)}h avg delivery` : 'No data'}</span>
-                  </div>
-                </div>
-                <Link href="/seller/verify" className="w-full sm:w-auto">
-                  <Button variant="outline" className="rounded-full gap-2 shrink-0 h-11 px-4 sm:px-6 font-bold border-slate-200 hover:bg-slate-50 w-full sm:w-auto">
-                    <ShieldCheck className="h-4 w-4 text-green-600" /> Get Verified
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {kpis.map((kpi, i) => (
-            <motion.div key={kpi.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-              <Card className="rounded-xl sm:rounded-3xl border-slate-200 shadow-lg shadow-slate-200/30 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 bg-white">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
-                    <div className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl ${kpi.color}`}>
-                      <kpi.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <section className="space-y-5">
+            {activeView === 'overview' && (
+              <>
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Overview</p>
+                        <h1 className="mt-1 text-3xl font-black text-slate-900">Seller Performance Dashboard</h1>
+                        <p className="mt-1 text-sm text-slate-600">A command center for your escrow-powered storefront.</p>
+                      </div>
+                      <Button className="rounded-full" onClick={() => setActiveView('listings')}>
+                        <Plus className="mr-1 h-4 w-4" />
+                        New Listing
+                      </Button>
                     </div>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{kpi.value}</p>
-                  {kpi.sub && <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1 sm:mt-2">{kpi.sub}</p>}
+                  </CardContent>
+                </Card>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <MetricCard title="Revenue" value={`GHS ${metrics.totalRevenue.toFixed(2)}`} icon={CreditCard} />
+                  <MetricCard title="Transactions" value={String(metrics.totalTransactions)} icon={Package} />
+                  <MetricCard title="Average Rating" value={metrics.avgRating > 0 ? metrics.avgRating.toFixed(1) : 'N/A'} icon={BarChart3} />
+                  <MetricCard title="Active Listings" value={String(listings.filter((l) => l.status === 'PUBLISHED').length)} icon={Store} />
+                </div>
+
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle>Recent Listings</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {listings.slice(0, 5).map((listing) => (
+                      <div key={listing.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{listing.title}</p>
+                          <p className="text-xs text-slate-500">
+                            {listing.listing_type} · GHS {Number(listing.price || 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <Badge variant="outline">{listing.status}</Badge>
+                      </div>
+                    ))}
+                    {listings.length === 0 && <p className="text-sm text-slate-500">No listings yet. Create your first listing.</p>}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {activeView === 'listings' && (
+              <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle>{editingListingId ? 'Edit Listing' : 'Create Listing'}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label>Type</Label>
+                      <Select value={listingForm.listing_type} onValueChange={(v) => setListingForm((s) => ({ ...s, listing_type: v || 'product' }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="product">Product</SelectItem>
+                          <SelectItem value="service">Service</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Title</Label>
+                      <Input value={listingForm.title} onChange={(e) => setListingForm((s) => ({ ...s, title: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Description</Label>
+                      <Textarea value={listingForm.description} onChange={(e) => setListingForm((s) => ({ ...s, description: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Category</Label>
+                      <Input value={listingForm.category} onChange={(e) => setListingForm((s) => ({ ...s, category: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Price (GHS)</Label>
+                      <Input type="number" min="0" step="0.01" value={listingForm.price} onChange={(e) => setListingForm((s) => ({ ...s, price: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Location</Label>
+                      <Input value={listingForm.location_text} onChange={(e) => setListingForm((s) => ({ ...s, location_text: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Status</Label>
+                      <Select value={listingForm.status} onValueChange={(v) => setListingForm((s) => ({ ...s, status: v || 'PUBLISHED' }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="DRAFT">Draft</SelectItem>
+                          <SelectItem value="PUBLISHED">Published</SelectItem>
+                          <SelectItem value="PAUSED">Paused</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button className="flex-1" onClick={handleSaveListing} disabled={savingListing}>
+                        {savingListing ? 'Saving...' : editingListingId ? 'Update Listing' : 'Create Listing'}
+                      </Button>
+                      {editingListingId && (
+                        <Button variant="outline" onClick={resetListingForm}>
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle>My Listings ({listings.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {listings.map((listing) => (
+                      <div key={listing.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-slate-900">{listing.title}</p>
+                            <p className="text-xs text-slate-500">
+                              {listing.listing_type} · {listing.category || 'General'} · GHS {Number(listing.price || 0).toFixed(2)}
+                            </p>
+                          </div>
+                          <Badge variant="outline">{listing.status}</Badge>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleEditListing(listing)}>
+                            Edit
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleChangeListingStatus(listing.id, 'PUBLISHED')}>
+                            Publish
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleChangeListingStatus(listing.id, 'PAUSED')}>
+                            Pause
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleChangeListingStatus(listing.id, 'DRAFT')}>
+                            Draft
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleChangeListingStatus(listing.id, 'ARCHIVED')}>
+                            Archive
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {listings.length === 0 && <p className="text-sm text-slate-500">You have not created any listings yet.</p>}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeView === 'orders' && (
+              <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Recent Orders ({orders.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {orders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{order.product_name || order.short_id}</p>
+                        <p className="text-xs text-slate-500">{order.short_id} · {order.seller_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">GHS {Number(order.product_total || 0).toFixed(2)}</p>
+                        <Badge variant="outline">{order.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {orders.length === 0 && <p className="text-sm text-slate-500">No orders yet.</p>}
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
-        </div>
+            )}
 
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 mb-6 sm:mb-8">
-          {/* Revenue Chart */}
-          <Card className="rounded-xl sm:rounded-3xl border-slate-200 shadow-lg shadow-slate-200/30 bg-white overflow-hidden">
-            <CardHeader className="pb-2 px-4 sm:px-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900"><BarChart3 className="h-5 w-5 text-primary" /> Monthly Revenue</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              {monthlyData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100">
-                  <Banknote className="h-8 w-8 text-slate-300 mb-2" />
-                  <p className="text-sm font-medium text-slate-500">Complete transactions to see revenue trends.</p>
-                </div>
-              ) : (
-                <div className="flex items-end gap-1.5 sm:gap-3 h-48 pt-4">
-                  {monthlyData.map(([month, value]) => {
-                    const height = ((value as number) / maxMonthly) * 100;
-                    return (
-                      <div key={month} className="flex-1 flex flex-col items-center gap-2 group">
-                        <span className="text-xs font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity -translate-y-2 group-hover:translate-y-0">GHS {(value as number).toFixed(0)}</span>
-                        <div className="w-full rounded-t-xl bg-slate-100 relative overflow-hidden transition-all duration-300 group-hover:bg-primary/10" style={{ height: `${Math.max(8, height)}%` }}>
-                          <div className="absolute bottom-0 left-0 right-0 rounded-t-xl bg-gradient-to-t from-primary to-blue-400 transition-all duration-500" style={{ height: `${height}%` }} />
-                        </div>
-                        <span className="text-xs font-bold text-slate-400 uppercase">{month.slice(5)}</span>
+            {activeView === 'payouts' && (
+              <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Payout Monitor</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {payouts.map((payout) => (
+                    <div key={payout.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{payout.type} payout</p>
+                        <p className="text-xs text-slate-500">{payout.transaction_id}</p>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Completion Rate + Status */}
-          <Card className="rounded-xl sm:rounded-3xl border-slate-200 shadow-lg shadow-slate-200/30 bg-white overflow-hidden">
-            <CardHeader className="pb-2 px-4 sm:px-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900"><Award className="h-5 w-5 text-primary" /> Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
-              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-bold text-slate-600">Completion Rate</span>
-                  <span className="font-black text-primary">{completionRate}%</span>
-                </div>
-                <Progress value={Number(completionRate)} className="h-2.5 bg-slate-200" />
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-slate-600 mb-3 uppercase tracking-wider">Status Breakdown</p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(data?.status_breakdown || {}).map(([status, count]) => (
-                    <Badge key={status} variant="outline" className={`px-3 py-1.5 text-xs font-bold border-transparent ${TRANSACTION_STATUSES[status]?.color || 'bg-slate-100 text-slate-700'}`}>
-                      {TRANSACTION_STATUSES[status]?.label || status} <span className="ml-1 opacity-70">({count as number})</span>
-                    </Badge>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">GHS {Number(payout.amount || 0).toFixed(2)}</p>
+                        <Badge variant="outline">{payout.status}</Badge>
+                      </div>
+                    </div>
                   ))}
-                </div>
-              </div>
+                  {payouts.length === 0 && <p className="text-sm text-slate-500">No payouts yet.</p>}
+                </CardContent>
+              </Card>
+            )}
 
-              {data?.avg_delivery_hours && (
-                <div className="flex items-center gap-3 sm:gap-4 bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
-                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Delivery Time</p>
-                    <p className="text-xl sm:text-2xl font-black text-slate-900">{data.avg_delivery_hours.toFixed(1)}h</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {activeView === 'reputation' && (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle>Trust and Rating</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-slate-600">Track trust signals buyers care about before they buy.</p>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <p className="text-xs text-slate-500">Average Rating</p>
+                      <p className="text-xl font-black text-slate-900">
+                        {analytics?.avg_rating ? Number(analytics.avg_rating).toFixed(1) : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <p className="text-xs text-slate-500">Total Reviews</p>
+                      <p className="text-xl font-black text-slate-900">{Number(analytics?.total_reviews || 0)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                  <CardHeader>
+                    <CardTitle>KYC Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-slate-600">Keep your seller account verified to unlock buyer confidence and payout trust.</p>
+                    <Badge variant="outline">{verification?.status || 'NOT_SUBMITTED'}</Badge>
+                    <Link href="/seller/verify">
+                      <Button className="w-full rounded-xl">Manage KYC</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeView === 'notifications' && (
+              <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Notifications ({notifications.length})</CardTitle>
+                  <Button variant="outline" size="sm" onClick={markNotificationsRead}>
+                    Mark all as read
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {notifications.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                          <p className="text-xs text-slate-600">{item.body}</p>
+                        </div>
+                        <Badge variant="outline">{item.channel || 'LOG'}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {notifications.length === 0 && <p className="text-sm text-slate-500">No notifications yet.</p>}
+                </CardContent>
+              </Card>
+            )}
+          </section>
         </div>
-
-        {/* Recent Transactions */}
-        {data?.recent_transactions?.length > 0 && (
-          <Card className="rounded-xl sm:rounded-3xl border-slate-200 shadow-lg shadow-slate-200/30 bg-white">
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg font-bold text-slate-900">Recent Transactions</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <div className="space-y-3 overflow-x-auto">
-                {data.recent_transactions.map((txn: any) => (
-                  <div key={txn.id} className="flex items-center justify-between rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-100 transition-colors cursor-pointer gap-3 min-w-0">
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
-                        <Package className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">{txn.product_name || 'Transaction'}</p>
-                        <p className="text-xs font-medium text-slate-500">{format(new Date(txn.created_at), 'dd MMM yyyy')}</p>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm sm:text-base font-black text-slate-900">GHS {Number(txn.product_total).toFixed(2)}</p>
-                      <Badge variant="outline" className={`mt-1 border-transparent ${TRANSACTION_STATUSES[txn.status]?.color || 'bg-slate-200'}`}>
-                        {TRANSACTION_STATUSES[txn.status]?.label || txn.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
       <Footer />
     </div>
+  );
+}
+
+function MetricCard({ title, value, icon: Icon }: { title: string; value: string; icon: any }) {
+  return (
+    <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
+          <span className="rounded-lg bg-primary/10 p-2 text-primary">
+            <Icon className="h-4 w-4" />
+          </span>
+        </div>
+        <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+      </CardContent>
+    </Card>
   );
 }

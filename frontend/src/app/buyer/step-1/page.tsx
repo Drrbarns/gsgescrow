@@ -62,6 +62,7 @@ function BuyerStep1() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
+  const listingPrefillAppliedRef = useRef(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -81,6 +82,49 @@ function BuyerStep1() {
     if (ref && txn) {
       verifyPaymentCallback(ref, txn);
     }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const listingId = searchParams.get('listing_id');
+    if (!listingId || listingPrefillAppliedRef.current) return;
+    listingPrefillAppliedRef.current = true;
+
+    const applyFromQuery = () => {
+      const listingType = searchParams.get('listing_type');
+      const product = searchParams.get('product_name');
+      const sellerN = searchParams.get('seller_name');
+      const sellerP = searchParams.get('seller_phone');
+      const productPrice = searchParams.get('product_total');
+      const listingLinkParam = searchParams.get('listing_link');
+      const sourcePlatformParam = searchParams.get('source_platform');
+      const category = listingType === 'service' ? 'food' : 'non_food';
+
+      if (sourcePlatformParam) setSourcePlatform(sourcePlatformParam);
+      if (listingLinkParam) setListingLink(listingLinkParam);
+      if (product) setProductName(product);
+      if (sellerN) setSellerName(sellerN);
+      if (sellerP) setSellerPhone(sellerP);
+      if (productPrice) setProductTotal(String(productPrice));
+      setProductType(category);
+      toast.success('Listing details prefilled. Complete delivery details and proceed.');
+    };
+
+    void api
+      .getMarketplaceListing(listingId)
+      .then((res) => {
+        const listing = res.data;
+        setSourcePlatform('website');
+        setListingLink(`marketplace:${listing.id}`);
+        setProductType(listing.listing_type === 'service' ? 'food' : 'non_food');
+        setProductName(listing.title || '');
+        setSellerName(listing.seller?.full_name || '');
+        setSellerPhone(listing.seller?.phone || '');
+        setProductTotal(String(listing.price || ''));
+        toast.success('Listing details prefilled. Complete delivery details and proceed.');
+      })
+      .catch(() => {
+        applyFromQuery();
+      });
   }, [searchParams]);
 
   async function verifyPaymentCallback(ref: string, txnId: string) {

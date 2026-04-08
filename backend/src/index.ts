@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin';
 import reviewRoutes from './routes/reviews';
 import sellerDashboardRoutes from './routes/seller-dashboard';
 import publicRoutes from './routes/public';
+import marketplaceRoutes from './routes/marketplace';
 import { startPayoutWorker, startNotificationWorker, startSchedulerWorker } from './services/queue';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/seller', sellerDashboardRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

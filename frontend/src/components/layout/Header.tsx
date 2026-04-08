@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
 
 const navLinks = [
+  { href: '/products-services', label: 'Products & Services', icon: ShoppingBag, desc: 'Browse marketplace' },
   { href: '/hub', label: 'Transaction Hub', icon: Package, desc: 'View all transactions' },
   { href: '/tracking', label: 'Track Order', icon: MapPin, desc: 'Track your delivery' },
   { href: '/calculator', label: 'Fee Calculator', icon: Calculator, desc: 'Estimate costs' },

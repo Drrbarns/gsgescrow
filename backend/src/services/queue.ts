@@ -154,6 +154,26 @@ export function startNotificationWorker() {
     }
 
     switch (type) {
+      case 'LISTING_CREATED':
+      case 'LISTING_UPDATED':
+      case 'LISTING_PUBLISHED': {
+        const targetUserId = extra.target_user_id as string | undefined;
+        if (!targetUserId) break;
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, phone')
+          .eq('user_id', targetUserId)
+          .single();
+        if (!profile?.phone) break;
+        const statusLabel = String(extra.listing_status || 'UPDATED');
+        pushMessage({
+          user_id: profile.user_id,
+          phone: profile.phone,
+          title: type === 'LISTING_CREATED' ? 'Listing Created' : type === 'LISTING_PUBLISHED' ? 'Listing Published' : 'Listing Updated',
+          body: `Your listing "${String(extra.listing_title || 'Untitled')}" is now ${statusLabel}.`,
+        });
+        break;
+      }
       case 'TRANSACTION_CREATED':
         if (!txn) break;
         pushMessage({
