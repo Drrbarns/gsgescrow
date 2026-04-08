@@ -11,11 +11,11 @@ import { createPaymentReceipt } from '../services/receipts';
 
 const router = Router();
 
-function isMoolreReference(reference: string) {
-  return reference.startsWith('MOO_');
+function isMoolreReference(reference?: string) {
+  return typeof reference === 'string' && reference.startsWith('MOO_');
 }
 
-function parseMoolreWebhook(body: any): { reference?: string; success: boolean } {
+function parseMoolreWebhook(body: any): { reference?: string; success: boolean; amount?: number } {
   const reference =
     body?.externalref ||
     body?.reference ||
@@ -24,16 +24,35 @@ function parseMoolreWebhook(body: any): { reference?: string; success: boolean }
     body?.transaction_reference ||
     body?.txnref;
 
-  const success =
-    body?.status === 1 ||
-    body?.status === '1' ||
-    body?.status === 'success' ||
-    body?.data?.status === 1 ||
-    body?.data?.status === '1' ||
-    body?.data?.status === 'success' ||
-    String(body?.message || '').toLowerCase().includes('success');
+  const apiStatus = body?.status;
+  const txStatus = body?.data?.txtstatus ?? body?.data?.status;
+  const message = String(body?.message || '').toLowerCase();
+  const txStatusStr = String(txStatus || '').toLowerCase();
+  const apiOk = apiStatus === 1 || apiStatus === '1' || String(apiStatus || '').toLowerCase() === 'success';
+  const txOk = txStatus === 1 || txStatus === '1' || ['success', 'successful', 'completed', 'paid'].includes(txStatusStr);
+  const success = (apiOk || txOk) && !message.includes('fail') && !message.includes('error');
 
-  return { reference, success };
+  const rawAmount = body?.data?.amount ?? body?.amount ?? body?.value;
+  const amountNum = Number(rawAmount);
+  const amount = Number.isFinite(amountNum) ? amountNum : undefined;
+
+  return { reference, success, amount };
+}
+
+function parseMoolreStatusResponse(payload: any): { success: boolean; amount?: number } {
+  const apiStatus = payload?.status;
+  const txStatus = payload?.data?.txtstatus ?? payload?.data?.status;
+  const message = String(payload?.message || '').toLowerCase();
+  const txStatusStr = String(txStatus || '').toLowerCase();
+  const apiOk = apiStatus === 1 || apiStatus === '1' || String(apiStatus || '').toLowerCase() === 'success';
+  const txOk = txStatus === 1 || txStatus === '1' || ['success', 'successful', 'completed', 'paid'].includes(txStatusStr);
+  const success = (apiOk || txOk) && !message.includes('fail') && !message.includes('error');
+
+  const rawAmount = payload?.data?.amount ?? payload?.amount ?? payload?.data?.value;
+  const amountNum = Number(rawAmount);
+  const amount = Number.isFinite(amountNum) ? amountNum : undefined;
+
+  return { success, amount };
 }
 
 // POST /api/payments/initiate - Initiate Paystack payment for a transaction
@@ -152,7 +171,7 @@ router.post('/verify', authenticateToken, async (req: Request, res: Response): P
     if (isMoolreReference(reference)) {
       const { data: txn } = await supabaseAdmin
         .from('transactions')
-        .select('id, status')
+        .select('id, status, grand_total')
         .eq('paystack_reference', reference)
         .single();
 
@@ -164,6 +183,22 @@ router.post('/verify', authenticateToken, async (req: Request, res: Response): P
       if (txn.status === 'PAID') {
         res.json({ data: { message: 'Payment verified', transaction_id: txn.id } });
         return;
+      }
+
+      try {
+        const statusPayload = await moolre.getPaymentStatus(reference);
+        const providerCheck = parseMoolreStatusResponse(statusPayload);
+        if (providerCheck.success) {
+          if (typeof providerCheck.amount === 'number' && Math.abs(providerCheck.amount - Number(txn.grand_total || 0)) > 0.01) {
+            res.status(400).json({ error: 'Payment amount mismatch' });
+            return;
+          }
+          await processSuccessfulPayment(txn.id, reference);
+          res.json({ data: { message: 'Payment verified', transaction_id: txn.id } });
+          return;
+        }
+      } catch (moolreErr: any) {
+        console.warn('[PAYMENT_VERIFY][MOOLRE_STATUS]', moolreErr?.message || 'status check failed');
       }
 
       res.status(202).json({ data: { message: 'Payment pending confirmation', transaction_id: txn.id, pending: true } });
@@ -199,7 +234,14 @@ router.post('/verify', authenticateToken, async (req: Request, res: Response): P
 
 router.post('/moolre/webhook', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { reference, success } = parseMoolreWebhook(req.body);
+    const configuredSecret = env.MOOLRE_CALLBACK_SECRET;
+    const incomingSecret = req.body?.secret;
+    if (configuredSecret && incomingSecret !== configuredSecret) {
+      res.status(403).json({ message: 'Invalid callback signature' });
+      return;
+    }
+
+    const { reference, success, amount } = parseMoolreWebhook(req.body);
     if (!reference) {
       res.status(200).json({ message: 'Missing reference acknowledged' });
       return;
@@ -207,7 +249,7 @@ router.post('/moolre/webhook', async (req: Request, res: Response): Promise<void
 
     const { data: txn } = await supabaseAdmin
       .from('transactions')
-      .select('id, status')
+      .select('id, status, grand_total')
       .eq('paystack_reference', reference)
       .single();
 
@@ -217,6 +259,10 @@ router.post('/moolre/webhook', async (req: Request, res: Response): Promise<void
     }
 
     if (success && txn.status !== 'PAID') {
+      if (typeof amount === 'number' && Math.abs(amount - Number(txn.grand_total || 0)) > 0.01) {
+        res.status(200).json({ message: 'Amount mismatch acknowledged' });
+        return;
+      }
       await processSuccessfulPayment(txn.id, reference);
     }
 

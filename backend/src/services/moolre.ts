@@ -30,7 +30,7 @@ export async function generatePaymentLink(params: {
 
   const payload = {
     type: 1,
-    amount: Number(params.amount),
+    amount: Number(params.amount).toString(),
     email: env.MOOLRE_BUSINESS_EMAIL || 'support@sellbuysafe.gsgbrands.com',
     externalref: params.externalref,
     callback: params.callback,
@@ -42,6 +42,24 @@ export async function generatePaymentLink(params: {
   };
 
   const { data } = await client.post('/embed/link', payload, {
+    headers: {
+      'X-API-USER': env.MOOLRE_API_USER,
+      'X-API-PUBKEY': env.MOOLRE_API_PUBKEY,
+    },
+  });
+
+  return data;
+}
+
+export async function getPaymentStatus(externalref: string) {
+  if (!isMoolreConfigured()) {
+    throw new Error('Moolre credentials are not configured');
+  }
+  if (!externalref) {
+    throw new Error('externalref is required');
+  }
+
+  const { data } = await client.post('/embed/status', { externalref }, {
     headers: {
       'X-API-USER': env.MOOLRE_API_USER,
       'X-API-PUBKEY': env.MOOLRE_API_PUBKEY,
