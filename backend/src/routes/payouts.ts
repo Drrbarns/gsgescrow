@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { payoutQueue, notificationQueue } from '../services/queue';
+import { payoutQueue } from '../services/queue';
+import { sendNotification } from '../services/notify';
 import { verifyCode } from '../utils/codes';
 import { randomUUID } from 'crypto';
 const uuidv4 = randomUUID;
@@ -101,12 +102,7 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
       after_state: { amount: payoutAmount, rider_momo: rider_momo_number },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'RIDER_PAYOUT_QUEUED',
-      transaction_id,
-      amount: payoutAmount,
-      rider_phone: txn.rider_phone || rider_momo_number,
-    });
+    await sendNotification('RIDER_PAYOUT_QUEUED', transaction_id);
 
     res.json({ data: { message: 'Rider payout queued', payout_id: payout.id } });
   } catch (err: any) {
@@ -208,11 +204,7 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       after_state: { amount: sellerAmount },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'SELLER_PAYOUT_QUEUED',
-      transaction_id,
-      amount: sellerAmount,
-    });
+    await sendNotification('SELLER_PAYOUT_QUEUED', transaction_id);
 
     res.json({ data: { message: 'Seller payout queued', payout_id: payout.id, amount: sellerAmount } });
   } catch (err: any) {

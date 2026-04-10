@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, isPrivilegedRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { notificationQueue } from '../services/queue';
+import { sendNotification } from '../services/notify';
 
 const router = Router();
 
@@ -213,12 +213,7 @@ router.post('/listings', authenticateToken, async (req: Request, res: Response):
       after_state: { title: data.title, status: data.status, listing_type: data.listing_type },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'LISTING_CREATED',
-      target_user_id: req.user!.id,
-      listing_title: data.title,
-      listing_status: data.status,
-    });
+    await sendNotification('LISTING_CREATED', data.id);
 
     res.status(201).json({ data });
   } catch (err: any) {
@@ -281,12 +276,7 @@ router.put('/listings/:id', authenticateToken, async (req: Request, res: Respons
       after_state: { title: data.title, status: data.status, price: data.price },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'LISTING_UPDATED',
-      target_user_id: existing.seller_id,
-      listing_title: data.title,
-      listing_status: data.status,
-    });
+    await sendNotification('LISTING_UPDATED', data.id);
 
     res.json({ data });
   } catch (err: any) {
@@ -334,12 +324,7 @@ router.patch('/listings/:id/status', authenticateToken, async (req: Request, res
       after_state: { status: data.status },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: status === 'PUBLISHED' ? 'LISTING_PUBLISHED' : 'LISTING_UPDATED',
-      target_user_id: listing.seller_id,
-      listing_title: data.title,
-      listing_status: data.status,
-    });
+    await sendNotification(status === 'PUBLISHED' ? 'LISTING_PUBLISHED' : 'LISTING_UPDATED', data.id);
 
     res.json({ data });
   } catch (err: any) {
@@ -379,12 +364,7 @@ router.delete('/listings/:id', authenticateToken, async (req: Request, res: Resp
       after_state: { status: 'ARCHIVED' },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'LISTING_UPDATED',
-      target_user_id: listing.seller_id,
-      listing_title: listing.title,
-      listing_status: 'ARCHIVED',
-    });
+    await sendNotification('LISTING_UPDATED', listing.id);
 
     res.json({ data: { ok: true } });
   } catch (err: any) {

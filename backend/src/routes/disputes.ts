@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { notificationQueue } from '../services/queue';
+import { sendNotification } from '../services/notify';
 
 const router = Router();
 
@@ -39,9 +39,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
       after_state: { reason }, request_id: req.requestId,
     });
 
-    await notificationQueue.add('send', {
-      type: 'DISPUTE_OPENED', transaction_id,
-    });
+    await sendNotification('DISPUTE_OPENED', transaction_id);
 
     res.status(201).json({ data: dispute });
   } catch (err: any) {
@@ -163,11 +161,7 @@ router.post('/:id/resolve', authenticateToken, requireAdminRole, async (req: Req
       after_state: { resolution, resolution_action },
       request_id: req.requestId,
     });
-    await notificationQueue.add('send', {
-      type: 'DISPUTE_RESOLVED',
-      transaction_id: dispute.transaction_id,
-      resolution_action,
-    });
+    await sendNotification('DISPUTE_RESOLVED', dispute.transaction_id);
 
     res.json({ data: { message: 'Dispute resolved' } });
   } catch (err: any) {

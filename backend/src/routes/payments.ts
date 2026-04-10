@@ -4,7 +4,7 @@ import { supabaseAdmin, auditLog } from '../services/supabase';
 import * as paystack from '../services/paystack';
 import * as moolre from '../services/moolre';
 import { generateCode, hashCode } from '../utils/codes';
-import { notificationQueue } from '../services/queue';
+import { sendNotification } from '../services/notify';
 import { env } from '../config/env';
 import { scoreFraudRisk } from '../services/fraud';
 import { createPaymentReceipt } from '../services/receipts';
@@ -84,7 +84,7 @@ router.post('/initiate', authenticateToken, async (req: Request, res: Response):
 
     const preferMoolre = env.PAYMENT_PROVIDER === 'moolre' && moolre.isMoolreConfigured();
     const reference = `${preferMoolre ? 'MOO' : 'SBS'}_${txn.short_id}_${Date.now()}`;
-    const redirectUrl = `${env.APP_URL}/buyer/step-1?ref=${reference}&txn=${txn.id}&provider=${preferMoolre ? 'moolre' : 'paystack'}`;
+    const redirectUrl = `${env.APP_URL}/buyer/step-1?ref=${reference}&txn=${txn.id}&provider=${preferMoolre ? 'moolre' : 'paystack'}&status=success`;
     const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0]?.trim();
     const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0]?.trim();
     const requestProto = forwardedProto || req.protocol;
@@ -321,10 +321,7 @@ export async function processSuccessfulPayment(transactionId: string, reference:
     after_state: { status: 'PAID', reference },
   });
 
-  await notificationQueue.add('send', {
-    type: 'PAYMENT_SUCCESS',
-    transaction_id: transactionId,
-  });
+  await sendNotification('PAYMENT_SUCCESS', transactionId);
 
   // Score fraud risk in background
   scoreFraudRisk(transactionId).catch(err => console.error('[FRAUD_SCORE]', err.message));
