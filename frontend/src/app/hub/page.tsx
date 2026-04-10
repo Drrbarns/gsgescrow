@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Loader2, Search, MoreHorizontal, Eye, Truck, CheckCircle, 
   AlertCircle, Banknote, ChevronLeft, ChevronRight, 
-  LayoutDashboard, Filter, ArrowRightLeft, Clock, ArrowRight, ClipboardList
+  LayoutDashboard, Filter, ArrowRightLeft, Clock, ArrowRight, ClipboardList, CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -38,7 +38,8 @@ type HubTransaction = {
 
 type ContinueAction = {
   label: string;
-  route: string;
+  route?: string;
+  type: 'route' | 'pay';
 };
 
 export default function HubPage() {
@@ -51,6 +52,7 @@ export default function HubPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [payingTxnId, setPayingTxnId] = useState<string | null>(null);
   const limit = 15;
 
   useEffect(() => {
@@ -83,6 +85,24 @@ export default function HubPage() {
     fetchTransactions();
   }
 
+  function focusStatus(status: string) {
+    setStatusFilter(status);
+    setPage(1);
+  }
+
+  async function handlePayNow(txnId: string) {
+    setPayingTxnId(txnId);
+    try {
+      const { data } = await api.initiatePayment(txnId);
+      if (!data?.authorization_url) throw new Error('Payment link unavailable');
+      window.location.href = data.authorization_url;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start payment');
+    } finally {
+      setPayingTxnId(null);
+    }
+  }
+
   const totalPages = Math.ceil(total / limit);
   const role = profile?.role;
   const roleHeading = role === 'buyer' ? 'Buyer Command Center' : role === 'seller' ? 'Seller Command Center' : 'Transaction Hub';
@@ -97,6 +117,7 @@ export default function HubPage() {
   const dispatchedCount = transactions.filter((t) => t.status === 'DISPATCHED').length;
   const deliveredConfirmedCount = transactions.filter((t) => t.status === 'DELIVERED_CONFIRMED').length;
   const completedCount = transactions.filter((t) => t.status === 'COMPLETED').length;
+  const paymentConfirmedCount = transactions.filter((t) => ['PAID', 'DISPATCHED', 'DELIVERED_CONFIRMED', 'COMPLETED'].includes(t.status)).length;
   const buyerPendingCount = role !== 'seller' ? submittedCount : 0;
   const buyerConfirmCount = role !== 'seller' ? dispatchedCount : 0;
   const sellerDispatchCount = role !== 'buyer' ? paidCount : 0;
@@ -126,10 +147,10 @@ export default function HubPage() {
   );
 
   function getContinueAction(txn: HubTransaction): ContinueAction | null {
-    if (txn.status === 'SUBMITTED' && role !== 'seller') return { label: 'Continue Payment', route: '/buyer/step-1' };
-    if (txn.status === 'PAID' && role !== 'buyer') return { label: 'Continue Dispatch', route: '/seller/step-1' };
-    if (txn.status === 'DISPATCHED' && role !== 'seller') return { label: 'Continue Delivery', route: '/buyer/step-2' };
-    if (txn.status === 'DELIVERED_CONFIRMED' && role !== 'buyer') return { label: 'Continue Payout', route: '/seller/step-2' };
+    if (txn.status === 'SUBMITTED' && role !== 'seller') return { label: 'Pay Now', type: 'pay' };
+    if (txn.status === 'PAID' && role !== 'buyer') return { label: 'Continue Dispatch', type: 'route', route: '/seller/step-1' };
+    if (txn.status === 'DISPATCHED' && role !== 'seller') return { label: 'Continue Delivery', type: 'route', route: '/buyer/step-2' };
+    if (txn.status === 'DELIVERED_CONFIRMED' && role !== 'buyer') return { label: 'Continue Payout', type: 'route', route: '/seller/step-2' };
     return null;
   }
 
@@ -151,7 +172,7 @@ export default function HubPage() {
                 <div>
                   <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                     <LayoutDashboard className="h-3.5 w-3.5" />
-                    Command Workspace
+                    Transaction Dashboard
                   </div>
                   <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
                     {roleHeading}
@@ -234,112 +255,78 @@ export default function HubPage() {
 
         <section className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 sm:pb-24 sm:pt-8">
           <div className="mb-6 grid gap-3 sm:mb-8 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Need your action</p>
+            <button type="button" onClick={() => focusStatus('SUBMITTED')} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-amber-300 hover:shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Awaiting Payment</p>
               <div className="mt-2 flex items-end justify-between">
-                <p className="text-2xl font-black text-amber-600">{actionRequired.length}</p>
+                <p className="text-2xl font-black text-amber-600">{submittedCount}</p>
                 <Clock className="h-5 w-5 text-amber-500/80" />
               </div>
-              <p className="text-xs text-slate-500 mt-1">Transactions waiting on next step</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Page volume</p>
+              <p className="text-xs text-slate-500 mt-1">Buyer needs to pay</p>
+            </button>
+            <button type="button" onClick={() => focusStatus('PAID')} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-primary/40 hover:shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Paid Orders</p>
               <div className="mt-2 flex items-end justify-between">
-                <p className="text-2xl font-black text-slate-900">GHS {pageVolume.toFixed(2)}</p>
-                <Banknote className="h-5 w-5 text-slate-400" />
+                <p className="text-2xl font-black text-primary">{paidCount}</p>
+                <CreditCard className="h-5 w-5 text-primary/80" />
               </div>
-              <p className="text-xs text-slate-500 mt-1">Total amount in this filtered view</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-xs text-slate-500 mt-1">Ready for dispatch</p>
+            </button>
+            <button type="button" onClick={() => focusStatus('DISPATCHED')} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-300 hover:shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">In Delivery</p>
+              <div className="mt-2 flex items-end justify-between">
+                <p className="text-2xl font-black text-sky-600">{dispatchedCount}</p>
+                <Truck className="h-5 w-5 text-sky-500/90" />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Waiting buyer confirmation</p>
+            </button>
+            <button type="button" onClick={() => focusStatus('COMPLETED')} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 hover:shadow-sm">
               <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Completed</p>
               <div className="mt-2 flex items-end justify-between">
                 <p className="text-2xl font-black text-emerald-600">{completedCount}</p>
                 <CheckCircle className="h-5 w-5 text-emerald-500/80" />
               </div>
-              <p className="text-xs text-slate-500 mt-1">Successfully finished transactions</p>
+              <p className="text-xs text-slate-500 mt-1">Fully finished transactions</p>
+            </button>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Workflow board</p>
+                <p className="text-xs text-slate-500 mt-1">Use this flow to move each transaction to completion.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => focusStatus('SUBMITTED')}>1. Pay</Button>
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => focusStatus('PAID')}>2. Dispatch</Button>
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => focusStatus('DISPATCHED')}>3. Confirm Delivery</Button>
+                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => focusStatus('DELIVERED_CONFIRMED')}>4. Payout</Button>
+                <Button size="sm" variant="ghost" className="h-8 rounded-lg" onClick={() => focusStatus('')}>Show All</Button>
+              </div>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Quick links</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {role !== 'seller' && (
-                  <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/buyer/step-1')}>
-                    Pay Orders
-                  </Button>
-                )}
-                {role !== 'buyer' && (
-                  <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/seller/step-1')}>
-                    Dispatch
-                  </Button>
-                )}
-                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/tracking')}>
-                  Track
-                </Button>
-                <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => router.push('/calculator')}>
-                  Fee Calc
-                </Button>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Pay</p>
+                <p className="mt-1 text-lg font-black text-amber-900">{submittedCount}</p>
+                <p className="text-xs text-amber-800/80">Transactions waiting for buyer payment.</p>
+              </div>
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Dispatch</p>
+                <p className="mt-1 text-lg font-black text-primary">{paidCount}</p>
+                <p className="text-xs text-slate-600">Paid and waiting for seller dispatch.</p>
+              </div>
+              <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700">Confirm</p>
+                <p className="mt-1 text-lg font-black text-sky-800">{dispatchedCount}</p>
+                <p className="text-xs text-sky-800/80">In transit; buyer should confirm delivery.</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Payout/Done</p>
+                <p className="mt-1 text-lg font-black text-emerald-800">{deliveredConfirmedCount + completedCount}</p>
+                <p className="text-xs text-emerald-800/80">Ready payout plus fully completed orders.</p>
               </div>
             </div>
           </div>
-
-          {/* Data Area */}
-          {actionRequired.length > 0 && (
-            <div className="mb-6 space-y-3">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-semibold text-amber-900">Action required on {actionRequired.length} transaction(s).</p>
-                <p className="text-xs text-amber-800 mt-1">Use the quick actions below to move transactions to completion.</p>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                {role !== 'seller' && buyerPendingCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => router.push('/buyer/step-1')}
-                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Pending Payment ({buyerPendingCount})</p>
-                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Go to payment <ArrowRight className="h-3 w-3" /></p>
-                  </button>
-                )}
-
-                {role !== 'buyer' && sellerDispatchCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => router.push('/seller/step-1')}
-                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Ready to Dispatch ({sellerDispatchCount})</p>
-                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Dispatch now <ArrowRight className="h-3 w-3" /></p>
-                  </button>
-                )}
-
-                {role !== 'seller' && buyerConfirmCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => router.push('/buyer/step-2')}
-                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Buyer Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Confirm Delivery ({buyerConfirmCount})</p>
-                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Confirm now <ArrowRight className="h-3 w-3" /></p>
-                  </button>
-                )}
-
-                {role !== 'buyer' && sellerPayoutCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => router.push('/seller/step-2')}
-                    className="rounded-xl border bg-white p-3 text-left hover:border-primary/40 transition-colors"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Seller Action</p>
-                    <p className="font-bold text-slate-900 mt-1">Collect Payout ({sellerPayoutCount})</p>
-                    <p className="text-xs text-slate-600 mt-1 inline-flex items-center gap-1">Collect now <ArrowRight className="h-3 w-3" /></p>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
           <div className="bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-xl border border-slate-100 overflow-hidden min-h-[400px]">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[400px] text-slate-400">
@@ -419,9 +406,17 @@ export default function HubPage() {
                                   size="sm"
                                   variant="outline"
                                   className="mr-2"
-                                  onClick={() => router.push(getContinueAction(txn)!.route)}
+                                  disabled={payingTxnId === txn.id}
+                                  onClick={() => {
+                                    const action = getContinueAction(txn)!;
+                                    if (action.type === 'pay') {
+                                      void handlePayNow(txn.id);
+                                      return;
+                                    }
+                                    if (action.route) router.push(action.route);
+                                  }}
                                 >
-                                  {getContinueAction(txn)!.label}
+                                  {payingTxnId === txn.id ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening...</> : getContinueAction(txn)!.label}
                                 </Button>
                               )}
                               <DropdownMenu>
@@ -433,7 +428,7 @@ export default function HubPage() {
                                     <Eye className="mr-2 h-4 w-4 text-slate-400" /> View Details
                                   </DropdownMenuItem>
                                   {role !== 'seller' && txn.status === 'SUBMITTED' && (
-                                    <DropdownMenuItem onClick={() => router.push('/buyer/step-1')} className="cursor-pointer py-2.5 text-primary font-medium">
+                                    <DropdownMenuItem onClick={() => void handlePayNow(txn.id)} className="cursor-pointer py-2.5 text-primary font-medium">
                                       <CheckCircle className="mr-2 h-4 w-4" /> Pay Now
                                     </DropdownMenuItem>
                                   )}
@@ -502,12 +497,18 @@ export default function HubPage() {
                           size="sm"
                           variant="outline"
                           className="w-full mt-3"
+                          disabled={payingTxnId === txn.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(getContinueAction(txn)!.route);
+                            const action = getContinueAction(txn)!;
+                            if (action.type === 'pay') {
+                              void handlePayNow(txn.id);
+                              return;
+                            }
+                            if (action.route) router.push(action.route);
                           }}
                         >
-                          {getContinueAction(txn)!.label}
+                          {payingTxnId === txn.id ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening...</> : getContinueAction(txn)!.label}
                         </Button>
                       )}
                     </div>
