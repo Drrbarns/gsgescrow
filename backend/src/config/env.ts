@@ -3,7 +3,12 @@ dotenv.config();
 
 function required(key: string): string {
   const val = process.env[key];
-  if (!val) throw new Error(`Missing required env var: ${key}`);
+  if (!val) {
+    const msg = `Missing required env var: ${key}`;
+    console.error(`[ENV] ${msg}`);
+    if (process.env.VERCEL) return '';
+    throw new Error(msg);
+  }
   return val;
 }
 
