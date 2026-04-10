@@ -19,6 +19,8 @@ import marketplaceRoutes from './routes/marketplace';
 import { getQueueHealth, pingRedis, startPayoutWorker, startNotificationWorker, startSchedulerWorker } from './services/queue';
 import { captureException, captureMessage, initTelemetry } from './services/telemetry';
 
+const isVercel = !!process.env.VERCEL;
+
 const app = express();
 initTelemetry();
 app.set('trust proxy', true);
@@ -67,11 +69,13 @@ app.use('/api/public', publicRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 
 app.get('/health', (_req, res) => {
+  if (isVercel) {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), runtime: 'vercel-serverless' });
+    return;
+  }
   void (async () => {
     const [redis, queues] = await Promise.all([pingRedis(), getQueueHealth()]);
     const healthy = redis.ok && queues.every((q) => q.ok);
-    // Keep health endpoint as liveness (always 200) so infra does not
-    // hard-fail the API when optional dependencies are degraded.
     res.status(200).json({
       status: healthy ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
@@ -82,6 +86,10 @@ app.get('/health', (_req, res) => {
 });
 
 app.get('/ready', (_req, res) => {
+  if (isVercel) {
+    res.status(200).json({ status: 'ready', timestamp: new Date().toISOString(), runtime: 'vercel-serverless' });
+    return;
+  }
   void (async () => {
     const [redis, queues] = await Promise.all([pingRedis(), getQueueHealth()]);
     const healthy = redis.ok && queues.every((q) => q.ok);
@@ -97,41 +105,43 @@ app.get('/ready', (_req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-let payoutWorker: ReturnType<typeof startPayoutWorker> | null = null;
-let notificationWorker: ReturnType<typeof startNotificationWorker> | null = null;
-let schedulerWorker: ReturnType<typeof startSchedulerWorker> | null = null;
+if (!isVercel) {
+  let payoutWorker: ReturnType<typeof startPayoutWorker> | null = null;
+  let notificationWorker: ReturnType<typeof startNotificationWorker> | null = null;
+  let schedulerWorker: ReturnType<typeof startSchedulerWorker> | null = null;
 
-try {
-  payoutWorker = startPayoutWorker();
-  notificationWorker = startNotificationWorker();
-  schedulerWorker = startSchedulerWorker();
-  console.log('[WORKERS] Payout, notification, and scheduler workers started');
-  void captureMessage('info', 'startup', 'Workers started', { queues: ['payouts', 'notifications', 'scheduler'] });
-} catch (err: any) {
-  console.error('[WORKERS] Failed to start one or more workers:', err?.message || err);
-  void captureException(err, { tag: 'startup.workers' });
+  try {
+    payoutWorker = startPayoutWorker();
+    notificationWorker = startNotificationWorker();
+    schedulerWorker = startSchedulerWorker();
+    console.log('[WORKERS] Payout, notification, and scheduler workers started');
+    void captureMessage('info', 'startup', 'Workers started', { queues: ['payouts', 'notifications', 'scheduler'] });
+  } catch (err: any) {
+    console.error('[WORKERS] Failed to start one or more workers:', err?.message || err);
+    void captureException(err, { tag: 'startup.workers' });
+  }
+
+  process.on('SIGTERM', async () => {
+    console.log('[SHUTDOWN] Graceful shutdown...');
+    await Promise.all([
+      payoutWorker?.close(),
+      notificationWorker?.close(),
+      schedulerWorker?.close(),
+    ]);
+    process.exit(0);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    void captureException(reason, { tag: 'process.unhandledRejection' });
+  });
+
+  process.on('uncaughtException', (error) => {
+    void captureException(error, { tag: 'process.uncaughtException' });
+  });
+
+  app.listen(env.PORT, () => {
+    console.log(`[SERVER] Running on port ${env.PORT} (${env.NODE_ENV})`);
+  });
 }
-
-process.on('SIGTERM', async () => {
-  console.log('[SHUTDOWN] Graceful shutdown...');
-  await Promise.all([
-    payoutWorker?.close(),
-    notificationWorker?.close(),
-    schedulerWorker?.close(),
-  ]);
-  process.exit(0);
-});
-
-process.on('unhandledRejection', (reason) => {
-  void captureException(reason, { tag: 'process.unhandledRejection' });
-});
-
-process.on('uncaughtException', (error) => {
-  void captureException(error, { tag: 'process.uncaughtException' });
-});
-
-app.listen(env.PORT, () => {
-  console.log(`[SERVER] Running on port ${env.PORT} (${env.NODE_ENV})`);
-});
 
 export default app;

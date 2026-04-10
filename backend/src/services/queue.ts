@@ -7,10 +7,15 @@ import * as moolre from './moolre';
 import { createHash } from 'crypto';
 import { captureMessage } from './telemetry';
 
-const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }) as any;
-connection.on('error', (err: Error) => {
-  void captureMessage('error', 'redis.connection', err.message, { redis_url: env.REDIS_URL });
-});
+const isVercel = !!process.env.VERCEL;
+
+let connection: any = null;
+if (!isVercel) {
+  connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
+  connection.on('error', (err: Error) => {
+    void captureMessage('error', 'redis.connection', err.message, { redis_url: env.REDIS_URL });
+  });
+}
 
 const MAX_LOG_BODY = 800;
 
@@ -96,6 +101,7 @@ async function recordQueueSnapshot() {
 }
 
 export async function pingRedis() {
+  if (!connection) return { ok: false, message: 'Redis not configured (serverless mode)' };
   try {
     const pong = await connection.ping();
     return { ok: pong === 'PONG', message: pong };
@@ -122,26 +128,32 @@ export async function getQueueHealth() {
   return out;
 }
 
+const noopQueue = { add: async () => {}, getJobCounts: async () => ({ waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, paused: 0 }) } as any;
+
 // ---- PAYOUT QUEUE ----
-export const payoutQueue = new Queue('payouts', {
-  connection,
-  defaultJobOptions: {
-    attempts: 5,
-    backoff: { type: 'exponential', delay: 60000 },
-    removeOnComplete: { count: 1000 },
-    removeOnFail: { count: 5000 },
-  },
-});
+export const payoutQueue: Queue = connection
+  ? new Queue('payouts', {
+      connection,
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 60000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 5000 },
+      },
+    })
+  : noopQueue;
 
 // ---- NOTIFICATION QUEUE ----
-export const notificationQueue = new Queue('notifications', {
-  connection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 10000 },
-    removeOnComplete: { count: 500 },
-  },
-});
+export const notificationQueue: Queue = connection
+  ? new Queue('notifications', {
+      connection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 10000 },
+        removeOnComplete: { count: 500 },
+      },
+    })
+  : noopQueue;
 
 // ---- PAYOUT WORKER ----
 export function startPayoutWorker() {
@@ -276,14 +288,16 @@ export function startPayoutWorker() {
 }
 
 // ---- SCHEDULER QUEUE (auto-release, trust recalc, stats refresh) ----
-export const schedulerQueue = new Queue('scheduler', {
-  connection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 30000 },
-    removeOnComplete: { count: 500 },
-  },
-});
+export const schedulerQueue: Queue = connection
+  ? new Queue('scheduler', {
+      connection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 30000 },
+        removeOnComplete: { count: 500 },
+      },
+    })
+  : noopQueue;
 
 // ---- NOTIFICATION WORKER ----
 export function startNotificationWorker() {
