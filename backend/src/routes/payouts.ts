@@ -3,7 +3,8 @@ import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middle
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { payoutQueue, notificationQueue } from '../services/queue';
 import { verifyCode } from '../utils/codes';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
+const uuidv4 = randomUUID;
 import { env } from '../config/env';
 
 const router = Router();
