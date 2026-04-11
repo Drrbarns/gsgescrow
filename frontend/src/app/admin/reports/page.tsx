@@ -207,7 +207,7 @@ export default function AdminReports() {
           </div>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Transactions ({report.transactions?.length || 0})</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Transactions ({report?.transactions?.length || 0})</CardTitle></CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
               <Table>
