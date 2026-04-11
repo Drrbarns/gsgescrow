@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Shield, LayoutDashboard, ArrowLeftRight, Banknote, AlertTriangle, Star, Settings, FileBarChart, LogOut, Menu, User, BarChart3, Search, Command, Sparkles, ShieldCheck } from 'lucide-react';
+import { Shield, LayoutDashboard, ArrowLeftRight, Banknote, AlertTriangle, Star, Settings, FileBarChart, LogOut, Menu, User, BarChart3, Search, Command, Sparkles, ShieldCheck, Radar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const sidebarLinks = [
@@ -19,6 +19,7 @@ const sidebarLinks = [
   { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/admin/payouts', label: 'Payouts', icon: Banknote },
   { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle },
+  { href: '/admin/fraud', label: 'Fraud Monitor', icon: Radar },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
   { href: '/admin/reports', label: 'Reports', icon: FileBarChart },

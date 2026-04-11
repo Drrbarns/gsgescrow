@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import { env } from './config/env';
 import { requestIdMiddleware, errorHandler, notFound } from './middleware/errorHandler';
+import { idempotency } from './middleware/idempotency';
 import authRoutes from './routes/auth';
 import paymentRoutes from './routes/payments';
 import payoutRoutes from './routes/payouts';
@@ -58,7 +59,7 @@ app.use(express.json({ limit: '5mb' }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/payouts', payoutRoutes);
+app.use('/api/payouts', idempotency, payoutRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/disputes', disputeRoutes);

@@ -101,7 +101,7 @@ router.post('/verify', authenticateToken, async (req: Request, res: Response): P
       .single();
 
     if (error) throw error;
-    await sendNotification('KYC_SUBMITTED', data.id);
+    await sendNotification('KYC_SUBMITTED', data.id, { applicant_role: userRole });
     res.status(201).json({ data });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to submit verification' });
@@ -176,7 +176,7 @@ router.post('/kyc', authenticateToken, async (req: Request, res: Response): Prom
       .single();
 
     if (error) throw error;
-    await sendNotification('KYC_SUBMITTED', data.id);
+    await sendNotification('KYC_SUBMITTED', data.id, { applicant_role: userRole });
     res.status(201).json({ data });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to submit KYC' });

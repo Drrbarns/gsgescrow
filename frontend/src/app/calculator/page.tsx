@@ -1,30 +1,66 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Copy, Check, Shield } from 'lucide-react';
+import { Copy, Check, Shield, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+
+function calcFallback(amount: string, delivery: string) {
+  const pt = parseFloat(amount) || 0;
+  const df = parseFloat(delivery) || 0;
+  const riderReleaseFee = df > 0 ? 1.0 : 0.0;
+  const buyerFee = pt * 0.0035;
+  const sellerFee = pt * 0.0065;
+  const buyerPays = pt + df + riderReleaseFee + buyerFee;
+  const sellerReceives = Math.max(0, pt - sellerFee);
+  return { pt, df, riderReleaseFee, buyerFee, sellerFee, buyerPays, sellerReceives };
+}
 
 export default function CalculatorPage() {
   const [amount, setAmount] = useState('');
   const [delivery, setDelivery] = useState('');
   const [copied, setCopied] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [calc, setCalc] = useState(() => calcFallback('', ''));
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const calc = useMemo(() => {
-    const pt = parseFloat(amount) || 0;
-    const df = parseFloat(delivery) || 0;
-    const riderReleaseFee = df > 0 ? 1.0 : 0.0;
-    const buyerFee = pt * 0.0035;
-    const sellerFee = pt * 0.0065;
-    const buyerPays = pt + df + riderReleaseFee + buyerFee;
-    const sellerReceives = pt - sellerFee;
+  const fetchFees = useCallback((amt: string, del: string) => {
+    const pt = parseFloat(amt) || 0;
+    const df = parseFloat(del) || 0;
 
-    return { 
-      pt, df, riderReleaseFee, buyerFee, sellerFee, buyerPays, 
-      sellerReceives: Math.max(0, sellerReceives) 
-    };
-  }, [amount, delivery]);
+    if (pt <= 0) {
+      setCalc(calcFallback(amt, del));
+      return;
+    }
+
+    setFetching(true);
+    api.calculateFees(pt, df)
+      .then((res) => {
+        const d = res.data;
+        setCalc({
+          pt: Number(d.product_total) || pt,
+          df: Number(d.delivery_fee) || df,
+          buyerFee: Number(d.buyer_platform_fee) || 0,
+          sellerFee: Number(d.seller_platform_fee) || 0,
+          riderReleaseFee: Number(d.rider_release_fee) || 0,
+          buyerPays: Number(d.grand_total) || 0,
+          sellerReceives: Math.max(0, (Number(d.product_total) || pt) - (Number(d.seller_platform_fee) || 0)),
+        });
+      })
+      .catch(() => {
+        setCalc(calcFallback(amt, del));
+      })
+      .finally(() => setFetching(false));
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setCalc(calcFallback(amount, delivery));
+    debounceRef.current = setTimeout(() => fetchFees(amount, delivery), 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [amount, delivery, fetchFees]);
 
   function handleCopyQuote() {
     const text = `Sell-Safe Buy-Safe Quote\n\nItem Price: GHS ${calc.pt.toFixed(2)}\nDelivery: GHS ${calc.df.toFixed(2)}\n\nBuyer Pays: GHS ${calc.buyerPays.toFixed(2)}\nSeller Receives: GHS ${calc.sellerReceives.toFixed(2)}\n\nSecure this deal at: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
@@ -123,8 +159,9 @@ export default function CalculatorPage() {
 
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-slate-400">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-slate-400 flex items-center gap-2">
                     Transaction Summary
+                    {fetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
                   </h3>
                   <button 
                     onClick={handleCopyQuote}

@@ -37,6 +37,6 @@ export const TRANSACTION_STATUSES: Record<string, { label: string; color: string
 
 export const MOMO_PROVIDERS = [
   { value: 'MTN', label: 'MTN Mobile Money', bank_code: 'MTN' },
-  { value: 'VOD', label: 'Vodafone Cash', bank_code: 'VOD' },
-  { value: 'ATL', label: 'AirtelTigo Money', bank_code: 'ATL' },
+  { value: 'VOD', label: 'Telecel Cash', bank_code: 'VOD' },
+  { value: 'ATL', label: 'AT Money', bank_code: 'ATL' },
 ] as const;

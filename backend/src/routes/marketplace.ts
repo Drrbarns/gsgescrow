@@ -213,7 +213,11 @@ router.post('/listings', authenticateToken, async (req: Request, res: Response):
       after_state: { title: data.title, status: data.status, listing_type: data.listing_type },
       request_id: req.requestId,
     });
-    await sendNotification('LISTING_CREATED', data.id);
+    await sendNotification('LISTING_CREATED', data.id, {
+      target_user_id: data.seller_id || req.user!.id,
+      listing_title: data.title,
+      listing_status: data.status,
+    });
 
     res.status(201).json({ data });
   } catch (err: any) {
@@ -276,7 +280,11 @@ router.put('/listings/:id', authenticateToken, async (req: Request, res: Respons
       after_state: { title: data.title, status: data.status, price: data.price },
       request_id: req.requestId,
     });
-    await sendNotification('LISTING_UPDATED', data.id);
+    await sendNotification('LISTING_UPDATED', data.id, {
+      target_user_id: data.seller_id || req.user!.id,
+      listing_title: data.title,
+      listing_status: data.status,
+    });
 
     res.json({ data });
   } catch (err: any) {
@@ -324,7 +332,11 @@ router.patch('/listings/:id/status', authenticateToken, async (req: Request, res
       after_state: { status: data.status },
       request_id: req.requestId,
     });
-    await sendNotification(status === 'PUBLISHED' ? 'LISTING_PUBLISHED' : 'LISTING_UPDATED', data.id);
+    await sendNotification(status === 'PUBLISHED' ? 'LISTING_PUBLISHED' : 'LISTING_UPDATED', data.id, {
+      target_user_id: data.seller_id || req.user!.id,
+      listing_title: data.title,
+      listing_status: data.status,
+    });
 
     res.json({ data });
   } catch (err: any) {
@@ -364,7 +376,11 @@ router.delete('/listings/:id', authenticateToken, async (req: Request, res: Resp
       after_state: { status: 'ARCHIVED' },
       request_id: req.requestId,
     });
-    await sendNotification('LISTING_UPDATED', listing.id);
+    await sendNotification('LISTING_UPDATED', listing.id, {
+      target_user_id: listing.seller_id || req.user!.id,
+      listing_title: listing.title,
+      listing_status: 'ARCHIVED',
+    });
 
     res.json({ data: { ok: true } });
   } catch (err: any) {

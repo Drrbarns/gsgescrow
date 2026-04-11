@@ -2,11 +2,14 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken, isPrivilegedRole, requireAdminRole } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
 import { payoutQueue } from '../services/queue';
+import { processPayoutInline } from '../services/payout-inline';
 import { sendNotification } from '../services/notify';
 import { verifyCode } from '../utils/codes';
 import { randomUUID } from 'crypto';
 const uuidv4 = randomUUID;
 import { env } from '../config/env';
+
+const isVercel = !!process.env.VERCEL;
 
 const router = Router();
 
@@ -82,18 +85,22 @@ router.post('/rider', authenticateToken, async (req: Request, res: Response): Pr
       delivery_verified: true,
     }).eq('transaction_id', transaction_id);
 
+    const payoutData = {
+      payout_id: payout.id,
+      transaction_id,
+      type: 'RIDER' as const,
+      amount: payoutAmount,
+      destination: payout.destination,
+      idempotency_key: idempotencyKey,
+      reason: `Rider payout for ${txn.short_id}`,
+    };
+
     if (env.SIMULATION_MODE) {
       await supabaseAdmin.from('payouts').update({ status: 'SUCCESS' }).eq('id', payout.id);
+    } else if (isVercel) {
+      await processPayoutInline(payoutData);
     } else {
-      await payoutQueue.add('rider_payout', {
-        payout_id: payout.id,
-        transaction_id,
-        type: 'RIDER',
-        amount: payoutAmount,
-        destination: payout.destination,
-        idempotency_key: idempotencyKey,
-        reason: `Rider payout for ${txn.short_id}`,
-      });
+      await payoutQueue.add('rider_payout', payoutData);
     }
 
     await auditLog({
@@ -179,18 +186,22 @@ router.post('/seller', authenticateToken, async (req: Request, res: Response): P
       description: 'Seller platform fee',
     });
 
+    const sellerPayoutData = {
+      payout_id: payout.id,
+      transaction_id,
+      type: 'SELLER' as const,
+      amount: sellerAmount,
+      destination: txn.seller_payout_destination,
+      idempotency_key: idempotencyKey,
+      reason: `Seller payout for ${txn.short_id}`,
+    };
+
     if (env.SIMULATION_MODE) {
       await supabaseAdmin.from('payouts').update({ status: 'SUCCESS' }).eq('id', payout.id);
+    } else if (isVercel) {
+      await processPayoutInline(sellerPayoutData);
     } else {
-      await payoutQueue.add('seller_payout', {
-        payout_id: payout.id,
-        transaction_id,
-        type: 'SELLER',
-        amount: sellerAmount,
-        destination: txn.seller_payout_destination,
-        idempotency_key: idempotencyKey,
-        reason: `Seller payout for ${txn.short_id}`,
-      });
+      await payoutQueue.add('seller_payout', sellerPayoutData);
     }
 
     await supabaseAdmin.from('transactions').update({
@@ -287,7 +298,7 @@ router.post('/:id/release', authenticateToken, requireAdminRole, async (req: Req
       status: 'QUEUED', held_reason: null, held_by: null,
     }).eq('id', payout.id);
 
-    await payoutQueue.add(`${payout.type.toLowerCase()}_payout`, {
+    const releaseData = {
       payout_id: payout.id,
       transaction_id: payout.transaction_id,
       type: payout.type,
@@ -295,7 +306,13 @@ router.post('/:id/release', authenticateToken, requireAdminRole, async (req: Req
       destination: payout.destination,
       idempotency_key: payout.idempotency_key,
       reason: `Released payout`,
-    });
+    };
+
+    if (isVercel) {
+      await processPayoutInline(releaseData);
+    } else {
+      await payoutQueue.add(`${payout.type.toLowerCase()}_payout`, releaseData);
+    }
 
     await auditLog({
       actor_id: req.user!.id, action: 'PAYOUT_RELEASED', entity: 'payouts', entity_id: payout.id,
@@ -320,7 +337,7 @@ router.post('/:id/retry', authenticateToken, requireAdminRole, async (req: Reque
       status: 'QUEUED', attempts: 0, last_error: null,
     }).eq('id', payout.id);
 
-    await payoutQueue.add(`${payout.type.toLowerCase()}_payout`, {
+    const retryData = {
       payout_id: payout.id,
       transaction_id: payout.transaction_id,
       type: payout.type,
@@ -328,7 +345,13 @@ router.post('/:id/retry', authenticateToken, requireAdminRole, async (req: Reque
       destination: payout.destination,
       idempotency_key: payout.idempotency_key,
       reason: 'Admin retry',
-    });
+    };
+
+    if (isVercel) {
+      await processPayoutInline(retryData);
+    } else {
+      await payoutQueue.add(`${payout.type.toLowerCase()}_payout`, retryData);
+    }
 
     res.json({ data: { message: 'Payout retried' } });
   } catch (err: any) {

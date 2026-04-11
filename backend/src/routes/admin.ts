@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken, requireAdminRole, requireSuperadmin } from '../middleware/auth';
 import { supabaseAdmin, auditLog } from '../services/supabase';
-import { getQueueHealth, pingRedis } from '../services/queue';
+import { getQueueHealth, pingRedis, payoutQueue } from '../services/queue';
+import { processPayoutInline } from '../services/payout-inline';
 import { sendNotification } from '../services/notify';
 import { randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
@@ -241,7 +242,11 @@ router.post('/verifications/:id/approve', authenticateToken, requireAdminRole, a
       entity: 'kyc_verifications',
       entity_id: req.params.id as string,
     });
-    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string);
+    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string, {
+      target_user_id: verification.user_id,
+      target_phone: verification.phone || '',
+      status: 'APPROVED',
+    });
 
     res.json({ data: { status: 'APPROVED', role: verification.user_role } });
   } catch (err: any) {
@@ -276,7 +281,12 @@ router.post('/verifications/:id/reject', authenticateToken, requireAdminRole, as
       entity: 'kyc_verifications',
       entity_id: req.params.id as string,
     });
-    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string);
+    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string, {
+      target_user_id: verification.user_id,
+      target_phone: verification.phone || '',
+      status: 'REJECTED',
+      reason,
+    });
 
     res.json({ data: { status: 'REJECTED' } });
   } catch (err: any) {
@@ -326,7 +336,12 @@ router.post('/verifications/:id/status', authenticateToken, requireAdminRole, as
       after_state: { status: nextStatus, notes: req.body.notes || null },
       reason: req.body.reason || null,
     });
-    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string);
+    await sendNotification('KYC_STATUS_CHANGED', req.params.id as string, {
+      target_user_id: data.user_id,
+      target_phone: data.phone || '',
+      status: nextStatus,
+      reason: req.body.reason || null,
+    });
 
     res.json({ data });
   } catch {
@@ -645,7 +660,11 @@ router.post('/impersonation/start', sensitiveAdminLimiter, authenticateToken, re
       after_state: { target_user_id: targetUserId, expires_at: expiresAt },
       request_id: req.requestId,
     });
-    await sendNotification('ADMIN_IMPERSONATION_STARTED', data.id);
+    await sendNotification('ADMIN_IMPERSONATION_STARTED', data.id, {
+      actor_id: req.user!.id,
+      actor_phone: '',
+      message: `Impersonation started for user ${targetUserId}: ${reason}`,
+    });
 
     res.json({
       data: {
@@ -743,7 +762,11 @@ router.post('/impersonation/stop', sensitiveAdminLimiter, authenticateToken, req
       reason: req.body.reason || 'manual-stop',
       request_id: req.requestId,
     });
-    await sendNotification('ADMIN_IMPERSONATION_STOPPED', existing.id);
+    await sendNotification('ADMIN_IMPERSONATION_STOPPED', existing.id, {
+      actor_id: req.user!.id,
+      actor_phone: '',
+      message: `Impersonation stopped: ${req.body.reason || 'manual-stop'}`,
+    });
 
     res.json({ data: { ok: true } });
   } catch {
@@ -893,11 +916,43 @@ router.post('/bulk/payouts', sensitiveAdminLimiter, ...adminAuth, async (req: Re
     let status: string = 'PENDING';
     if (action === 'hold') status = 'HELD';
     if (action === 'release' || action === 'retry') status = 'QUEUED';
+
+    const updateData: Record<string, any> = { status };
+    if (action === 'hold') updateData.held_reason = req.body.reason || 'Bulk held';
+    else updateData.held_reason = null;
+    if (action === 'retry') { updateData.attempts = 0; updateData.last_error = null; }
+
     const { error } = await supabaseAdmin
       .from('payouts')
-      .update({ status, held_reason: action === 'hold' ? (req.body.reason || 'Bulk held') : null })
+      .update(updateData)
       .in('id', ids);
     if (error) throw error;
+
+    if (action === 'release' || action === 'retry') {
+      const { data: payouts } = await supabaseAdmin
+        .from('payouts')
+        .select('id, transaction_id, type, amount, destination, idempotency_key')
+        .in('id', ids);
+
+      const isVercelRuntime = !!process.env.VERCEL;
+      for (const p of payouts || []) {
+        const jobData = {
+          payout_id: p.id,
+          transaction_id: p.transaction_id,
+          type: p.type,
+          amount: p.amount,
+          destination: p.destination,
+          idempotency_key: p.idempotency_key,
+          reason: `Bulk ${action}`,
+        };
+        if (isVercelRuntime) {
+          await processPayoutInline(jobData);
+        } else {
+          await payoutQueue.add(`${p.type.toLowerCase()}_payout`, jobData);
+        }
+      }
+    }
+
     await auditLog({
       actor_id: req.user!.id,
       action: 'BULK_PAYOUT_ACTION',
@@ -1046,8 +1101,79 @@ router.post('/export/jobs', ...adminAuth, async (req: Request, res: Response): P
       return;
     }
 
-    const now = new Date().toISOString();
-    const fakeFilePath = `exports/${exportType}-${Date.now()}.csv`;
+    const startedAt = new Date().toISOString();
+    let csvContent = '';
+    let rowCount = 0;
+
+    const toCsvRow = (values: any[]) =>
+      values.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
+
+    switch (exportType) {
+      case 'transactions': {
+        const { data: rows } = await supabaseAdmin
+          .from('transactions')
+          .select('short_id, status, buyer_name, seller_name, product_total, delivery_fee, grand_total, created_at, completed_at')
+          .order('created_at', { ascending: false })
+          .limit(10000);
+        const headers = ['Short ID', 'Status', 'Buyer', 'Seller', 'Product Total', 'Delivery Fee', 'Grand Total', 'Created', 'Completed'];
+        csvContent = toCsvRow(headers);
+        for (const r of rows || []) {
+          csvContent += toCsvRow([r.short_id, r.status, r.buyer_name, r.seller_name, r.product_total, r.delivery_fee, r.grand_total, r.created_at, r.completed_at]);
+          rowCount++;
+        }
+        break;
+      }
+      case 'payouts': {
+        const { data: rows } = await supabaseAdmin
+          .from('payouts')
+          .select('id, transaction_id, type, amount, status, provider_ref, created_at, completed_at')
+          .order('created_at', { ascending: false })
+          .limit(10000);
+        const headers = ['ID', 'Transaction ID', 'Type', 'Amount', 'Status', 'Provider Ref', 'Created', 'Completed'];
+        csvContent = toCsvRow(headers);
+        for (const r of rows || []) {
+          csvContent += toCsvRow([r.id, r.transaction_id, r.type, r.amount, r.status, r.provider_ref, r.created_at, r.completed_at]);
+          rowCount++;
+        }
+        break;
+      }
+      case 'disputes': {
+        const { data: rows } = await supabaseAdmin
+          .from('disputes')
+          .select('id, transaction_id, status, reason, resolution, resolution_action, created_at, resolved_at')
+          .order('created_at', { ascending: false })
+          .limit(10000);
+        const headers = ['ID', 'Transaction ID', 'Status', 'Reason', 'Resolution', 'Action', 'Created', 'Resolved'];
+        csvContent = toCsvRow(headers);
+        for (const r of rows || []) {
+          csvContent += toCsvRow([r.id, r.transaction_id, r.status, r.reason, r.resolution, r.resolution_action, r.created_at, r.resolved_at]);
+          rowCount++;
+        }
+        break;
+      }
+      case 'users': {
+        const { data: rows } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, display_name, phone, role, kyc_status, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10000);
+        const headers = ['User ID', 'Name', 'Phone', 'Role', 'KYC Status', 'Created'];
+        csvContent = toCsvRow(headers);
+        for (const r of rows || []) {
+          csvContent += toCsvRow([r.user_id, r.display_name, r.phone, r.role, r.kyc_status, r.created_at]);
+          rowCount++;
+        }
+        break;
+      }
+      default: {
+        res.status(400).json({ error: `Unsupported export type: ${exportType}` });
+        return;
+      }
+    }
+
+    const csvBase64 = Buffer.from(csvContent, 'utf-8').toString('base64');
+    const completedAt = new Date().toISOString();
+
     const { data, error } = await supabaseAdmin
       .from('admin_export_jobs')
       .insert({
@@ -1055,10 +1181,11 @@ router.post('/export/jobs', ...adminAuth, async (req: Request, res: Response): P
         export_type: exportType,
         status: 'COMPLETED',
         request_filters: filters,
-        file_path: fakeFilePath,
+        file_path: csvBase64,
         file_format: 'csv',
-        started_at: now,
-        completed_at: now,
+        started_at: startedAt,
+        completed_at: completedAt,
+        row_count: rowCount,
       })
       .select('*')
       .single();
@@ -1069,13 +1196,35 @@ router.post('/export/jobs', ...adminAuth, async (req: Request, res: Response): P
       action: 'EXPORT_JOB_CREATED',
       entity: 'admin_export_jobs',
       entity_id: data.id as string,
-      after_state: { export_type: exportType, filters, file_path: fakeFilePath },
+      after_state: { export_type: exportType, filters, row_count: rowCount },
       request_id: req.requestId,
     });
 
     res.status(201).json({ data });
   } catch {
     res.status(500).json({ error: 'Failed to create export job' });
+  }
+});
+
+router.get('/export/jobs/:id/download', ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { data: job } = await supabaseAdmin
+      .from('admin_export_jobs')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (!job) { res.status(404).json({ error: 'Export job not found' }); return; }
+    if (job.status !== 'COMPLETED' || !job.file_path) {
+      res.status(400).json({ error: 'Export not ready' }); return;
+    }
+
+    const csvContent = Buffer.from(job.file_path, 'base64').toString('utf-8');
+    const filename = `${job.export_type}-${job.id}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csvContent);
+  } catch {
+    res.status(500).json({ error: 'Failed to download export' });
   }
 });
 

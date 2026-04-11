@@ -668,10 +668,20 @@ export function startSchedulerWorker() {
           .eq('delivery_verified', false);
 
         for (const code of expired || []) {
+          await supabaseAdmin
+            .from('transaction_codes')
+            .update({
+              delivery_code_hash: null,
+              delivery_code_expires_at: null,
+            })
+            .eq('transaction_id', code.transaction_id)
+            .eq('delivery_verified', false);
+
           await auditLog({
             action: 'CODE_EXPIRED',
             entity: 'transaction_codes',
             entity_id: code.transaction_id,
+            after_state: { reason: 'Delivery code expired and invalidated' },
           });
         }
         break;
