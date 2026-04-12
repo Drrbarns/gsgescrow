@@ -26,6 +26,10 @@ export default function AdminReports() {
   const [logTagFilter, setLogTagFilter] = useState('');
   const [alertStatusFilter, setAlertStatusFilter] = useState('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [smsRecipient, setSmsRecipient] = useState('');
+  const [smsMessage, setSmsMessage] = useState('SMS debugger test from Sell-Safe Buy-Safe');
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsResponse, setSmsResponse] = useState<any>(null);
 
   useEffect(() => {
     void loadOpsData();
@@ -109,6 +113,37 @@ export default function AdminReports() {
       await loadOpsData();
     } catch {
       toast.error('Failed to update rule');
+    }
+  }
+
+  async function sendSmsDebug(dryRun = false) {
+    if (!smsRecipient.trim()) {
+      toast.error('Recipient is required');
+      return;
+    }
+    if (!smsMessage.trim()) {
+      toast.error('Message is required');
+      return;
+    }
+
+    setSmsLoading(true);
+    try {
+      const result = await api.request<{ data: any }>('/api/admin/sms/debug', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipient: smsRecipient.trim(),
+          message: smsMessage.trim(),
+          dry_run: dryRun,
+        }),
+      });
+      setSmsResponse(result.data);
+      toast.success(dryRun ? 'Dry run successful' : (result.data?.success ? 'SMS sent' : 'SMS request completed'));
+      await loadOpsData();
+    } catch (err: any) {
+      setSmsResponse({ error: err?.message || 'SMS debug failed' });
+      toast.error(err?.message || 'SMS debug failed');
+    } finally {
+      setSmsLoading(false);
     }
   }
 
@@ -432,6 +467,45 @@ export default function AdminReports() {
                   ))
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">SMS Debugger</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Recipient</Label>
+                <Input
+                  placeholder="+233XXXXXXXXX"
+                  value={smsRecipient}
+                  onChange={(e) => setSmsRecipient(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Message</Label>
+                <Input
+                  placeholder="Enter SMS content"
+                  value={smsMessage}
+                  onChange={(e) => setSmsMessage(e.target.value)}
+                  maxLength={450}
+                />
+                <p className="text-xs text-muted-foreground">{smsMessage.length}/450</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => void sendSmsDebug(false)} disabled={smsLoading}>
+                  {smsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Test SMS'}
+                </Button>
+                <Button variant="outline" onClick={() => void sendSmsDebug(true)} disabled={smsLoading}>
+                  Dry Run
+                </Button>
+              </div>
+              {smsResponse && (
+                <pre className="max-h-56 overflow-auto rounded-md border bg-slate-50 p-3 text-xs">
+                  {JSON.stringify(smsResponse, null, 2)}
+                </pre>
+              )}
             </CardContent>
           </Card>
       </>
