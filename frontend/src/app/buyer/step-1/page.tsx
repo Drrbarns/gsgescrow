@@ -506,234 +506,363 @@ function BuyerStep1() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[#f8fafc]">
       <Header />
-      
-      <main className="flex-1 pb-12 sm:pb-24">
-        {/* Header Section */}
-        <div className="bg-slate-950 pt-8 pb-24 sm:pt-12 sm:pb-32 text-white px-4">
-          <div className="mx-auto max-w-6xl">
-            <div className="flex items-center gap-3 sm:gap-4 mb-4">
-              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-primary text-white font-bold text-lg sm:text-xl shadow-lg shadow-primary/30 shrink-0">
-                1
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">Secure Your Purchase</h1>
-                <p className="text-slate-400 mt-1 text-sm sm:text-base">Fill in the details to lock your funds in the PSPs vault.</p>
-              </div>
-            </div>
+
+      <main className="flex-1 pb-16 sm:pb-24">
+        {/* Light, calm intro — no heavy hero band */}
+        <div className="border-b border-slate-200/80 bg-white">
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Secure checkout</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Lock in your payment safely</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+              Your money stays protected until you confirm delivery. Most people finish in under two minutes.
+            </p>
           </div>
         </div>
 
-        {/* Form Container */}
-        <div className="mx-auto max-w-6xl px-4 -mt-16 sm:-mt-20 relative z-10">
-          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
-            
-            {/* Left Side: Form */}
-            <div className="w-full lg:flex-[1.8] xl:flex-[2] space-y-6 sm:space-y-8">
-              
-              {/* Section 1: Item Details */}
-              <div className="rounded-2xl sm:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-8">
-                <h3 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mb-5 sm:mb-6 pb-3 border-b border-slate-100">
-                  <ShoppingBag className="h-5 w-5 text-primary" /> Item Details
-                </h3>
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-slate-600 font-semibold">Where did you find this? *</Label>
-                    <Select value={sourcePlatform} onValueChange={v => setSourcePlatform(v ?? '')}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select platform" /></SelectTrigger>
-                      <SelectContent>
-                        {SOURCE_PLATFORMS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-600 font-semibold">Product/Service Category *</Label>
-                    <Select value={productType} onValueChange={v => setProductType(v ?? '')}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200"><SelectValue placeholder="Select category" /></SelectTrigger>
-                      <SelectContent>
-                        {PRODUCT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Exact Product Name *</Label>
-                    <Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="e.g. iPhone 15 Pro Max 256GB" className="h-12 rounded-xl bg-slate-50 border-slate-200" />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Listing URL (Optional)</Label>
-                    <Input value={listingLink} onChange={e => setListingLink(e.target.value)} placeholder="https://instagram.com/p/..." className="h-12 rounded-xl bg-slate-50 border-slate-200" />
-                    {linkWarning && <p className="text-xs text-amber-600 flex items-center gap-1 mt-1"><AlertTriangle className="h-3 w-3" /> Please enter a valid URL</p>}
-                  </div>
+        <div className="mx-auto max-w-5xl px-4 pt-8 sm:pt-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+            {/* Single unified form card — less visual noise than stacked heavy cards */}
+            <div className="min-w-0 flex-1">
+              <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+                <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                    <ShoppingBag className="h-4 w-4 text-primary" />
+                    Order details
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500">What you&apos;re buying and where it should go.</p>
                 </div>
-              </div>
 
-              {/* Section 2: Delivery & Parties */}
-              <div className="rounded-2xl sm:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-8">
-                <h3 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mb-5 sm:mb-6 pb-3 border-b border-slate-100">
-                  <Store className="h-5 w-5 text-primary" /> Delivery & Parties
-                </h3>
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Full Delivery Address *</Label>
-                    <Textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="House number, Street, Landmark, City" className="min-h-[100px] rounded-xl bg-slate-50 border-slate-200 resize-none" />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Pickup Location (for distance estimate)</Label>
-                    <Input
-                      value={pickupLocation}
-                      onChange={(e) => setPickupLocation(e.target.value)}
-                      placeholder="e.g. Madina, Accra"
-                      className="h-12 rounded-xl bg-slate-50 border-slate-200"
-                    />
-                  </div>
-                  <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
-                    <Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg" onClick={() => setShowMapPicker((prev) => !prev)}>
-                      <MapPin className="h-4 w-4" /> {showMapPicker ? 'Hide Map Picker' : 'Open Map Picker'}
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg" onClick={handleUseCurrentLocation} disabled={locating || resolvingAddress}>
-                      {(locating || resolvingAddress) ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-                      Use Current Location
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg" onClick={() => window.open(externalMapUrl, '_blank')} disabled={!mapQuery && !deliveryAddress && !geoCoords}>
-                      <ExternalLink className="h-4 w-4" /> Open in Maps
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg" onClick={handlePinQueryOnMap} disabled={resolvingAddress || (!mapQuery.trim() && !deliveryAddress.trim())}>
-                      {resolvingAddress ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                      Pin Query on Map
-                    </Button>
-                  </div>
-                  {showMapPicker && (
-                    <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-                      <Label className="text-sm font-semibold text-slate-700">Search/Map Query</Label>
-                      <div className="flex gap-2">
+                <div className="space-y-0 divide-y divide-slate-100">
+                  {/* Block A — item */}
+                  <div className="px-5 py-6 sm:px-6">
+                    <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Item</p>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-700">Product name *</Label>
                         <Input
-                          value={mapQuery}
-                          onChange={(e) => setMapQuery(e.target.value)}
-                          placeholder="e.g. East Legon, Accra or GPS coordinates"
-                          className="h-11 bg-white rounded-lg flex-1"
+                          value={productName}
+                          onChange={(e) => setProductName(e.target.value)}
+                          placeholder="e.g. iPhone 15 Pro Max 256GB"
+                          className="h-11 rounded-lg border-slate-200 bg-white"
                         />
-                        <Button
-                          type="button"
-                          variant="default"
-                          className="h-11 rounded-lg"
-                          onClick={() => setDeliveryAddress(mapQuery.trim())}
-                          disabled={!mapQuery.trim()}
-                        >
-                          Apply
-                        </Button>
                       </div>
-                      {geoCoords ? (
-                        <div className="space-y-2 mt-2">
-                          <p className="text-xs text-slate-500 font-medium">Pinned coordinates: {geoCoords.lat}, {geoCoords.lng}</p>
-                          <div ref={mapContainerRef} className="w-full h-64 rounded-xl border border-slate-200 shadow-inner" />
-                          <p className="text-[11px] text-slate-500">Drag the pin to fine-tune exact delivery point.</p>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-sm text-slate-700">Source *</Label>
+                          <Select value={sourcePlatform} onValueChange={(v) => setSourcePlatform(v ?? '')}>
+                            <SelectTrigger className="h-11 rounded-lg border-slate-200 bg-white">
+                              <SelectValue placeholder="Where you found it" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SOURCE_PLATFORMS.map((p) => (
+                                <SelectItem key={p.value} value={p.value}>
+                                  {p.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      ) : (
-                        <p className="text-xs text-slate-500 mt-2">Use &ldquo;Current Location&rdquo; to pin coordinates and render an in-page map preview.</p>
-                      )}
+                        <div className="space-y-2">
+                          <Label className="text-sm text-slate-700">Category *</Label>
+                          <Select value={productType} onValueChange={(v) => setProductType(v ?? '')}>
+                            <SelectTrigger className="h-11 rounded-lg border-slate-200 bg-white">
+                              <SelectValue placeholder="Type of item" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRODUCT_TYPES.map((p) => (
+                                <SelectItem key={p.value} value={p.value}>
+                                  {p.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <details className="group rounded-lg border border-slate-100 bg-slate-50/50">
+                        <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:text-slate-900 [&::-webkit-details-marker]:hidden">
+                          <span className="inline-flex items-center gap-2">
+                            Listing link <span className="text-xs font-normal text-slate-400">(optional)</span>
+                          </span>
+                        </summary>
+                        <div className="border-t border-slate-100 px-3 pb-3 pt-1">
+                          <Input
+                            value={listingLink}
+                            onChange={(e) => setListingLink(e.target.value)}
+                            placeholder="https://…"
+                            className="h-10 rounded-lg border-slate-200 bg-white text-sm"
+                          />
+                          {linkWarning && (
+                            <p className="mt-1.5 flex items-center gap-1 text-xs text-amber-700">
+                              <AlertTriangle className="h-3 w-3 shrink-0" /> Use a full link starting with http:// or https://
+                            </p>
+                          )}
+                        </div>
+                      </details>
                     </div>
-                  )}
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Expected Delivery Date</Label>
-                    <Popover>
-                      <PopoverTrigger className="flex w-full h-12 items-center justify-start rounded-xl border border-slate-200 bg-slate-50 px-3 text-left font-normal text-slate-600 hover:bg-slate-100 transition-colors">
-                          <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                          {deliveryDate ? format(deliveryDate, 'PPP') : 'Select date'}
-                        </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 rounded-xl"><Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} /></PopoverContent>
-                    </Popover>
                   </div>
-                  <div className="space-y-2 sm:col-span-2 pt-4 border-t border-slate-100">
-                    <h4 className="text-sm font-bold text-slate-900 mb-2">Party Information</h4>
+
+                  {/* Block B — delivery */}
+                  <div className="px-5 py-6 sm:px-6">
+                    <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Delivery</p>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-700">Delivery address *</Label>
+                        <Textarea
+                          value={deliveryAddress}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          placeholder="House number, street, landmark, city"
+                          className="min-h-[88px] resize-none rounded-lg border-slate-200 bg-white text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-700">Preferred delivery date</Label>
+                        <Popover>
+                          <PopoverTrigger className="flex h-11 w-full items-center justify-start rounded-lg border border-slate-200 bg-white px-3 text-left text-sm font-normal text-slate-700 hover:bg-slate-50">
+                            <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                            {deliveryDate ? format(deliveryDate, 'PPP') : <span className="text-slate-400">Pick a date (optional)</span>}
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto rounded-lg p-0">
+                            <Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <details className="group rounded-lg border border-dashed border-slate-200 bg-white">
+                        <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
+                          Map, GPS & distance estimate
+                        </summary>
+                        <div className="space-y-4 border-t border-slate-100 px-3 pb-4 pt-3">
+                          <p className="text-xs text-slate-500">
+                            Optional — use this if you want a map pin or an automatic delivery fee suggestion from distance.
+                          </p>
+                          <div className="space-y-2">
+                            <Label className="text-xs text-slate-600">Seller pickup point (for distance)</Label>
+                            <Input
+                              value={pickupLocation}
+                              onChange={(e) => setPickupLocation(e.target.value)}
+                              placeholder="e.g. Madina, Accra"
+                              className="h-10 rounded-lg border-slate-200 bg-slate-50 text-sm"
+                            />
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" variant="outline" size="sm" className="h-8 rounded-md text-xs" onClick={() => setShowMapPicker((prev) => !prev)}>
+                              <MapPin className="mr-1 h-3.5 w-3.5" />
+                              {showMapPicker ? 'Hide map' : 'Map picker'}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" className="h-8 rounded-md text-xs" onClick={handleUseCurrentLocation} disabled={locating || resolvingAddress}>
+                              {locating || resolvingAddress ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+                              <span className="ml-1">Use my location</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 rounded-md text-xs"
+                              onClick={() => window.open(externalMapUrl, '_blank')}
+                              disabled={!mapQuery && !deliveryAddress && !geoCoords}
+                            >
+                              <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                              Google Maps
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 rounded-md text-xs"
+                              onClick={handlePinQueryOnMap}
+                              disabled={resolvingAddress || (!mapQuery.trim() && !deliveryAddress.trim())}
+                            >
+                              {resolvingAddress ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
+                              <span className="ml-1">Pin on map</span>
+                            </Button>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 w-full rounded-md text-xs sm:w-auto"
+                            onClick={handleEstimateDeliveryFee}
+                            disabled={estimatingFee}
+                          >
+                            {estimatingFee ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                            Suggest fee from distance
+                          </Button>
+                          {estimatedDistanceKm !== null && (
+                            <p className="text-xs text-slate-600">Last route distance: ~{estimatedDistanceKm.toFixed(1)} km</p>
+                          )}
+                          {showMapPicker && (
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-3">
+                              <Label className="text-xs font-medium text-slate-700">Search or coordinates</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={mapQuery}
+                                  onChange={(e) => setMapQuery(e.target.value)}
+                                  placeholder="Area name or GPS"
+                                  className="h-10 flex-1 rounded-lg bg-white text-sm"
+                                />
+                                <Button type="button" size="sm" className="h-10 shrink-0 rounded-lg" onClick={() => setDeliveryAddress(mapQuery.trim())} disabled={!mapQuery.trim()}>
+                                  Apply
+                                </Button>
+                              </div>
+                              {geoCoords ? (
+                                <div className="space-y-2">
+                                  <p className="text-[11px] text-slate-500">
+                                    Pin: {geoCoords.lat.toFixed(5)}, {geoCoords.lng.toFixed(5)}
+                                  </p>
+                                  <div ref={mapContainerRef} className="h-56 w-full overflow-hidden rounded-lg border border-slate-200" />
+                                  <p className="text-[11px] text-slate-500">Drag the marker to adjust.</p>
+                                </div>
+                              ) : (
+                                <p className="text-[11px] text-slate-500">Use &ldquo;Use my location&rdquo; or &ldquo;Pin on map&rdquo; to show the map.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-600 font-semibold">Your Name (Ghana Card) *</Label>
-                    <Input value={buyerName} onChange={e => setBuyerName(e.target.value)} className="h-12 rounded-xl bg-slate-50 border-slate-200" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-600 font-semibold">Seller&apos;s Name / Business *</Label>
-                    <Input value={sellerName} onChange={e => setSellerName(e.target.value)} placeholder="e.g. Kojo Phones" className="h-12 rounded-xl bg-slate-50 border-slate-200" />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-slate-600 font-semibold">Seller&apos;s Phone Number *</Label>
-                    <Input value={sellerPhone} onChange={e => setSellerPhone(e.target.value)} placeholder="+233..." className="h-12 rounded-xl bg-slate-50 border-slate-200" />
+
+                  {/* Block C — people */}
+                  <div className="px-5 py-6 sm:px-6">
+                    <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">You & seller</p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label className="text-sm text-slate-700">Your name (as on Ghana Card) *</Label>
+                        <Input value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className="h-11 rounded-lg border-slate-200 bg-white" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-700">Seller / business *</Label>
+                        <Input value={sellerName} onChange={(e) => setSellerName(e.target.value)} placeholder="e.g. Kojo Phones" className="h-11 rounded-lg border-slate-200 bg-white" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-700">Seller phone *</Label>
+                        <Input value={sellerPhone} onChange={(e) => setSellerPhone(e.target.value)} placeholder="+233…" className="h-11 rounded-lg border-slate-200 bg-white" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Side: Pricing & Checkout (Sticky) */}
-            <div className="w-full lg:flex-[1] xl:flex-[1.2] lg:sticky lg:top-24 space-y-6">
-              <div className="rounded-2xl sm:rounded-3xl bg-white shadow-xl shadow-slate-200/40 border border-slate-100 p-5 sm:p-8 flex flex-col">
-                <h3 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mb-5 sm:mb-6 pb-3 border-b border-slate-100">
-                  <CreditCard className="h-5 w-5 text-primary" /> Payment Summary
-                </h3>
-                
-                <div className="space-y-6 flex-1">
-                  <div className="space-y-5">
+            {/* Sticky pay column — big total first, details collapsed */}
+            <aside className="w-full shrink-0 lg:w-[min(100%,380px)] lg:sticky lg:top-24">
+              <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+                <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    Amount & pay
+                  </h2>
+                </div>
+                <div className="space-y-5 px-5 py-6 sm:px-6">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="space-y-2">
-                      <Label className="text-slate-600 font-semibold">Agreed Product Price (GHS) *</Label>
+                      <Label className="text-sm text-slate-700">Item price (GHS) *</Label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-slate-400 text-sm sm:text-base">GHS</span>
-                        <Input type="number" min="0" step="0.01" value={productTotal} onChange={e => setProductTotal(e.target.value)} placeholder="0.00" className="h-12 sm:h-14 pl-14 text-lg sm:text-xl font-bold rounded-xl border-slate-200 focus-visible:ring-primary/20 bg-slate-50" />
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">GHS</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={productTotal}
+                          onChange={(e) => setProductTotal(e.target.value)}
+                          placeholder="0.00"
+                          className="h-11 rounded-lg border-slate-200 bg-white pl-12 text-base font-semibold"
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-slate-600 font-semibold">Delivery Fee (GHS) *</Label>
+                      <Label className="text-sm text-slate-700">Delivery (GHS) *</Label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-slate-400 text-sm sm:text-base">GHS</span>
-                        <Input type="number" min="0" step="0.01" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} placeholder="0.00" className="h-12 sm:h-14 pl-14 text-lg sm:text-xl font-bold rounded-xl border-slate-200 focus-visible:ring-primary/20 bg-slate-50" />
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">GHS</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={deliveryFee}
+                          onChange={(e) => setDeliveryFee(e.target.value)}
+                          placeholder="0.00"
+                          className="h-11 rounded-lg border-slate-200 bg-white pl-12 text-base font-semibold"
+                        />
                       </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <Button type="button" variant="ghost" size="sm" onClick={handleEstimateDeliveryFee} disabled={estimatingFee} className="gap-2 text-primary hover:text-primary/80 hover:bg-primary/5 px-2 h-8">
-                          {estimatingFee ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-                          Estimate by Distance
-                        </Button>
-                      </div>
-                      {estimatedDistanceKm !== null && (
-                        <p className="text-xs text-slate-600 px-2">Last estimated route distance: {estimatedDistanceKm.toFixed(1)} km.</p>
-                      )}
-                      <p className="text-xs text-slate-500 px-2">Set to GHS 0.00 if no delivery fee applies.</p>
+                      <p className="text-[11px] text-slate-400">Use 0 if there&apos;s no delivery fee.</p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 p-5 space-y-3">
-                    <div className="flex justify-between text-sm text-slate-600"><span>Item Total</span><span className="font-medium text-slate-900">GHS {total.productTotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-sm text-slate-600"><span>Delivery</span><span className="font-medium text-slate-900">GHS {total.deliveryFee.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-sm text-slate-600"><span>Rider Release (PSP Fee)</span><span className="font-medium text-slate-900">GHS {total.riderReleaseFee.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-sm text-slate-600"><span>Platform Fee (0.35%)</span><span className="font-medium text-slate-900">GHS {total.platformFee.toFixed(2)}</span></div>
-                    <Separator className="my-3 border-slate-200" />
-                    <div className="flex justify-between items-end">
-                      <span className="font-bold text-slate-900 text-base">Total to Pay</span>
-                      <span className="text-2xl font-extrabold text-primary">GHS {total.grand.toFixed(2)}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-1">Note: PSPs/Telco fees may apply.</p>
+                  <div className="rounded-xl bg-gradient-to-br from-primary/[0.06] to-sky-500/[0.04] px-4 py-5 ring-1 ring-primary/10">
+                    <p className="text-xs font-medium text-slate-600">You&apos;ll pay</p>
+                    <p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">GHS {total.grand.toFixed(2)}</p>
+                    <p className="mt-2 text-xs text-slate-500">Includes small platform fees — see breakdown if you need the detail.</p>
                   </div>
 
-                  <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-                    <Checkbox id="agree" checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
-                    <Label htmlFor="agree" className="text-sm leading-snug cursor-pointer text-blue-900 font-medium">
-                      I agree to the <a href="/terms" className="underline hover:text-blue-700" target="_blank">Terms of Service</a>. I understand my funds will be locked with PSPs until I confirm delivery.
+                  <details className="rounded-lg border border-slate-100 bg-slate-50/80">
+                    <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-slate-700 [&::-webkit-details-marker]:hidden">
+                      View fee breakdown
+                    </summary>
+                    <div className="space-y-2 border-t border-slate-100 px-3 py-3 text-sm">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Item</span>
+                        <span className="font-medium text-slate-900">GHS {total.productTotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Delivery</span>
+                        <span className="font-medium text-slate-900">GHS {total.deliveryFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Rider / PSP fee</span>
+                        <span className="font-medium text-slate-900">GHS {total.riderReleaseFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Platform ({buyerFeePercent}%)</span>
+                        <span className="font-medium text-slate-900">GHS {total.platformFee.toFixed(2)}</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between font-semibold text-slate-900">
+                        <span>Total</span>
+                        <span>GHS {total.grand.toFixed(2)}</span>
+                      </div>
+                      <p className="pt-1 text-[11px] text-slate-400">Additional PSP or telco charges may apply at payment.</p>
+                    </div>
+                  </details>
+
+                  <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                    <Checkbox id="agree" checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
+                    <Label htmlFor="agree" className="cursor-pointer text-xs leading-relaxed text-slate-700">
+                      I agree to the{' '}
+                      <a href="/terms" className="font-medium text-primary underline underline-offset-2" target="_blank" rel="noreferrer">
+                        terms
+                      </a>
+                      . Funds stay protected until I confirm delivery.
                     </Label>
                   </div>
-                </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <Button 
-                    onClick={handleSubmit} 
-                    disabled={submitting || !agreed || total.grand <= 0} 
-                    className="w-full h-14 rounded-xl text-lg font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting || !agreed || total.grand <= 0}
+                    className="h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/15"
                   >
-                    {submitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Securing Funds...</> : `Pay GHS ${total.grand.toFixed(2)}`}
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Working…
+                      </>
+                    ) : (
+                      `Continue to pay · GHS ${total.grand.toFixed(2)}`
+                    )}
                   </Button>
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
-                    <Lock className="h-3 w-3" /> Secured by {activeProvider}
-                  </div>
+                  <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-slate-400">
+                    <Lock className="h-3 w-3" />
+                    Encrypted checkout · {activeProvider}
+                  </p>
                 </div>
               </div>
-            </div>
 
+              <p className="mt-4 hidden text-center text-xs text-slate-400 lg:block">
+                <Store className="mr-1 inline h-3.5 w-3.5 align-text-bottom" />
+                Questions? Check the fee calculator or contact support from your hub.
+              </p>
+            </aside>
           </div>
         </div>
       </main>

@@ -321,8 +321,26 @@ router.post('/:id/request-replacement', authenticateToken, async (req: Request, 
 router.get('/track/:query', async (req: Request, res: Response): Promise<void> => {
   try {
     const q = req.params.query as string;
-    let query = supabaseAdmin.from('transactions')
-      .select('short_id, status, product_name, product_type, created_at, dispatched_at, delivered_at, completed_at');
+    let query = supabaseAdmin.from('transactions').select(
+      [
+        'id',
+        'short_id',
+        'status',
+        'product_name',
+        'product_type',
+        'product_total',
+        'delivery_fee',
+        'grand_total',
+        'buyer_phone',
+        'seller_phone',
+        'created_at',
+        'updated_at',
+        'paid_at',
+        'dispatched_at',
+        'delivered_at',
+        'completed_at',
+      ].join(', ')
+    );
 
     if (q.startsWith('SBS-')) {
       query = query.eq('short_id', q);

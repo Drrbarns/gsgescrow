@@ -342,7 +342,9 @@ class ApiClient {
       async () => {
         const supabase = await this.getSupabase();
         const { data } = await supabase.from('transactions')
-          .select('short_id, status, product_name, product_type, created_at, dispatched_at, delivered_at, completed_at')
+          .select(
+            'id, short_id, status, product_name, product_type, product_total, delivery_fee, grand_total, buyer_phone, seller_phone, created_at, updated_at, paid_at, dispatched_at, delivered_at, completed_at'
+          )
           .or(`short_id.ilike.%${query}%,buyer_phone.ilike.%${query}%,seller_phone.ilike.%${query}%`)
           .order('created_at', { ascending: false }).limit(10);
         return { data: data || [] };

@@ -44,15 +44,18 @@ function getStepIndex(status: string) {
 
 interface Transaction {
   id: string;
-  sbs_id: string;
+  short_id?: string;
+  sbs_id?: string;
   status: string;
   product_name: string;
-  product_price: number;
-  delivery_fee: number;
+  product_total?: number;
+  delivery_fee?: number;
+  grand_total?: number;
   seller_phone: string;
   buyer_phone: string;
   created_at: string;
   updated_at: string;
+  paid_at?: string | null;
 }
 
 export default function TrackingPage() {
@@ -181,13 +184,18 @@ export default function TrackingPage() {
             )}
 
             {!loading && results.map((tx, index) => {
+              const displayId = tx.short_id || tx.sbs_id || tx.id;
+              const lineTotal =
+                tx.grand_total != null
+                  ? Number(tx.grand_total)
+                  : Number(tx.product_total || 0) + Number(tx.delivery_fee || 0);
               const currentIdx = getStepIndex(tx.status);
               const statusInfo = TRANSACTION_STATUSES[tx.status];
               const isTerminal = ['CANCELLED', 'DISPUTE', 'HOLD'].includes(tx.status);
 
               return (
                 <motion.div 
-                  key={tx.id}
+                  key={displayId || tx.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -202,7 +210,7 @@ export default function TrackingPage() {
                       <div>
                         <div className="flex items-center gap-3 mb-1">
                           <h2 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
-                            {tx.sbs_id || tx.id}
+                            {displayId}
                           </h2>
                           {statusInfo && (
                             <Badge className={`${statusInfo.color} rounded-full px-3 py-1 font-semibold uppercase tracking-wider text-[10px]`}>
@@ -211,7 +219,10 @@ export default function TrackingPage() {
                           )}
                         </div>
                         <p className="text-slate-500 font-medium">
-                          {tx.product_name} &middot; <span className="text-slate-900">GHS {((tx.product_price || 0) + (tx.delivery_fee || 0)).toLocaleString()}</span>
+                          {tx.product_name} &middot;{' '}
+                          <span className="text-slate-900">
+                            GHS {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
                         </p>
                       </div>
                     </div>
