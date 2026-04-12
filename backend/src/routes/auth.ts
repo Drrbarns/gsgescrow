@@ -9,6 +9,7 @@ router.post('/profile', authenticateToken, async (req: Request, res: Response): 
   try {
     const userId = req.user!.id;
     const { full_name, ghana_card_name, role } = req.body;
+    const normalizedRole = role === 'seller' ? 'seller' : 'buyer';
 
     const { data: existing } = await supabaseAdmin
       .from('profiles').select('*').eq('user_id', userId).single();
@@ -17,6 +18,7 @@ router.post('/profile', authenticateToken, async (req: Request, res: Response): 
       const updates: Record<string, unknown> = {};
       if (full_name) updates.full_name = full_name;
       if (ghana_card_name) updates.ghana_card_name = ghana_card_name;
+      if (role === 'buyer' || role === 'seller') updates.role = normalizedRole;
 
       if (Object.keys(updates).length > 0) {
         const { data, error } = await supabaseAdmin
@@ -35,7 +37,7 @@ router.post('/profile', authenticateToken, async (req: Request, res: Response): 
           phone,
           full_name: full_name || '',
           ghana_card_name,
-          role: role === 'seller' ? 'seller' : 'buyer',
+          role: normalizedRole,
         })
         .select()
         .single();

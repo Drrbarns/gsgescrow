@@ -4,17 +4,18 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { api } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Loader2, Mail, Lock, User, ShoppingBag, Store, Eye, EyeOff } from 'lucide-react';
+import { Shield, Loader2, User, ShoppingBag, Store, Phone, KeyRound, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUpWithEmail, user, loading: authLoading } = useAuth();
+  const { signInWithOtp, verifyOtp, user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -24,48 +25,58 @@ export default function RegisterPage() {
 
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [loading, setLoading] = useState(false);
+  const fullPhone = `+233${phone.replace(/^0+/, '').replace(/\s/g, '')}`;
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!fullName.trim()) {
-        toast.error('Enter your full name');
-        return;
-      }
-      if (!email.trim()) {
-        toast.error('Enter your email');
-        return;
-      }
-      if (password.length < 8) {
-        toast.error('Password must be at least 8 characters');
-        return;
-      }
-      if (password !== confirmPassword) {
-        toast.error('Passwords do not match');
-        return;
-      }
-      setLoading(true);
-      const result = await signUpWithEmail(email.trim(), password, fullName.trim(), role);
+  const handleSendOtp = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error('Enter your full name');
+      return;
+    }
+    const cleaned = phone.replace(/^0+/, '').replace(/\s/g, '');
+    if (cleaned.length < 9 || cleaned.length > 10) {
+      toast.error('Enter a valid Ghanaian phone number');
+      return;
+    }
+    setLoading(true);
+    const result = await signInWithOtp(fullPhone);
+    setLoading(false);
+    if (result.error) {
+      toast.error(result.error.message || 'Failed to send OTP. Try again.');
+      return;
+    }
+    toast.success('OTP sent! Enter the code to complete signup.');
+    setStep('otp');
+  }, [fullName, phone, fullPhone, signInWithOtp]);
+
+  const handleVerifyOtp = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6) {
+      toast.error('Enter the 6-digit code');
+      return;
+    }
+    setLoading(true);
+    const result = await verifyOtp(fullPhone, otp);
+    if (result.error) {
       setLoading(false);
-      if (result.error) {
-        toast.error(result.error.message || 'Could not create account. Try again.');
-        return;
-      }
-      if (result.needsConfirmation) {
-        toast.success('Account created! Check your email to confirm, then sign in.');
-        router.push('/login');
-      } else {
-        toast.success('Account created! Welcome.');
-        router.push(role === 'seller' ? '/seller/dashboard' : '/hub');
-      }
-    },
-    [fullName, email, password, confirmPassword, role, signUpWithEmail, router]
-  );
+      toast.error(result.error.message || 'Invalid OTP code');
+      return;
+    }
+
+    try {
+      await api.createProfile({ full_name: fullName.trim(), role });
+    } catch {
+      // best effort; profile trigger might already exist
+    }
+
+    setLoading(false);
+    toast.success('Account created and verified by SMS.');
+    router.push(role === 'seller' ? '/seller/dashboard' : '/hub');
+  }, [otp, fullPhone, verifyOtp, fullName, role, router]);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -113,10 +124,10 @@ export default function RegisterPage() {
                     <Shield className="h-8 w-8" />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">Create account</h1>
-                  <p className="text-slate-500 text-sm">Join Sell-Safe Buy-Safe as a buyer or seller</p>
+                  <p className="text-slate-500 text-sm">Sign up with your phone number and verify by SMS</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={step === 'phone' ? handleSendOtp : handleVerifyOtp} className="space-y-5">
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-semibold">I want to</Label>
                     <div className="flex bg-slate-100 rounded-xl p-1">
@@ -158,57 +169,45 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-semibold">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200"
-                        autoComplete="email"
-                      />
+                  {step === 'phone' ? (
+                    <div className="space-y-2">
+                      <Label className="text-slate-700 font-semibold">Phone number</Label>
+                      <div className="flex gap-2">
+                        <div className="flex h-14 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700 font-bold shrink-0">
+                          +233
+                        </div>
+                        <div className="relative flex-1">
+                          <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                          <Input
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="24 123 4567"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/[^\d\s]/g, ''))}
+                            className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200"
+                            maxLength={12}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-semibold">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="At least 8 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-14 pl-12 pr-12 rounded-xl bg-slate-50 border-slate-200"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label className="text-slate-700 font-semibold">6-digit OTP</Label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="123456"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200 tracking-[0.25em] text-center text-xl"
+                          maxLength={6}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500">Code sent to +233 {phone.replace(/^0+/, '').replace(/\s/g, '')}</p>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-semibold">Confirm password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="h-14 pl-12 rounded-xl bg-slate-50 border-slate-200"
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   <Button
                     type="submit"
@@ -216,11 +215,25 @@ export default function RegisterPage() {
                     disabled={loading}
                   >
                     {loading ? (
-                      <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creating account…</>
+                      <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing…</>
                     ) : (
-                      'Create account'
+                      step === 'phone' ? 'Send OTP' : 'Verify & Create Account'
                     )}
                   </Button>
+                  {step === 'otp' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-12 rounded-xl"
+                      onClick={() => {
+                        setStep('phone');
+                        setOtp('');
+                      }}
+                      disabled={loading}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Change Number
+                    </Button>
+                  )}
                 </form>
 
                 <p className="mt-6 text-center text-sm text-slate-600">
