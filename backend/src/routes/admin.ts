@@ -4,6 +4,7 @@ import { supabaseAdmin, auditLog } from '../services/supabase';
 import { getQueueHealth, pingRedis, payoutQueue } from '../services/queue';
 import { processPayoutInline } from '../services/payout-inline';
 import { sendNotification } from '../services/notify';
+import * as moolre from '../services/moolre';
 import { randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
 
@@ -138,6 +139,112 @@ router.put('/settings/:key', ...adminAuth, async (req: Request, res: Response): 
     res.json({ data: { message: 'Setting updated' } });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update setting' });
+  }
+});
+
+// POST /api/admin/sms/debug - Send test SMS and return provider diagnostics
+router.post('/sms/debug', sensitiveAdminLimiter, ...adminAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const recipient = String(req.body.recipient || '').trim();
+    const message = String(req.body.message || '').trim();
+    const senderid = req.body.senderid ? String(req.body.senderid).trim() : undefined;
+    const dryRun = req.body.dry_run === true;
+
+    if (!recipient) {
+      res.status(400).json({ error: 'recipient is required' });
+      return;
+    }
+    if (!message) {
+      res.status(400).json({ error: 'message is required' });
+      return;
+    }
+    if (message.length > 450) {
+      res.status(400).json({ error: 'message must be 450 characters or less' });
+      return;
+    }
+
+    const isConfigured = moolre.isMoolreSmsConfigured();
+    const ref = `sms_debug_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    if (dryRun || !isConfigured) {
+      res.json({
+        data: {
+          mode: dryRun ? 'dry-run' : 'not-configured',
+          configured: isConfigured,
+          recipient,
+          message_preview: message,
+          senderid: senderid || null,
+          ref,
+          result: !isConfigured ? 'Moolre SMS credentials missing' : 'No provider call made (dry-run=true)',
+        },
+      });
+      return;
+    }
+
+    let providerRaw: any = null;
+    let providerError: string | null = null;
+    let smsSuccess = false;
+
+    try {
+      providerRaw = await moolre.sendSmsPost({
+        senderid,
+        messages: [{ recipient, message, ref }],
+      });
+      smsSuccess = providerRaw?.status === 1 || providerRaw?.status === '1' || providerRaw?.code === 'SMS01';
+    } catch (err: any) {
+      providerError = err?.message || 'SMS send failed';
+    }
+
+    await supabaseAdmin.from('notifications').insert({
+      user_id: req.user!.id,
+      phone: recipient,
+      channel: 'SMS',
+      title: 'SMS Debug Test',
+      body: message,
+      status: providerError ? 'FAILED' : (smsSuccess ? 'SENT' : 'FAILED'),
+      sent_at: smsSuccess ? new Date().toISOString() : null,
+      metadata: {
+        debug: true,
+        ref,
+        senderid: senderid || null,
+        initiated_by: req.user!.id,
+        provider_raw: providerRaw,
+        provider_error: providerError,
+      },
+    });
+
+    await auditLog({
+      actor_id: req.user!.id,
+      action: 'SMS_DEBUG_SENT',
+      entity: 'notifications',
+      entity_id: ref,
+      after_state: {
+        recipient,
+        success: !!smsSuccess && !providerError,
+        provider_code: providerRaw?.code || null,
+        provider_message: providerRaw?.message || null,
+      },
+      reason: 'admin sms debugger',
+      request_id: req.requestId,
+    });
+
+    res.status(providerError ? 502 : 200).json({
+      data: {
+        success: !!smsSuccess && !providerError,
+        recipient,
+        senderid: senderid || null,
+        ref,
+        provider: {
+          code: providerRaw?.code || null,
+          message: providerRaw?.message || null,
+          status: providerRaw?.status || null,
+          raw: providerRaw,
+        },
+        error: providerError,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Failed to run SMS debug' });
   }
 });
 
