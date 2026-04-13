@@ -119,11 +119,11 @@ export default function ProductsServicesPage() {
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/20 px-4 py-1.5 text-xs font-bold tracking-wide text-primary-foreground backdrop-blur-sm">
                 <ShieldCheck className="h-4 w-4" />
-                Escrow-Protected Marketplace
+                Secure Payment Marketplace
               </div>
               <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-6xl">Products & Services</h1>
               <p className="mt-4 text-base text-slate-400 sm:text-lg max-w-xl leading-relaxed">
-                Discover verified seller listings and purchase through our secure escrow flow. Your money is protected until delivery is confirmed.
+                Discover verified seller listings and purchase through our secure payment protection flow. Your money is protected until delivery is confirmed.
               </p>
             </motion.div>
           </div>

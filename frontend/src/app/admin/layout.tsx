@@ -107,7 +107,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
             <div>
               <p className="font-semibold tracking-tight">Superadmin OS</p>
-              <p className="text-xs text-slate-400">Escrow Control Plane</p>
+              <p className="text-xs text-slate-400">Secure Payment Control Plane</p>
             </div>
           </div>
         </div>

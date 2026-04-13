@@ -30,7 +30,7 @@
 - [ ] Alert rules list and toggle correctly.
 - [ ] Alert events list and acknowledgment work.
 - [ ] Export jobs can be created and listed.
-- [ ] Analytics overview returns GMV, escrow-held, dispute and payout failure metrics.
+- [ ] Analytics overview returns GMV, protected-funds-held, dispute and payout failure metrics.
 
 ## Security and Audit
 - [ ] Sensitive endpoints are rate-limited.

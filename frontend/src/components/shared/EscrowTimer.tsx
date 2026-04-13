@@ -8,7 +8,7 @@ interface Props {
   status: string;
 }
 
-export function EscrowTimer({ autoReleaseAt, status }: Props) {
+export function ProtectionTimer({ autoReleaseAt, status }: Props) {
   const [timeLeft, setTimeLeft] = useState('');
   const [progress, setProgress] = useState(0);
 

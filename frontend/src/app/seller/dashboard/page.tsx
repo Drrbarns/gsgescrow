@@ -286,7 +286,7 @@ export default function SellerDashboardPage() {
                       <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Overview</p>
                         <h1 className="mt-1 text-3xl font-black text-slate-900">Seller Performance Dashboard</h1>
-                        <p className="mt-1 text-sm text-slate-600">A command center for your escrow-powered storefront.</p>
+                        <p className="mt-1 text-sm text-slate-600">A command center for your secure-payment storefront.</p>
                   </div>
                       <Button className="rounded-full" onClick={() => setActiveView('listings')}>
                         <Plus className="mr-1 h-4 w-4" />

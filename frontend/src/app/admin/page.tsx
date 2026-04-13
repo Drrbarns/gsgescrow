@@ -256,7 +256,7 @@ export default function AdminDashboard() {
               <p className="text-xl font-bold">GHS {Number(analytics?.gmv || 0).toFixed(2)}</p>
             </div>
             <div className="rounded-xl border bg-slate-50 p-3">
-              <p className="text-xs text-muted-foreground">Escrow Held</p>
+              <p className="text-xs text-muted-foreground">Protected Funds Held</p>
               <p className="text-xl font-bold">GHS {Number(analytics?.escrow_held_value || 0).toFixed(2)}</p>
             </div>
             <div className="rounded-xl border bg-slate-50 p-3">

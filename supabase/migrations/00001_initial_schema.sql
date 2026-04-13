@@ -113,7 +113,7 @@ CREATE TABLE transaction_codes (
 );
 
 -- ============================================================
--- LEDGER ENTRIES (Internal escrow accounting)
+-- LEDGER ENTRIES (Internal protected-funds accounting)
 -- ============================================================
 CREATE TABLE ledger_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -90,7 +90,7 @@ export default function AdminSettings() {
   function getGroupName(key: string) {
     if (key.includes('fee') || key.includes('payout')) return 'Fees & Payouts';
     if (key.includes('fraud') || key.includes('lockout') || key.includes('attempt')) return 'Risk & Security';
-    if (key.includes('code') || key.includes('release')) return 'Escrow Flow';
+    if (key.includes('code') || key.includes('release')) return 'Secure Release Flow';
     if (key.includes('whatsapp') || key.includes('verification') || key.includes('kyc')) return 'Support & Compliance';
     return 'General';
   }
@@ -110,7 +110,7 @@ export default function AdminSettings() {
         <CardContent className="py-5">
           <p className="text-xs uppercase tracking-[0.12em] text-white/70">Admin Configuration</p>
           <h1 className="mt-1 text-2xl font-bold">Platform Settings Console</h1>
-          <p className="mt-1 text-sm text-white/80">Tune pricing, fraud controls, and escrow behavior with instant save actions.</p>
+          <p className="mt-1 text-sm text-white/80">Tune pricing, fraud controls, and secure payment behavior with instant save actions.</p>
         </CardContent>
       </Card>
 

@@ -170,7 +170,7 @@ CREATE INDEX idx_payouts_status ON payouts(status);
 CREATE INDEX idx_payouts_idempotency ON payouts(idempotency_key);
 
 -- ============================================================
--- LEDGER ENTRIES (Internal escrow accounting)
+-- LEDGER ENTRIES (Internal protected-funds accounting)
 -- ============================================================
 
 CREATE TABLE ledger_entries (
