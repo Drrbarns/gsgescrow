@@ -8,6 +8,35 @@ interface NotificationMessage {
   body: string;
 }
 
+function normalizePhone(raw?: string | null): string | undefined {
+  const input = String(raw || '').trim();
+  if (!input) return undefined;
+
+  const keepPlus = input.startsWith('+');
+  const digits = input.replace(/\D/g, '');
+  if (!digits) return undefined;
+
+  if (keepPlus) return `+${digits}`;
+  if (digits.startsWith('233') && digits.length >= 12) return `+${digits}`;
+  if (digits.startsWith('0') && digits.length >= 10) return `+233${digits.slice(1)}`;
+  if (digits.length === 9) return `+233${digits}`;
+  return keepPlus ? `+${digits}` : digits;
+}
+
+async function resolvePhone(userId: string | null, fallbackPhone?: string): Promise<string | undefined> {
+  const normalizedFallback = normalizePhone(fallbackPhone);
+  if (normalizedFallback) return normalizedFallback;
+  if (!userId) return undefined;
+
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('phone')
+    .eq('user_id', userId)
+    .single();
+
+  return normalizePhone(profile?.phone);
+}
+
 export async function sendInlineNotification(type: string, entityId: string, extra: Record<string, any> = {}) {
   const messages: NotificationMessage[] = [];
 
@@ -256,32 +285,38 @@ export async function sendInlineNotification(type: string, entityId: string, ext
 
   for (const msg of messages) {
     const ref = `sms_${entityId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const recipient = await resolvePhone(msg.user_id, msg.phone);
     let channel: 'LOG' | 'SMS' = 'LOG';
     let status = 'SENT';
     let metadata: Record<string, unknown> = { type, entity_id: entityId };
 
     try {
-      if (msg.phone && moolre.isMoolreSmsConfigured()) {
+      if (recipient && moolre.isMoolreSmsConfigured()) {
         const smsRes = await moolre.sendSmsPost({
-          messages: [{ recipient: msg.phone, message: `${msg.title}: ${msg.body}`.slice(0, 450), ref }],
+          messages: [{ recipient, message: `${msg.title}: ${msg.body}`.slice(0, 450), ref }],
         });
         const smsSuccess = smsRes?.status === 1 || smsRes?.status === '1' || smsRes?.code === 'SMS01';
         channel = 'SMS';
         status = smsSuccess ? 'SENT' : 'FAILED';
-        metadata = { ...metadata, sms_ref: ref, sms_code: smsRes?.code, sms_raw: smsRes };
+        metadata = { ...metadata, sms_ref: ref, sms_code: smsRes?.code, sms_raw: smsRes, recipient };
       } else {
-        metadata = { ...metadata, sms_skipped: true, reason: 'Moolre SMS not configured or phone missing' };
+        metadata = {
+          ...metadata,
+          sms_skipped: true,
+          reason: 'Moolre SMS not configured or phone missing',
+          recipient_missing: !recipient,
+        };
       }
     } catch (smsErr: any) {
       channel = 'SMS';
       status = 'FAILED';
-      metadata = { ...metadata, sms_ref: ref, sms_error: smsErr?.message || 'SMS send failed' };
+      metadata = { ...metadata, sms_ref: ref, sms_error: smsErr?.message || 'SMS send failed', recipient };
     }
 
     try {
       await supabaseAdmin.from('notifications').insert({
         user_id: msg.user_id,
-        phone: msg.phone,
+        phone: recipient || msg.phone,
         channel,
         title: msg.title,
         body: msg.body,
