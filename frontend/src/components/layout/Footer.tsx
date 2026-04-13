@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, Shield, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export function Footer() {
   return (
@@ -30,9 +31,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:pr-6">
             <div className="mb-4 flex items-center gap-2.5 text-lg font-extrabold tracking-tight text-slate-900">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
-                <Shield className="h-4.5 w-4.5" />
-              </div>
+              <BrandLogo size={36} />
               Sell-Safe Buy-Safe
             </div>
             <p className="text-sm leading-relaxed text-slate-600">

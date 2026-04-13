@@ -4,11 +4,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Shield, Loader2, Lock, Mail, Eye, EyeOff,
+  Loader2, Lock, Mail, Eye, EyeOff,
   LayoutDashboard, ArrowLeftRight, Banknote, AlertTriangle, ShieldCheck, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -64,9 +65,7 @@ export default function AdminLoginPage() {
         <div className="relative z-10 flex flex-col h-full p-12">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
+            <BrandLogo size={40} priority />
             <span className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">Sell-Safe Buy-Safe</span>
           </Link>
 
@@ -133,9 +132,7 @@ export default function AdminLoginPage() {
 
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
+            <BrandLogo size={40} priority />
             <span className="text-lg font-bold text-slate-900">Sell-Safe Buy-Safe</span>
           </div>
 

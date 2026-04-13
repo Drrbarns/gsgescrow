@@ -2,9 +2,10 @@
 
 import { useState, useEffect, use } from 'react';
 import { api } from '@/lib/api';
-import { Shield, ShieldCheck, Star, CheckCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Star, CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const TIER_COLORS: Record<string, { gradient: string; text: string; accent: string }> = {
   NEW: { gradient: 'from-gray-100 to-gray-200', text: 'text-gray-700', accent: 'bg-gray-500' },
@@ -47,7 +48,9 @@ export default function SellerBadgePage({ params }: { params: Promise<{ phone: s
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-white">
         <div className="text-center">
-          <Shield className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <BrandLogo size={64} priority />
+          </div>
           <h1 className="text-xl font-bold">Seller Not Found</h1>
           <p className="text-muted-foreground mt-2">This seller has not used Sell-Safe Buy-Safe yet.</p>
           <Link href="/" className="mt-6 inline-block">
@@ -64,8 +67,8 @@ export default function SellerBadgePage({ params }: { params: Promise<{ phone: s
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-white p-4">
       <div className={`w-full max-w-sm rounded-3xl bg-gradient-to-br ${colors.gradient} p-8 shadow-xl`}>
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-md">
-            <Shield className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-4 flex items-center justify-center rounded-2xl bg-white p-2 shadow-md">
+            <BrandLogo size={56} priority />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">Sell-Safe Buy-Safe</h1>
           <p className="text-sm mt-1 opacity-70">Verified Seller Badge</p>

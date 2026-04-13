@@ -3,7 +3,8 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Download, Share2, Shield } from 'lucide-react';
+import { Download, Share2 } from 'lucide-react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 interface ReceiptProps {
   receipt: {
@@ -23,12 +24,15 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
     if (!content) return;
     const printWindow = window.open('', '', 'width=400,height=600');
     if (!printWindow) return;
+    const logoUrl = `${window.location.origin}/images/brand-logo-gsg.png`;
     printWindow.document.write(`
       <html><head><title>Receipt ${receipt.receipt_number}</title>
       <style>
         body { font-family: system-ui, sans-serif; padding: 24px; max-width: 400px; margin: 0 auto; color: #1a1a1a; }
         .header { text-align: center; margin-bottom: 20px; }
-        .logo { font-size: 18px; font-weight: bold; color: #6b21a8; }
+        .logo-wrap { display: inline-flex; align-items: center; gap: 8px; }
+        .logo { width: 28px; height: 28px; object-fit: contain; }
+        .logo-text { font-size: 18px; font-weight: bold; color: #6b21a8; }
         .receipt-no { font-size: 11px; color: #666; margin-top: 4px; }
         .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
         .row.total { font-weight: bold; font-size: 15px; border-top: 2px solid #e5e7eb; padding-top: 10px; margin-top: 6px; }
@@ -38,7 +42,10 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
         .footer { text-align: center; margin-top: 24px; font-size: 11px; color: #999; }
       </style></head><body>
       <div class="header">
-        <div class="logo">🛡️ Sell-Safe Buy-Safe</div>
+        <div class="logo-wrap">
+          <img src="${logoUrl}" alt="GSG logo" class="logo" />
+          <div class="logo-text">Sell-Safe Buy-Safe</div>
+        </div>
         <div class="receipt-no">${receipt.receipt_number}</div>
         <div style="font-size:12px;color:#666;margin-top:4px">${new Date(receipt.created_at).toLocaleString('en-GH')}</div>
       </div>
@@ -71,7 +78,7 @@ export function TransactionReceipt({ receipt }: ReceiptProps) {
     <div ref={receiptRef} className="rounded-2xl border bg-card p-6 max-w-sm mx-auto">
       <div className="text-center mb-4">
         <div className="inline-flex items-center gap-2 text-primary font-bold text-lg">
-          <Shield className="h-5 w-5" />
+          <BrandLogo size={24} />
           Sell-Safe Buy-Safe
         </div>
         <p className="text-xs text-muted-foreground mt-1">{receipt.receipt_number}</p>

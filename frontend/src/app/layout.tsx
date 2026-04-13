@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     images: ['/images/social-share-gsg.png'],
   },
   icons: {
-    icon: [{ url: '/icon', type: 'image/png' }],
-    apple: [{ url: '/apple-icon', type: 'image/png' }],
-    shortcut: ['/icon'],
+    icon: [{ url: '/images/brand-logo-gsg.png', type: 'image/png' }],
+    apple: [{ url: '/images/brand-logo-gsg.png', type: 'image/png' }],
+    shortcut: ['/images/brand-logo-gsg.png'],
   },
   manifest: '/manifest.json',
   category: 'finance',

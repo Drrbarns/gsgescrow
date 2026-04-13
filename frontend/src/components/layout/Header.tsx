@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const navLinks = [
   { href: '/products-services', label: 'Products & Services', icon: ShoppingBag, desc: 'Browse marketplace' },
@@ -54,9 +55,7 @@ export function Header() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Shield className="h-4 w-4" />
-          </div>
+          <BrandLogo size={34} />
           <span className="hidden sm:inline">Sell-Safe Buy-Safe</span>
           <span className="sm:hidden">SBS</span>
         </Link>
@@ -125,9 +124,7 @@ export function Header() {
               {/* Menu Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-                    <Shield className="h-4 w-4" />
-                  </div>
+                  <BrandLogo size={32} />
                   <span className="font-bold text-slate-900">Sell-Safe Buy-Safe</span>
                 </div>
                 <button onClick={() => setOpen(false)} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors text-slate-500">

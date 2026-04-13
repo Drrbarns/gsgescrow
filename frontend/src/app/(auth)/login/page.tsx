@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Header } from '@/components/layout/Header';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Phone, KeyRound, ArrowLeft, Loader2, ShieldCheck, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Phone, KeyRound, ArrowLeft, Loader2, ShieldCheck, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -152,8 +153,8 @@ export default function LoginPage() {
 
                 {/* Logo + Title */}
                 <div className="text-center mb-8">
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-primary border border-slate-100 shadow-sm">
-                    <Shield className="h-8 w-8" />
+                  <div className="mx-auto mb-5 flex items-center justify-center">
+                    <BrandLogo size={64} priority />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">Welcome Back</h1>
                   <p className="text-slate-500 text-sm">Sign in to your Sell-Safe Buy-Safe account</p>

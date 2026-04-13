@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Loader2, User, ShoppingBag, Store, Phone, KeyRound, ArrowLeft } from 'lucide-react';
+import { Loader2, User, ShoppingBag, Store, Phone, KeyRound, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -120,8 +121,8 @@ export default function RegisterPage() {
               <div className="h-1.5 w-full bg-gradient-to-r from-primary to-blue-500" />
               <div className="p-5 sm:p-10">
                 <div className="text-center mb-8">
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-primary border border-slate-100 shadow-sm">
-                    <Shield className="h-8 w-8" />
+                  <div className="mx-auto mb-5 flex items-center justify-center">
+                    <BrandLogo size={64} priority />
                   </div>
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">Create account</h1>
                   <p className="text-slate-500 text-sm">Sign up with your phone number and verify by SMS</p>
