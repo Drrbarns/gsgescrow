@@ -630,81 +630,91 @@ function BuyerStep1() {
                         </Popover>
                       </div>
 
-                      <details className="group rounded-lg border border-dashed border-slate-200 bg-white">
-                        <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
-                          Map, GPS & distance estimate
+                      <details className="group overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50/80 to-white">
+                        <summary className="cursor-pointer list-none px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-primary">Map, GPS & distance estimate</p>
+                              <p className="mt-0.5 text-xs text-slate-500">Optional tools to pin location and auto-suggest delivery fee.</p>
+                            </div>
+                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              Optional
+                            </span>
+                          </div>
                         </summary>
-                        <div className="space-y-4 border-t border-slate-100 px-3 pb-4 pt-3">
-                          <p className="text-xs text-slate-500">
-                            Optional — use this if you want a map pin or an automatic delivery fee suggestion from distance.
-                          </p>
+                        <div className="space-y-4 border-t border-slate-100 px-4 pb-4 pt-4">
                           <div className="space-y-2">
-                            <Label className="text-xs text-slate-600">Seller pickup point (for distance)</Label>
+                            <Label className="text-xs font-medium text-slate-600">Seller pickup point (for distance)</Label>
                             <Input
                               value={pickupLocation}
                               onChange={(e) => setPickupLocation(e.target.value)}
                               placeholder="e.g. Madina, Accra"
-                              className="h-10 rounded-lg border-slate-200 bg-slate-50 text-sm"
+                              className="h-11 rounded-lg border-slate-200 bg-white text-sm"
                             />
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button type="button" variant="outline" size="sm" className="h-8 rounded-md text-xs" onClick={() => setShowMapPicker((prev) => !prev)}>
-                              <MapPin className="mr-1 h-3.5 w-3.5" />
-                              {showMapPicker ? 'Hide map' : 'Map picker'}
+
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <Button type="button" variant="outline" size="sm" className="h-10 justify-start rounded-lg text-xs font-medium" onClick={() => setShowMapPicker((prev) => !prev)}>
+                              <MapPin className="mr-2 h-4 w-4" />
+                              {showMapPicker ? 'Hide map picker' : 'Open map picker'}
                             </Button>
-                            <Button type="button" variant="outline" size="sm" className="h-8 rounded-md text-xs" onClick={handleUseCurrentLocation} disabled={locating || resolvingAddress}>
-                              {locating || resolvingAddress ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
-                              <span className="ml-1">Use my location</span>
+                            <Button type="button" variant="outline" size="sm" className="h-10 justify-start rounded-lg text-xs font-medium" onClick={handleUseCurrentLocation} disabled={locating || resolvingAddress}>
+                              {locating || resolvingAddress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LocateFixed className="mr-2 h-4 w-4" />}
+                              Use my location
                             </Button>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="h-8 rounded-md text-xs"
+                              className="h-10 justify-start rounded-lg text-xs font-medium"
                               onClick={() => window.open(externalMapUrl, '_blank')}
                               disabled={!mapQuery && !deliveryAddress && !geoCoords}
                             >
-                              <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                              Google Maps
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Open in Google Maps
                             </Button>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="h-8 rounded-md text-xs"
+                              className="h-10 justify-start rounded-lg text-xs font-medium"
                               onClick={handlePinQueryOnMap}
                               disabled={resolvingAddress || (!mapQuery.trim() && !deliveryAddress.trim())}
                             >
-                              {resolvingAddress ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
-                              <span className="ml-1">Pin on map</span>
+                              {resolvingAddress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
+                              Pin query on map
                             </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 w-full rounded-md text-xs sm:w-auto"
-                            onClick={handleEstimateDeliveryFee}
-                            disabled={estimatingFee}
-                          >
-                            {estimatingFee ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                            Suggest fee from distance
-                          </Button>
-                          {estimatedDistanceKm !== null && (
-                            <p className="text-xs text-slate-600">Last route distance: ~{estimatedDistanceKm.toFixed(1)} km</p>
-                          )}
+
+                          <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="h-9 w-full rounded-md text-xs font-semibold sm:w-auto"
+                              onClick={handleEstimateDeliveryFee}
+                              disabled={estimatingFee}
+                            >
+                              {estimatingFee ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <MapPin className="mr-2 h-3.5 w-3.5" />}
+                              Suggest fee from distance
+                            </Button>
+                            {estimatedDistanceKm !== null && (
+                              <p className="mt-2 text-xs text-slate-600">Last route distance: ~{estimatedDistanceKm.toFixed(1)} km</p>
+                            )}
+                          </div>
+
                           {showMapPicker && (
-                            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-3">
-                              <Label className="text-xs font-medium text-slate-700">Search or coordinates</Label>
-                              <div className="flex gap-2">
+                            <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
+                              <Label className="text-xs font-medium text-slate-700">Search area name or coordinates</Label>
+                              <div className="flex flex-col gap-2 sm:flex-row">
                                 <Input
                                   value={mapQuery}
                                   onChange={(e) => setMapQuery(e.target.value)}
-                                  placeholder="Area name or GPS"
-                                  className="h-10 flex-1 rounded-lg bg-white text-sm"
+                                  placeholder="e.g. East Legon, Accra or 5.60,-0.18"
+                                  className="h-10 flex-1 rounded-lg bg-slate-50 text-sm"
                                 />
-                                <Button type="button" size="sm" className="h-10 shrink-0 rounded-lg" onClick={() => setDeliveryAddress(mapQuery.trim())} disabled={!mapQuery.trim()}>
-                                  Apply
+                                <Button type="button" size="sm" className="h-10 shrink-0 rounded-lg sm:px-4" onClick={() => setDeliveryAddress(mapQuery.trim())} disabled={!mapQuery.trim()}>
+                                  Apply to address
                                 </Button>
                               </div>
                               {geoCoords ? (
@@ -713,10 +723,10 @@ function BuyerStep1() {
                                     Pin: {geoCoords.lat.toFixed(5)}, {geoCoords.lng.toFixed(5)}
                                   </p>
                                   <div ref={mapContainerRef} className="h-56 w-full overflow-hidden rounded-lg border border-slate-200" />
-                                  <p className="text-[11px] text-slate-500">Drag the marker to adjust.</p>
+                                  <p className="text-[11px] text-slate-500">Drag the marker for exact delivery point.</p>
                                 </div>
                               ) : (
-                                <p className="text-[11px] text-slate-500">Use &ldquo;Use my location&rdquo; or &ldquo;Pin on map&rdquo; to show the map.</p>
+                                <p className="text-[11px] text-slate-500">Use &ldquo;Use my location&rdquo; or &ldquo;Pin query on map&rdquo; to load the map preview.</p>
                               )}
                             </div>
                           )}

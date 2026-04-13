@@ -103,15 +103,22 @@ export default function ProductsServicesPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="border-b border-slate-200 bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <section className="relative overflow-hidden border-b border-slate-200 bg-white">
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: "url('/images/hero-woman.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/95 via-white/90 to-white/75" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(99,102,241,0.10),transparent_45%)]" />
+
+          <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/85 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-sm">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Escrow-Protected Marketplace
               </div>
               <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Products & Services</h1>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">
+              <p className="mt-2 text-sm text-slate-700 sm:text-base">
                 Discover seller listings and purchase through the same secure escrow flow.
               </p>
             </div>
