@@ -22,7 +22,8 @@ import {
   Circle,
   AlertTriangle,
   ShieldCheck,
-  MapPin
+  MapPin,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -103,13 +104,14 @@ export default function TrackingPage() {
       <Header />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-slate-200 bg-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(109,40,217,0.08),transparent_36%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.08),transparent_38%)]" />
-          <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden bg-slate-950 pt-12 pb-24 sm:pt-20 sm:pb-32 text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(99,102,241,0.15),transparent_36%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.15),transparent_38%)]" />
+          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-primary"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/20 px-4 py-1.5 text-xs sm:text-sm font-bold tracking-wide text-primary-foreground backdrop-blur-sm"
             >
               <MapPin className="h-4 w-4" />
               <span>Real-Time Order Tracking</span>
@@ -119,16 +121,16 @@ export default function TrackingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
-              className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
+              className="mt-6 text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl"
             >
-              Track Your Transaction Status
+              Track Your Transaction
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.14 }}
-              className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base"
+              className="mt-4 max-w-2xl mx-auto text-base leading-relaxed text-slate-400 sm:text-lg"
             >
               Enter your secure Transaction ID or phone number to instantly check the latest delivery and payout progress.
             </motion.p>
@@ -141,43 +143,44 @@ export default function TrackingPage() {
                 e.preventDefault();
                 handleSearch();
               }}
-              className="mt-6 flex max-w-3xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row"
+              className="mt-10 mx-auto flex max-w-2xl flex-col gap-3 sm:flex-row relative z-20"
             >
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-5 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-400" />
                 <Input
                   placeholder="e.g. SBS-12345678 or 024XXXXXXX"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="h-12 rounded-xl border-none bg-slate-50 pl-12 text-slate-900 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="h-14 sm:h-16 rounded-2xl border-2 border-white/10 bg-white/5 pl-14 text-lg text-white placeholder:text-slate-500 focus-visible:border-primary focus-visible:bg-white/10 focus-visible:ring-0 backdrop-blur-md transition-all"
                   autoFocus
                 />
               </div>
               <Button
                 type="submit"
-                className="h-12 w-full rounded-xl px-6 text-sm font-bold shadow-lg shadow-primary/20 sm:w-auto"
+                className="h-14 sm:h-16 w-full rounded-2xl px-8 text-lg font-bold shadow-xl shadow-primary/20 sm:w-auto transition-transform active:scale-95"
                 disabled={loading}
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Track Order'}
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Track Order'}
               </Button>
             </motion.form>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 sm:pb-24 sm:pt-8">
+        {/* Results Section */}
+        <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-24 -mt-12 sm:-mt-16 relative z-10">
           <AnimatePresence mode="wait">
             {!loading && searched && results.length === 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-xl border border-slate-100 p-8 sm:p-16 text-center"
+                className="rounded-3xl bg-white shadow-2xl shadow-slate-200/40 border border-slate-100 p-10 sm:p-16 text-center"
               >
-                <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <div className="mx-auto w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
                   <Search className="h-10 w-10 text-slate-300" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No transaction found</h3>
-                <p className="text-slate-500 max-w-md mx-auto">
+                <h3 className="text-2xl font-black text-slate-900 mb-3">No transaction found</h3>
+                <p className="text-slate-500 max-w-md mx-auto text-base">
                   We could not find any active order matching that ID or phone number. Please double-check and try again.
                 </p>
               </motion.div>
@@ -199,58 +202,63 @@ export default function TrackingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="mb-6 sm:mb-8 rounded-xl sm:rounded-2xl lg:rounded-3xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+                  className="mb-8 rounded-3xl bg-white shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden"
                 >
                   {/* Header */}
-                  <div className="bg-slate-50/50 border-b border-slate-100 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <ShieldCheck className="h-6 w-6" />
+                  <div className="bg-slate-50/80 border-b border-slate-100 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div className="flex items-start gap-5">
+                      <div className="hidden sm:flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+                        <ShieldCheck className="h-7 w-7" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                             {displayId}
                           </h2>
                           {statusInfo && (
-                            <Badge className={`${statusInfo.color} rounded-full px-3 py-1 font-semibold uppercase tracking-wider text-[10px]`}>
+                            <Badge className={`${statusInfo.color} rounded-full px-3.5 py-1.5 font-bold uppercase tracking-wider text-[11px]`}>
                               {statusInfo.label}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-slate-500 font-medium">
-                          {tx.product_name} &middot;{' '}
-                          <span className="text-slate-900">
-                            GHS {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
+                        <p className="text-slate-600 font-medium text-base">
+                          {tx.product_name}
                         </p>
                       </div>
+                    </div>
+                    <div className="sm:text-right bg-white sm:bg-transparent p-4 sm:p-0 rounded-2xl border sm:border-none border-slate-100">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Amount</p>
+                      <p className="text-2xl sm:text-3xl font-black text-primary">
+                        GHS {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
 
                   {/* Body */}
                   <div className="p-6 sm:p-10">
                     {isTerminal ? (
-                      <div className="rounded-xl sm:rounded-2xl bg-red-50 border border-red-100 p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
-                        <AlertTriangle className="h-6 w-6 text-red-600 shrink-0 mt-0.5" />
+                      <div className="rounded-2xl bg-red-50 border border-red-100 p-5 sm:p-8 flex items-start gap-4">
+                        <div className="bg-red-100 p-3 rounded-xl shrink-0">
+                          <AlertTriangle className="h-6 w-6 text-red-600" />
+                        </div>
                         <div>
-                          <h4 className="text-lg font-bold text-red-900 mb-1">Transaction {statusInfo?.label || tx.status}</h4>
-                          <p className="text-red-700">
+                          <h4 className="text-xl font-black text-red-900 mb-2">Transaction {statusInfo?.label || tx.status}</h4>
+                          <p className="text-red-700 font-medium leading-relaxed">
                             This transaction has been flagged or stopped. Funds are secured. Please contact support for further assistance and resolution.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="py-4 sm:py-8 overflow-x-auto">
-                        <div className="relative flex items-center justify-between max-w-3xl mx-auto min-w-[480px] px-2 sm:px-0">
+                      <div className="py-6 sm:py-10 overflow-x-auto">
+                        <div className="relative flex items-center justify-between max-w-4xl mx-auto min-w-[600px] px-4 sm:px-0">
                           {/* Background Track */}
-                          <div className="absolute left-[10%] right-[10%] top-1/2 h-1 -translate-y-1/2 bg-slate-100 rounded-full" />
+                          <div className="absolute left-[8%] right-[8%] top-1/2 h-1.5 -translate-y-1/2 bg-slate-100 rounded-full" />
                           
                           {/* Active Track */}
                           <div
-                            className="absolute left-[10%] top-1/2 h-1 -translate-y-1/2 bg-primary rounded-full transition-all duration-1000 ease-out"
+                            className="absolute left-[8%] top-1/2 h-1.5 -translate-y-1/2 bg-primary rounded-full transition-all duration-1000 ease-out"
                             style={{
-                              width: `${(currentIdx / (TIMELINE_STEPS.length - 1)) * 80}%`,
+                              width: `${(currentIdx / (TIMELINE_STEPS.length - 1)) * 84}%`,
                             }}
                           />
 
@@ -262,28 +270,28 @@ export default function TrackingPage() {
                             return (
                               <div
                                 key={s.key}
-                                className="relative z-10 flex flex-col items-center gap-3 w-20"
+                                className="relative z-10 flex flex-col items-center gap-4 w-24"
                               >
                                 <motion.div
                                   initial={false}
                                   animate={{
-                                    scale: isCurrent ? 1.2 : 1,
+                                    scale: isCurrent ? 1.15 : 1,
                                     backgroundColor: isCurrent ? 'var(--primary)' : isPast ? '#eff6ff' : '#ffffff',
                                     borderColor: isCurrent ? 'var(--primary)' : isPast ? '#3b82f6' : '#e2e8f0',
                                     color: isCurrent ? '#ffffff' : isPast ? '#3b82f6' : '#94a3b8'
                                   }}
-                                  className="flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm bg-white"
+                                  className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 shadow-sm bg-white transition-colors duration-500"
                                 >
                                   {isCurrent ? (
-                                    <CircleDot className="h-5 w-5" />
+                                    <CircleDot className="h-6 w-6" />
                                   ) : isPast ? (
-                                    <StepIcon className="h-5 w-5" />
+                                    <StepIcon className="h-6 w-6" />
                                   ) : (
-                                    <Circle className="h-5 w-5" />
+                                    <Circle className="h-6 w-6" />
                                   )}
                                 </motion.div>
                                 <span
-                                  className={`text-xs font-bold text-center transition-colors ${
+                                  className={`text-xs sm:text-sm font-bold text-center transition-colors duration-500 ${
                                     isCurrent
                                       ? 'text-primary'
                                       : isPast
@@ -301,18 +309,18 @@ export default function TrackingPage() {
                     )}
 
                     {/* Details Grid */}
-                    <div className="mt-6 sm:mt-10 grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-4 pt-6 sm:pt-8 border-t border-slate-100">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Buyer</p>
-                        <p className="font-semibold text-slate-900">{tx.buyer_phone || '—'}</p>
+                    <div className="mt-8 sm:mt-12 grid grid-cols-2 gap-6 sm:gap-8 sm:grid-cols-4 pt-8 sm:pt-10 border-t border-slate-100">
+                      <div className="bg-slate-50 p-4 rounded-2xl">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5"><span className="flex h-4 w-4 items-center justify-center rounded bg-blue-100 text-[9px] text-blue-700">B</span> Buyer</p>
+                        <p className="font-bold text-slate-900 sm:text-lg">{tx.buyer_phone || '—'}</p>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Seller</p>
-                        <p className="font-semibold text-slate-900">{tx.seller_phone || '—'}</p>
+                      <div className="bg-slate-50 p-4 rounded-2xl">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5"><span className="flex h-4 w-4 items-center justify-center rounded bg-emerald-100 text-[9px] text-emerald-700">S</span> Seller</p>
+                        <p className="font-bold text-slate-900 sm:text-lg">{tx.seller_phone || '—'}</p>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Created</p>
-                        <p className="font-semibold text-slate-900">
+                      <div className="bg-slate-50 p-4 rounded-2xl">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Created</p>
+                        <p className="font-bold text-slate-900 sm:text-lg">
                           {tx.created_at
                             ? new Date(tx.created_at).toLocaleDateString('en-GH', {
                                 day: 'numeric',
@@ -322,9 +330,9 @@ export default function TrackingPage() {
                             : '—'}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Last Updated</p>
-                        <p className="font-semibold text-slate-900">
+                      <div className="bg-slate-50 p-4 rounded-2xl">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Updated</p>
+                        <p className="font-bold text-slate-900 sm:text-lg">
                           {tx.updated_at
                             ? new Date(tx.updated_at).toLocaleDateString('en-GH', {
                                 day: 'numeric',
