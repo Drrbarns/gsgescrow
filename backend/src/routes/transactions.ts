@@ -13,6 +13,12 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
   try {
     const payload: CreateTransactionPayload = req.body;
     const buyerId = req.user!.id;
+    const buyerPhone = String(payload.buyer_phone || req.user!.phone || '').trim();
+
+    if (!buyerPhone) {
+      res.status(400).json({ error: 'Buyer phone number is required for SMS notifications' });
+      return;
+    }
 
     const buyerFeePercent = 0.35;
     const sellerFeePercent = 0.65;
@@ -29,7 +35,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
         seller_phone: payload.seller_phone,
         seller_name: payload.seller_name,
         buyer_name: payload.buyer_name,
-        buyer_phone: req.user!.phone,
+        buyer_phone: buyerPhone,
         listing_link: payload.listing_link,
         source_platform: payload.source_platform,
         product_type: payload.product_type,
@@ -53,6 +59,13 @@ router.post('/', authenticateToken, async (req: Request, res: Response): Promise
       await supabaseAdmin
         .from('profiles')
         .update({ refund_bank_details: payload.refund_bank_details })
+        .eq('user_id', buyerId);
+    }
+
+    if (payload.buyer_phone) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ phone: buyerPhone })
         .eq('user_id', buyerId);
     }
 

@@ -51,6 +51,7 @@ function BuyerStep1() {
   const [estimatedDistanceKm, setEstimatedDistanceKm] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState<Date>();
   const [buyerName, setBuyerName] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState('');
   const [sellerPhone, setSellerPhone] = useState('');
   const [sellerName, setSellerName] = useState('');
   const [productTotal, setProductTotal] = useState('');
@@ -70,7 +71,10 @@ function BuyerStep1() {
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    if (profile) setBuyerName(profile.ghana_card_name || profile.full_name || '');
+    if (profile) {
+      setBuyerName(profile.ghana_card_name || profile.full_name || '');
+      setBuyerPhone(profile.phone || '');
+    }
   }, [profile]);
 
   useEffect(() => {
@@ -397,7 +401,7 @@ function BuyerStep1() {
 
   async function handleSubmit() {
     if (!agreed) { toast.error('Please accept the terms'); return; }
-    if (!sourcePlatform || !productType || !productName || !deliveryAddress || !buyerName || !sellerPhone || !sellerName) {
+    if (!sourcePlatform || !productType || !productName || !deliveryAddress || !buyerName || !buyerPhone || !sellerPhone || !sellerName) {
       toast.error('Please fill all required fields'); return;
     }
     if (total.productTotal <= 0) { toast.error('Product total must be greater than 0'); return; }
@@ -412,6 +416,7 @@ function BuyerStep1() {
         delivery_address: deliveryAddress,
         delivery_date: deliveryDate?.toISOString().split('T')[0],
         buyer_name: buyerName,
+        buyer_phone: buyerPhone,
         seller_phone: sellerPhone,
         seller_name: sellerName,
         product_total: total.productTotal,
@@ -742,6 +747,15 @@ function BuyerStep1() {
                       <div className="space-y-2 sm:col-span-2">
                         <Label className="text-sm text-slate-700">Your name (as on Ghana Card) *</Label>
                         <Input value={buyerName} onChange={(e) => setBuyerName(e.target.value)} className="h-11 rounded-lg border-slate-200 bg-white" />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label className="text-sm text-slate-700">Your phone (for SMS updates) *</Label>
+                        <Input
+                          value={buyerPhone}
+                          onChange={(e) => setBuyerPhone(e.target.value)}
+                          placeholder="+233..."
+                          className="h-11 rounded-lg border-slate-200 bg-white"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm text-slate-700">Seller / business *</Label>

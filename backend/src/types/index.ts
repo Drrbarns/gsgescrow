@@ -30,6 +30,7 @@ export interface CreateTransactionPayload {
   delivery_address: string;
   delivery_date?: string;
   buyer_name: string;
+  buyer_phone?: string;
   seller_phone: string;
   seller_name: string;
   product_total: number;
